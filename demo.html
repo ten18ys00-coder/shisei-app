@@ -494,6 +494,7 @@ const CRY={
 const CL={sb:null,clinic:null,dek:null,dekRaw:null,
  init(){if(this.sb)return true;try{if(!window.supabase||!window.crypto||!crypto.subtle)return false;this.sb=supabase.createClient(SUPA.url,SUPA.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'shisei-auth'}});return true}catch(e){return false}},
  email(code){return String(code).trim().toLowerCase()+'@'+SUPA.domain},
+ authPw(p){p=String(p);return p.length<6?'pin-'+p+'-shisei':p},
  async me(){const r=await this.sb.auth.getSession();const ses=r&&r.data&&r.data.session;if(!ses){this.clinic=null;return null}
   const {data,error}=await this.sb.from('clinics').select('*').eq('user_id',ses.user.id).maybeSingle();if(error)throw error;this.clinic=data||null;return this.clinic},
  dekName(){return 'shisei-dek-'+(this.clinic&&this.clinic.id)},
@@ -502,7 +503,7 @@ const CL={sb:null,clinic:null,dek:null,dekRaw:null,
  async useDek(raw){this.dekRaw=raw;this.dek=await CRY.dekKey(raw);try{localStorage.setItem(this.dekName(),CRY.b64(raw))}catch(e){}},
  async enc(o){return CRY.seal(this.dek,new TextEncoder().encode(JSON.stringify(o)))},
  async dec(str){if(!str)return {};try{return JSON.parse(new TextDecoder().decode(await CRY.open(this.dek,str)))}catch(e){return {_locked:true}}},
- async signIn(code,pass){const {error}=await this.sb.auth.signInWithPassword({email:this.email(code),password:String(pass)});
+ async signIn(code,pass){const {error}=await this.sb.auth.signInWithPassword({email:this.email(code),password:this.authPw(pass)});
   if(error)throw new Error(/invalid/i.test(error.message)?'院コードかパスコードが違います':(/rate|many/i.test(error.message)?'入力が続いたため、しばらく待ってからもう一度試してください':error.message));
   const c=await this.me();if(!c){await this.sb.auth.signOut({scope:'local'});throw new Error('この院コードは使えません')}return c},
  async unlock(pass){const c=this.clinic;if(!c||!c.wrapped_dek)throw new Error('先にパスコードの設定が必要です');let raw;
@@ -510,14 +511,14 @@ const CL={sb:null,clinic:null,dek:null,dekRaw:null,
  async setup(newPass,rec,discard){const c=this.clinic;let raw=null,code=null;
   if(c.wrapped_dek){if(this.dekRaw)raw=this.dekRaw;else if(rec){try{raw=await CRY.open(await CRY.kek(CRY.norm(rec),c.rec_salt),c.wrapped_dek_rec)}catch(e){throw new Error('復旧コードが違います')}}else if(!discard)throw new Error('NEED_REC')}
   if(!raw){raw=crypto.getRandomValues(new Uint8Array(32));code=CRY.recCode()}
-  const up=await this.sb.auth.updateUser({password:String(newPass)});if(up.error)throw new Error(up.error.message);
+  const up=await this.sb.auth.updateUser({password:this.authPw(newPass)});if(up.error)throw new Error(/same|different/i.test(up.error.message)?'最初のパスコードとは別のパスコードにしてください':up.error.message);
   const ks=CRY.salt(),patch={must_change:false,kdf_salt:ks,wrapped_dek:await CRY.seal(await CRY.kek(newPass,ks),raw)};
   if(code){const rs=CRY.salt();patch.rec_salt=rs;patch.wrapped_dek_rec=await CRY.seal(await CRY.kek(CRY.norm(code),rs),raw)}
   await this.useDek(raw);patch.settings=Object.assign({},c.settings||{},{dek_check:await this.enc('ok')});
   const {error}=await this.sb.from('clinics').update(patch).eq('id',c.id);if(error)throw error;Object.assign(c,patch);return code},
  async changePass(oldPass,newPass){const c=this.clinic;let raw;try{raw=await CRY.open(await CRY.kek(oldPass,c.kdf_salt),c.wrapped_dek)}catch(e){throw new Error('今のパスコードが違います')}
-  const si=await this.sb.auth.signInWithPassword({email:this.email(c.code),password:String(oldPass)});if(si.error)throw new Error('今のパスコードが違います');
-  const up=await this.sb.auth.updateUser({password:String(newPass)});if(up.error)throw new Error(up.error.message);
+  const si=await this.sb.auth.signInWithPassword({email:this.email(c.code),password:this.authPw(oldPass)});if(si.error)throw new Error('今のパスコードが違います');
+  const up=await this.sb.auth.updateUser({password:this.authPw(newPass)});if(up.error)throw new Error(/same|different/i.test(up.error.message)?'今と同じパスコードです':up.error.message);
   const ks=CRY.salt(),patch={kdf_salt:ks,wrapped_dek:await CRY.seal(await CRY.kek(newPass,ks),raw)};const {error}=await this.sb.from('clinics').update(patch).eq('id',c.id);if(error)throw error;Object.assign(c,patch);
   try{await this.sb.auth.signOut({scope:'others'})}catch(e){}},
  async logout(){try{localStorage.removeItem(this.dekName())}catch(e){}try{await this.sb.auth.signOut({scope:'local'})}catch(e){}this.clinic=null;this.dek=null;this.dekRaw=null},
@@ -679,7 +680,7 @@ const NAV={armed:false,gs(){return !!(window.google&&google.script&&google.scrip
 function render_(){const hb=$('#hback');if(hb)hb.hidden=st.view==='home'||st.view==='lock';const ht=$('header.top');if(ht)ht.classList.toggle('sub',st.view!=='home'&&st.view!=='lock');setTimeout(NAV.arm,0);const m=$('#main');m.innerHTML=({home:vHome,patient:vPatient,capture:vCapture,result:vResult,calib:vCalib,lock:vLock,admin:vAdmin})[st.view]();
  if(st.view==='home'&&!DEMO)renderList();if(st.view==='patient')drawTrend();if(st.view==='capture')setupEditor();if(st.view==='result')afterResult();
  $('#chip').textContent=DEMO?'お試し版':({cloud:'記録：クラウド（暗号化）',gas:'記録：Googleドライブ',local:'記録：この端末のみ',memory:'記録：保存なし'}[Store.mode]||'')}
-function storeNote(){return '<p class="store">'+({cloud:'記録はクラウドに保存しています。患者さんのお名前・ふりがな・メモ・コメントはこの端末で暗号化してから保存するため、この院のパスコードがないと誰も読めません（運営側でも読めません）。名前を含まない測定値は、姿勢分析の精度を上げるために統計として利用します。写真そのものは保存しません。',gas:'記録は院長のGoogleドライブ内のスプレッドシート「ほさか整骨院_姿勢分析データ」に保存されます（スプレッドシートは院長のアカウントでしか開けません。アプリは院のパスコードを入れた端末からだけ開けます）。写真そのものは保存せず、目印の位置と数値だけを保存します。',local:'いまは記録をこの端末のブラウザにだけ一時的に保存しています。',memory:'お試し版のため、記録は保存されません。写真はこの端末の中だけで解析し、どこにも送信・保存しません。'}[Store.mode]||'')+'</p>'}
+function storeNote(){return '<p class="store">'+({cloud:'記録はクラウドに保存しています。患者さんのお名前・ふりがな・メモ・コメントはこの端末で暗号化してから保存するため、この院のパスコードを知らない人には読めません。パスコードは運営側にも伝わりません。名前を含まない測定値は、姿勢分析の精度を上げるために統計として利用します。写真そのものは保存しません。',gas:'記録は院長のGoogleドライブ内のスプレッドシート「ほさか整骨院_姿勢分析データ」に保存されます（スプレッドシートは院長のアカウントでしか開けません。アプリは院のパスコードを入れた端末からだけ開けます）。写真そのものは保存せず、目印の位置と数値だけを保存します。',local:'いまは記録をこの端末のブラウザにだけ一時的に保存しています。',memory:'お試し版のため、記録は保存されません。写真はこの端末の中だけで解析し、どこにも送信・保存しません。'}[Store.mode]||'')+'</p>'}
 function calSamples(){const out={};Object.keys(SPEC).forEach(k=>out[k]=[]);(st.cal&&st.cal.sessions||[]).forEach(s=>{const c=unpack(s),A=analyze(c);A.rows.forEach(r=>{out[r.key].push({raw:r.raw,j:c.judge&&c.judge[jkey(r)]||null,vk:r.vk})})});return out}
 const ORD={ok:0,wn:1,ng:2};
 function calCost(S,q){let c=0;S.forEach(x=>{c+=Math.abs(ORD[stOf(x.raw-q.ofs,q)]-ORD[x.j])});return c}
@@ -884,13 +885,16 @@ async function doSave(){const c=st.cur,p=st.patient;if(!p||!p.id)return;const A=
  if(st.view==='result')render()}
 async function loadPatients(){st.loading=true;try{st.patients=takeCfg(await Store.listPatients())}catch(e){st.loadErr=msg(e)}st.loading=false;render()}
 function lockOut(){if(st.view==='lock')return;closeModal();st.lock=Store.mode==='cloud'?{mode:'login'}:{set:true};st.patients=[];st.patient=null;go('lock')}
+const PLEN=[4,6,8];
+function lenSel(id,cur){return '<label>パスコードの桁数<select id="'+id+'">'+PLEN.map(n=>'<option value="'+n+'"'+(n===(cur||6)?' selected':'')+'>'+n+'桁</option>').join('')+'</select></label><p class="note" id="'+id+'Note" style="margin:-4px 0 0"'+((cur||6)===4?'':' hidden')+'>4桁は覚えやすい反面、推測されやすくなります。院の外に持ち出すスマホでは6桁以上がおすすめです。</p>'}
+function lenOk(p,len){return new RegExp('^[0-9]{'+len+'}$').test(p)}
 function vLockCloud(){const L=st.lock||{mode:'login'},c=CL.clinic,err=st.lockErr?'<div class="warn">'+esc(st.lockErr)+'</div>':'',
  pw=(id,lab,ac)=>'<label>'+lab+'<input id="'+id+'" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="'+ac+'" required></label>';
  if(L.mode==='recovery')return '<div class="wrap lock"><h1>復旧コードを控えてください</h1><p class="lead">パスコードを忘れたときに、患者さんのお名前を読み戻すための大切なコードです。この画面は一度しか出ません。</p><div class="card"><p class="reccode" id="recCode">'+esc(L.rec)+'</p>'+
   '<p class="note">紙に書いて、院内の決まった場所に保管してください。運営側でも再発行できません。なくすと、パスコードを忘れたときに患者さんのお名前が読めなくなります（測定の記録とグラフは残ります）。</p><label class="chk"><input type="checkbox" id="recOk"> 書き留めました</label><button class="btn pri big" data-act="recDone">はじめる</button></div></div>';
  if(L.mode==='setup'){const reset=c&&c.wrapped_dek&&!CL.dekRaw&&!L.discard;
-  return '<div class="wrap lock"><h1>院のパスコードを決める</h1><p class="lead">'+esc(c?c.name:'')+'（院コード：'+esc(c?c.code:'')+'）<br>院のスマホで使うパスコード（6桁以上の数字）を決めてください。お知らせした最初のパスコードは、これで使えなくなります。</p><form id="lockForm" class="form card">'+
-  pw('np1','新しいパスコード（6桁以上の数字）','new-password')+pw('np2','もう一度入力','new-password')+
+  return '<div class="wrap lock"><h1>院のパスコードを決める</h1><p class="lead">'+esc(c?c.name:'')+'（院コード：'+esc(c?c.code:'')+'）<br>院のスマホで使うパスコードを、4桁・6桁・8桁の数字から選んで決めてください。お知らせした最初のパスコードは、これで使えなくなります。</p><form id="lockForm" class="form card">'+
+  lenSel('plen',st.plen)+pw('np1','新しいパスコード（数字）','new-password')+pw('np2','もう一度入力','new-password')+
   (reset?'<label>復旧コード<input id="rec" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX"></label><p class="note" style="margin:0">最初に控えた復旧コードを入れると、今までの患者さんのお名前を読み戻せます。<button type="button" class="link" data-act="recLost">復旧コードがない</button></p>':'')+
   (L.discard?'<div class="warn">新しい暗号キーで始めます。これまでの患者さんのお名前・メモ・コメントは読めなくなります。</div>':'')+err+'<button class="btn pri big" type="submit" id="lockBtn">このパスコードにする</button></form></div>'}
  if(L.mode==='unlock')return '<div class="wrap lock"><h1>院のパスコードを入力</h1><p class="lead">'+esc(c?c.name:'')+'<br>この端末で患者さんのお名前を読むために、院のパスコードを入れてください。</p><form id="lockForm" class="form card">'+pw('lp1','パスコード','current-password')+err+'<button class="btn pri big" type="submit" id="lockBtn">開く</button></form><p><button class="link" data-act="logout">別の院コードでログインする</button></p></div>';
@@ -901,7 +905,7 @@ async function submitLockCloud(){const L=st.lock||{mode:'login'},v=id=>(($('#'+i
  try{
   if(L.mode==='login'){const code=v('lcode'),p=v('lp1');if(!code||!p)return;busy();await CL.signIn(code,p);try{localStorage.setItem('shisei-last-code',code.toLowerCase())}catch(e){}await CL.loadLocalDek();if(CL.clinic.must_change){st.lock={mode:'setup'};return render()}if(!CL.dek)await CL.unlock(p);return enterApp()}
   if(L.mode==='unlock'){busy();await CL.unlock(v('lp1'));return enterApp()}
-  if(L.mode==='setup'){const n1=v('np1'),n2=v('np2');if(!/^[0-9]{6,}$/.test(n1)){st.lockErr='パスコードは6桁以上の数字にしてください';return render()}if(n1!==n2){st.lockErr='2回目の入力が違います';return render()}busy();
+  if(L.mode==='setup'){const n1=v('np1'),n2=v('np2'),len=+v('plen')||6;st.plen=len;if(!lenOk(n1,len)){st.lockErr='パスコードは'+len+'桁の数字にしてください';return render()}if(n1!==n2){st.lockErr='2回目の入力が違います';return render()}busy();
    const code=await CL.setup(n1,v('rec')||null,!!L.discard);if(code){st.lock={mode:'recovery',rec:code};return render()}return enterApp()}
  }catch(e){st.lockErr=msg(e)==='NEED_REC'?'復旧コードを入れてください（ない場合は「復旧コードがない」を押してください）':msg(e);render()}}
 async function enterApp(){st.lock=null;st.lockErr='';applyClinic();go('home');await loadPatients()}
@@ -920,13 +924,13 @@ async function submitLock(){const L=st.lock||{set:true},p1=($('#lp1')||{}).value
 function cloudMenu(){const c=CL.clinic||{},p=PROFILE,f=(n,l,v,ph)=>'<label>'+l+'<input name="'+n+'" value="'+esc(v||'')+'" placeholder="'+esc(ph||'')+'" autocomplete="off"></label>',pw=(id,l,ac)=>'<label>'+l+'<input id="'+id+'" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="'+ac+'" required></label>';
  openModal('<h2>院の設定</h2><p class="mut">'+esc(c.name||'')+'（院コード：'+esc(c.code||'')+'）</p>'+
  '<form id="profForm" class="form"><h3 style="margin:4px 0 0">レポートに入る院の情報</h3>'+f('name','院名',p.name,'例：〇〇整骨院')+f('tagline','ひとこと（英語のキャッチなど・任意）',p.tagline,'')+f('addr','住所（任意）',p.addr,'')+f('tel','電話番号（任意）',p.tel,'')+'<label>アプリの色<select name="theme"><option value="">緑（標準）</option>'+Object.keys(THEMES).map(k=>'<option value="'+k+'"'+(((c.settings||{}).theme||'')===k?' selected':'')+'>'+THEMES[k].label+'</option>').join('')+'</select></label><div class="macts"><button class="btn pri" type="submit">院の情報を保存</button></div></form>'+
- '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><form id="passForm" class="form"><h3 style="margin:0">パスコードを変える</h3>'+pw('op','今のパスコード','current-password')+pw('np1','新しいパスコード（6桁以上の数字）','new-password')+pw('np2','新しいパスコードをもう一度','new-password')+
+ '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><form id="passForm" class="form"><h3 style="margin:0">パスコードを変える</h3>'+pw('op','今のパスコード','current-password')+lenSel('plen2',6)+pw('np1','新しいパスコード（数字）','new-password')+pw('np2','新しいパスコードをもう一度','new-password')+
  '<p class="note" style="margin:0">変えると、この端末以外はもう一度ログインが必要になります（スマホをなくしたときにも使えます）。</p><div class="macts"><button class="btn" type="submit">パスコードを変える</button></div></form>'+
  (c.is_admin?'':'<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><label class="chk"><input type="checkbox" id="shareRes"'+(c.share_research?' checked':'')+'> 名前を含まない測定値を、姿勢分析の精度向上のために提供する</label>')+
  '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><div class="macts"><button class="btn" data-act="logout">この端末からログアウト</button><button class="btn" data-act="closeModal">閉じる</button></div>');
  $('#profForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),np={name:String(fd.get('name')||'').trim()||c.name,tagline:String(fd.get('tagline')||'').trim(),addr:String(fd.get('addr')||'').trim(),tel:String(fd.get('tel')||'').trim()};
   try{await CL.saveSettings({profile:np,theme:String(fd.get('theme')||'')});applyClinic();toast('院の情報を保存しました')}catch(er){toast('保存できませんでした：'+msg(er))}};
- $('#passForm').onsubmit=async e=>{e.preventDefault();const o=$('#op').value.trim(),n1=$('#np1').value.trim(),n2=$('#np2').value.trim();if(!/^[0-9]{6,}$/.test(n1))return toast('新しいパスコードは6桁以上の数字にしてください');if(n1!==n2)return toast('新しいパスコードの2回目の入力が違います');
+ $('#passForm').onsubmit=async e=>{e.preventDefault();const o=$('#op').value.trim(),n1=$('#np1').value.trim(),n2=$('#np2').value.trim(),len=+$('#plen2').value||6;if(!lenOk(n1,len))return toast('新しいパスコードは'+len+'桁の数字にしてください');if(n1!==n2)return toast('新しいパスコードの2回目の入力が違います');
   const sb=e.target.querySelector('[type=submit]');sb.disabled=true;sb.textContent='変更中…';try{await CL.changePass(o,n1);closeModal();toast('パスコードを変えました')}catch(er){toast(msg(er));sb.disabled=false;sb.textContent='パスコードを変える'}};
  const sr=$('#shareRes');if(sr)sr.onchange=async()=>{try{const {error}=await CL.sb.from('clinics').update({share_research:sr.checked}).eq('id',c.id);if(error)throw error;c.share_research=sr.checked;toast(sr.checked?'測定値の提供をオンにしました':'測定値の提供をオフにしました')}catch(er){toast(msg(er));sr.checked=!sr.checked}}}
 function vAdmin(){const A=st.adm||{};
@@ -936,7 +940,7 @@ function vAdmin(){const A=st.adm||{};
  '<div class="card"><h2>院の一覧</h2>'+(A.loading?'<p class="empty">読み込み中…</p>':A.err?'<div class="warn">'+esc(A.err)+'</div>':'<ul class="clist">'+(A.list||[]).map(c=>'<li><div><b>'+esc(c.name)+'</b>'+(c.is_admin?' <span class="chg">管理者</span>':'')+'<small>院コード '+esc(c.code)+'・患者 '+c.patients+'人・記録 '+c.sessions+'件'+(c.must_change?'・初回設定まだ':'')+(c.share_research?'':'・測定値の提供なし')+'</small></div>'+
  (c.is_admin?'':'<div class="acts"><button class="btn" data-act="admReset" data-code="'+esc(c.code)+'" data-name="'+esc(c.name)+'">パスコード再発行</button><button class="btn danger" data-act="admDel" data-code="'+esc(c.code)+'" data-name="'+esc(c.name)+'">削除</button></div>')+'</li>').join('')+'</ul><p class="note">お試し版から集まった測定値：'+(A.demo||0)+'件</p>')+'</div></div>'}
 async function loadAdmin(){st.adm=Object.assign({},st.adm||{},{loading:true,err:''});if(st.view==='admin')render();try{const r=await CL.adminCall({action:'list'});st.adm.list=r.clinics||[];st.adm.demo=r.demo||0}catch(e){st.adm.err=msg(e)}st.adm.loading=false;if(st.view==='admin')render()}
-function issuedText(i){return '【姿勢分析アプリのご案内】\nURL：'+SUPA.appUrl+'?clinic='+i.code+'\n院コード：'+i.code+'\n最初のパスコード：'+i.temp+'\n\n初めて開いたときに、院で使うパスコード（6桁以上の数字）を決めてください。そのあと表示される「復旧コード」は、紙に書いて大切に保管してください。'}
+function issuedText(i){return '【姿勢分析アプリのご案内】\nURL：'+SUPA.appUrl+'?clinic='+i.code+'\n院コード：'+i.code+'\n最初のパスコード：'+i.temp+'\n\n初めて開いたときに、院で使うパスコード（4桁・6桁・8桁の数字から選べます）を決めてください。そのあと表示される「復旧コード」は、紙に書いて大切に保管してください。'}
 async function importGas(){const b=$('#impBtn');if(b){b.disabled=true;b.textContent='取り込み中…'}let np=0,ns=0;
  try{const ps=(await gs('apiListPatients'))||[];for(const p of ps){if(p.id===CFG_ID){if(p.cfg){CFG=p.cfg;await saveCfg()}continue}await CL.savePatient(p);np++;const ss=(await gs('apiListSessions',p.id))||[];for(const x of ss){await CL.saveSession(p.id,x.id,x);ns++}}
   await CL.saveSettings({imported:new Date().toISOString()});toast(np+'人・'+ns+'件の記録を取り込みました');await loadPatients()}catch(e){toast('取り込めませんでした：'+msg(e));if(b){b.disabled=false;b.textContent='Googleドライブの記録を取り込む'}}}
@@ -1100,6 +1104,7 @@ document.addEventListener('submit',e=>{if(e.target&&e.target.id==='newClinic'){e
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)closeModal()});
 document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='calAll'){st.calAll=t.checked;loadCalib()}
+ if(t.id==='plen'||t.id==='plen2'){const n=$('#'+t.id+'Note');if(n)n.hidden=t.value!=='4';if(t.id==='plen')st.plen=+t.value}
  if(t.id==='demoShare'){st.demoShare=t.checked}
  if(t.dataset&&t.dataset.cfg&&st.cal){const k=t.dataset.cfg,f=t.dataset.f,v=parseFloat(t.value),q=specOf(k);if(isFinite(v)){const o=CFG[k]=Object.assign({ofs:q.ofs,good:q.good,bad:q.bad},CFG[k]||{});o[f]=f==='ofs'?v:Math.max(0.5,v);if(o.bad<=o.good)o.bad=o.good+0.5;const s=SPEC[k];if(!o.ofs&&o.good===s.good&&o.bad===s.bad)delete CFG[k];st.cal.dirty=true;
   setTimeout(()=>{const el=document.querySelector('.cal .card[data-ck="'+k+'"] .cst');if(el&&st.cal.S)el.innerHTML=calStat(st.cal.S[k],specOf(k));const b=$('#cfgSave');if(b){b.disabled=false;b.textContent='基準を保存'}},0)}}if(t.id==='file'){const f=t.files&&t.files[0];const k=st.tab;t.value='';if(f)handlePhoto(k,f)}
