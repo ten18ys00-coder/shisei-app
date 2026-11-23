@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ほさか整骨院 姿勢分析（お試し版）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 院内で毎日使う道具。清潔・落ち着き・精密
+   IDEA: 壁に貼る姿勢評価の方眼ボードと、金の下げ振り線
+   PICTURE: 写真に重ねた方眼・下げ振り線・骨格ライン（作業画面そのもの）
+   COLOUR and TYPE: 深緑・生成り・控えめな金／Zen Kaku Gothic New＋数字はInter Tight
+   LAYOUT: 上に作業領域、スコア→画像→所見→詳細→比較、下に固定の操作バー */
+:root{--bg:#f6f2e9;--card:#fffdf8;--soft:#efe8da;--ink:#1b2420;--mut:#5f675f;--line:#e0d8c6;--g:#1f4436;--g2:#2f6a54;--gd:#a8843f;--ok:#2f7a5a;--wn:#a8650f;--ng:#b23b27;--onG:#fff;--band:#1f4436;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1613;--card:#17211d;--soft:#22302a;--ink:#ece6d8;--mut:#a3ab9f;--line:#2e3b35;--g:#8cc7a8;--g2:#5ea383;--gd:#d3b06c;--ok:#6fc49a;--wn:#e0a54d;--ng:#ef7a64;--onG:#0f1613;--band:#132a21;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0f1613;--card:#17211d;--soft:#22302a;--ink:#ece6d8;--mut:#a3ab9f;--line:#2e3b35;--g:#8cc7a8;--g2:#5ea383;--gd:#d3b06c;--ok:#6fc49a;--wn:#e0a54d;--ng:#ef7a64;--onG:#0f1613;--band:#132a21;color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Zen Kaku Gothic New",system-ui,sans-serif;overflow-x:clip;-webkit-text-size-adjust:100%}
+.n{font-family:"Inter Tight","Zen Kaku Gothic New",sans-serif;font-variant-numeric:tabular-nums}
+header.top{position:sticky;top:0;z-index:15;background:var(--band);color:#f4efe3;padding:10px max(4vw,16px);display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:max(10px,env(safe-area-inset-top))}
+.brand{display:flex;flex-direction:column;line-height:1.25;flex:1;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hback{appearance:none;flex:none;background:rgba(244,239,227,.12);color:#f4efe3;border:1px solid rgba(244,239,227,.4);border-radius:99px;font:inherit;font-weight:700;font-size:15px;min-height:42px;padding:0 14px;cursor:pointer;white-space:nowrap}.hback[hidden]{display:none}
+@media (max-width:520px){header.top.sub .brand small,header.top.sub .chip{display:none}header.top.sub .brand b{font-size:16px}}.brand b{font-size:18px;letter-spacing:.06em}.brand small{color:#d3b06c;font-size:12px;letter-spacing:.04em}
+.chip{font-size:12px;border:1px solid rgba(244,239,227,.35);border-radius:99px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1100px;margin:0 auto;padding:18px max(4vw,16px) 40px}
+h1{font-size:clamp(26px,5vw,34px);line-height:1.15;margin:6px 0 6px;text-wrap:balance}h1 span{font-size:.6em;font-weight:500}
+h2{font-size:18px;margin:0 0 12px;line-height:1.3}h3{font-size:16px;margin:18px 0 8px}
+p{margin:0 0 10px}.mut,.lead{color:var(--mut)}.note,.hint{font-size:13px;color:var(--mut)}
+.btn{appearance:none;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:15px;min-height:44px;padding:9px 16px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;text-decoration:none}
+.btn.pri{background:var(--g);border-color:var(--g);color:var(--onG)}.btn.big{min-height:52px;font-size:16px;padding:12px 22px}
+.btn.on{border-color:var(--gd);background:var(--soft)}.btn.danger{color:var(--ng)}.btn:disabled{opacity:.45;cursor:default}
+.link{background:none;border:0;color:var(--g2);font:inherit;text-decoration:underline;cursor:pointer;padding:10px 0;min-height:44px}
+:focus-visible{outline:3px solid var(--gd);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+textarea{line-height:1.6;resize:vertical}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.toolbar{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}.toolbar input{flex:1 1 220px;width:auto}
+.plist,.slist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist button{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n s" "m s";gap:2px 12px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;font:inherit;color:inherit;cursor:pointer;min-height:64px}
+.pn{grid-area:n;font-weight:700;font-size:17px}.pn small{font-weight:400;color:var(--mut);font-size:13px;margin-left:6px}.pm{grid-area:m;font-size:13px;color:var(--mut)}
+.ps{grid-area:s;align-self:center;font-size:26px;font-weight:700}.ps small,.sv small{font-size:12px;margin-left:2px}
+.s-ok{color:var(--ok)}.s-wn{color:var(--wn)}.s-ng{color:var(--ng)}
+.empty{padding:28px 18px;text-align:center;color:var(--mut);border:1.5px dashed var(--line);border-radius:16px}
+.crumb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.back{background:none;border:0;font:inherit;color:var(--g2);font-weight:700;cursor:pointer;min-height:44px;padding:0}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}.acts{display:flex;gap:8px;flex-wrap:wrap}
+.slist li{display:flex;gap:6px;align-items:stretch}
+.srow{flex:1;display:grid;grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:"d v t" "s s s";gap:2px 14px;align-items:center;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font:inherit;color:inherit;cursor:pointer}
+.sd{grid-area:d;font-weight:700}.sv{grid-area:v;font-size:22px;font-weight:700}.ss{grid-area:s;font-size:13px;color:var(--mut)}.st{grid-area:t;font-size:13px;color:var(--mut);text-align:right}
+.x{background:none;border:1px solid var(--line);border-radius:12px;color:var(--mut);font:inherit;font-size:13px;padding:0 12px;cursor:pointer}
+.fig{position:relative;min-height:200px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.eng{font-size:13px;color:var(--mut);display:flex;align-items:center;gap:8px;margin:2px 0 10px}.dot{width:8px;height:8px;border-radius:50%;background:var(--wn)}.dot.ready{background:var(--ok)}.dot.error{background:var(--ng)}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 12px}
+.tab{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 6px;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-height:60px}
+.tab b{font-size:16px}.tab small{font-size:12px;color:var(--mut)}.tab.on{border-color:var(--g);box-shadow:inset 0 0 0 1.5px var(--g)}.tab.done small{color:var(--ok);font-weight:700}
+.guide{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:22px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+.guide ul{margin:0 0 16px;padding-left:1.2em}.guide li{margin:4px 0}.gsvg{width:100%;max-width:200px;margin:auto;display:block}
+.stagebox{display:flex;justify-content:center;background:#101a16;border-radius:16px;overflow:hidden;padding:0}
+.stagebox canvas{display:block;max-width:100%}
+.edbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.quick span{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:13px}
+.warn{background:var(--soft);border-left:4px solid var(--wn);border-radius:8px;padding:10px 12px;font-size:14px;margin:8px 0}
+.busy{display:grid;place-items:center;min-height:300px;background:var(--card);border:1px solid var(--line);border-radius:18px;color:var(--mut);text-align:center;padding:20px}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--g);animation:sp 1s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.hrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}.hrow input{width:110px}
+.actbar{position:sticky;bottom:0;z-index:5;background:var(--bg);border-top:1px solid var(--line);padding:10px max(4vw,16px) max(10px,env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.scores{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px 22px;align-items:center}
+.gauge{position:relative;width:150px;height:150px}.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}.gl small{font-size:12px;color:var(--mut);margin-bottom:4px}.gl b{font-size:46px}.gl span{font-size:12px;color:var(--mut);margin-top:2px}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px}.tile small{display:block;font-size:13px;color:var(--mut)}.tile b{font-size:30px;line-height:1.1}
+.dl{display:block;font-size:12px;color:var(--mut)}.dl.up{color:var(--ok)}.dl.dn{color:var(--ng)}
+.type{grid-column:1/-1;border-top:1px solid var(--line);padding-top:12px}.type small{font-size:13px;color:var(--mut)}.type b{display:block;font-size:22px;line-height:1.3;margin:2px 0 4px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}.tags span{font-size:13px;background:var(--soft);border-radius:99px;padding:3px 10px}
+.shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.shots figure,.cmpgrid figure{margin:0}.shots canvas,.cmpgrid canvas{display:block;width:100%;border-radius:14px;background:var(--soft)}
+figcaption{font-size:13px;color:var(--mut);text-align:center;margin-top:4px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px}.grid2>.card{margin:0}
+.finds{margin:0;padding:0;list-style:none;display:grid;gap:10px}.finds li{border-left:4px solid var(--wn);padding:2px 0 2px 12px}.finds li.b-ng{border-color:var(--ng)}
+.finds b{display:block}.finds b span{font-weight:500;color:var(--mut);font-size:14px;margin-left:6px;white-space:nowrap}.finds p{font-size:14px;color:var(--mut);margin:2px 0 0}
+.three canvas{display:block;width:100%;height:300px;touch-action:pan-y;cursor:grab}
+.topv{width:100%;max-width:300px;display:block;margin:6px auto 0}.topv text{font-size:12px;fill:var(--mut)}
+.legend{list-style:none;padding:0;margin:8px 0;font-size:14px}.legend li{display:flex;gap:8px;align-items:center;margin:3px 0}.legend i{width:22px;height:6px;border-radius:3px;flex:none}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:13px;color:var(--mut);font-weight:500}
+td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(--mut);font-size:12px}
+.badge{font-size:12px;font-weight:700;border-radius:99px;padding:2px 9px;white-space:nowrap;border:1.5px solid currentColor}.b-ok{color:var(--ok)}.b-wn{color:var(--wn)}.b-ng{color:var(--ng)}
+.mlist{list-style:none;margin:0;padding:0}.mlist li{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}.mlist li.gh{font-weight:700;color:var(--g2);border-bottom:2px solid var(--line);padding-top:16px}.mlist li.gh:first-child{padding-top:0}
+.jg{display:flex;align-items:center;gap:4px;margin-top:6px;flex-wrap:wrap}.jg>span{font-size:11px;color:var(--mut);margin-right:2px}
+.jg button{appearance:none;font:inherit;font-size:12px;font-weight:700;min-height:30px;padding:2px 10px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--mut);cursor:pointer}
+.jg button.on.ok{border-color:var(--ok);color:var(--ok);background:var(--soft)}.jg button.on.wn{border-color:var(--wn);color:var(--wn);background:var(--soft)}.jg button.on.ng{border-color:var(--ng);color:var(--ng);background:var(--soft)}
+.jhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 6px}
+.cal{display:grid;gap:10px}.cal .card{margin:0}.cal h3{margin:0 0 4px;font-size:16px}.cal .meta{font-size:13px;color:var(--mut);margin:0 0 8px}
+.cal .bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--soft);margin:6px 0 8px}.cal .bar i{display:block;height:100%}
+.cal .thr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.cal .thr label{font-size:12px;color:var(--mut);display:grid;gap:2px}.cal .thr input{width:100%;min-height:40px}
+.cal .sug{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.cal .chg{color:var(--gd);font-weight:700;font-size:12px}
+.reccode{font:700 26px/1.4 "Inter Tight",ui-monospace,monospace;letter-spacing:.06em;text-align:center;margin:6px 0 12px;word-break:break-all;background:var(--soft);border-radius:12px;padding:14px 8px}
+.chk{display:flex;gap:10px;align-items:center;font-weight:700;margin:12px 0}.chk input{width:22px;height:22px;flex:none}
+.clist{list-style:none;margin:0;padding:0}.clist li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--line)}.clist small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+.issued{background:var(--soft);border-radius:12px;padding:12px 14px;margin-top:12px}.issued b.n{font-size:20px;letter-spacing:.04em}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mlist small{display:block;font-size:12px;color:var(--mut)}.mlist b{font-weight:500}.mv{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}.mv .n{font-size:17px;font-weight:700}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:8px 0}.tool summary{cursor:pointer;padding:12px 14px;font-size:14px;min-height:44px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.tool .tbody{padding:0 14px 14px}.tool .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.tool input[type=range]{width:100%;min-height:32px;padding:0;border:0;background:none;accent-color:var(--g2)}
+.sw{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid var(--line);vertical-align:-2px;margin-right:2px}.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px}.chk input{width:20px;min-height:20px}
+.loads{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:4px 0 6px}.load{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px}.load small{display:block;font-size:13px;color:var(--mut)}.load b{font-size:34px;color:var(--ng);line-height:1.2}.load b span{font-size:15px;margin-left:2px}.load p{font-size:13px;color:var(--mut);margin:2px 0 0}
+.cgrid{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:18px;align-items:start;margin-top:10px}.bmapbox canvas{display:block;width:100%}.leg{font-size:12px;color:var(--mut);text-align:center;margin:4px 0 0}.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 6px;vertical-align:-1px}
+.mus{list-style:none;margin:0;padding:0;display:grid;gap:6px}.mus li{border-left:4px solid #e0573f;padding:2px 0 2px 10px}.mus.w li{border-color:#3f8fd8}.mus b{font-weight:700;font-size:15px}.mus small{display:block;font-size:12px;color:var(--mut)}.sd{display:inline-block;font-size:12px;background:var(--soft);border-radius:6px;padding:0 6px;margin-right:6px}
+.exlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}.exi{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px;cursor:pointer}.exi input{width:22px;min-height:22px;margin-top:2px;flex:none;accent-color:var(--g2)}.exi b{display:block;font-size:15px}.exi small{display:block;font-size:12px;color:var(--gd);margin:1px 0 4px}.exi .how{display:block;font-size:13px;color:var(--mut)}
+@media (max-width:600px){.cgrid{grid-template-columns:minmax(0,1fr)}.bmapbox{max-width:320px;margin:0 auto}}
+.cmpgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(8,14,11,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal[hidden]{display:none}.mbox{background:var(--card);color:var(--ink);border-radius:20px;max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:20px}
+.form{display:grid;gap:12px}.form label{display:grid;gap:4px;font-size:14px;font-weight:700}.req{font-size:11px;color:var(--ng);margin-left:6px}
+.macts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.or{text-align:center;color:var(--mut);font-size:13px;margin:0}
+.repimg{background:var(--soft);border-radius:12px;padding:8px;margin:10px 0;min-height:120px;display:grid;place-items:center}.repimg img{width:100%;display:block;border-radius:6px}
+.seg2{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}.seg2 button{border:0;background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:8px 14px;min-height:44px;cursor:pointer}.seg2 button.on{background:var(--g);color:var(--onG)}
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-size:14px;z-index:30;max-width:90vw}
+.store{margin-top:22px;font-size:13px;color:var(--mut);border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:720px){.grid2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){
+ .guide{grid-template-columns:minmax(0,1fr)}.gsvg{max-width:140px}
+ .scores{grid-template-columns:minmax(0,1fr);justify-items:center}.tiles{width:100%}
+ .shots{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:76%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}.shots figure{scroll-snap-align:start}
+ table{font-size:13px}th,td{padding:8px 5px}
+ .actbar .btn{flex:1 1 auto}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="hback" id="hback" type="button" data-act="back" hidden aria-label="前の画面に戻る">← 戻る</button>
+  <div class="brand"><b id="brandName">ほさか整骨院　姿勢分析</b><small id="brandTag">Structural Body Care</small></div>
+  <span class="chip" id="chip">読み込み中</span>
+</header>
+<main id="main"></main>
+<div id="modal" class="modal" hidden><div class="mbox" role="dialog" aria-modal="true" id="mbody"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script>
+{
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const D=180/Math.PI, f1=v=>(Math.round(v*10)/10).toFixed(1), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fmtDate=iso=>{const d=new Date(iso);return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()};
+const fmtDT=iso=>{const d=new Date(iso);return fmtDate(iso)+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')};
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const msg=e=>(e&&(e.message||e.code))||String(e);
+const band=v=>v==null?'':v>=80?'ok':v>=60?'wn':'ng';
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+
+const VIEWS=[{k:'front',label:'正面'},{k:'right',label:'右側面'},{k:'left',label:'左側面'}];
+const VL={front:'正面',right:'右側面',left:'左側面',rot:'回旋'};
+const SIDE={R:{ear:8,sh:12,el:14,wr:16,hip:24,kn:26,an:28,he:30,ft:32},L:{ear:7,sh:11,el:13,wr:15,hip:23,kn:25,an:27,he:29,ft:31}};
+const FRONT_EDIT=[0,7,8,11,12,23,24,25,26,27,28];
+const FRONT_BONES=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32]];
+const sideEdit=n=>{const s=SIDE[n];return [0,s.ear,s.sh,s.hip,s.kn,s.an]};
+const sideBones=n=>{const s=SIDE[n];return [[0,s.ear],[s.ear,s.sh],[s.sh,s.el],[s.el,s.wr],[s.sh,s.hip],[s.hip,s.kn],[s.kn,s.an],[s.an,s.he],[s.an,s.ft]]};
+const COL={ok:'#3fae7c',wn:'#e2a33a',ng:'#e0573f'};
+const STL={ok:'良好',wn:'注意',ng:'要改善'};
+const tipF=t=>typeof t==='function'?t:()=>t;
+const SPEC={
+ headTilt:{g:'front',label:'頭の傾き',good:2,bad:6,dir:v=>v>0?'頭が左に傾いている':'頭が右に傾いている',tip:'首まわりの筋肉の緊張に左右差が出やすい状態です。'},
+ shoulderTilt:{g:'front',label:'肩の高さ',good:1.5,bad:4,dir:v=>v>0?'左肩が下がっている':'右肩が下がっている',tip:'片側の肩や首に負担がかたよりやすい状態です。'},
+ pelvisTilt:{g:'front',label:'骨盤の高さ',good:1.5,bad:4,dir:v=>v>0?'骨盤の左側が低い':'骨盤の右側が低い',tip:'腰や膝にかかる負担の左右差につながりやすいポイントです。'},
+ trunkLean:{g:'front',label:'上半身の左右の傾き',good:1.5,bad:4,dir:v=>v>0?'上半身が左に傾いている':'上半身が右に傾いている',tip:'体重を左右どちらかにかけて立つクセがあるかもしれません。'},
+ bodyShift:{g:'front',label:'全身の左右バランス',good:1,bad:3,dir:v=>v>0?'頭の位置が左寄り':'頭の位置が右寄り',tip:'体の中心線が、足元の中心からずれています。'},
+ kneeAlign:{g:'front',label:'膝のライン',good:3,bad:8,dir:v=>v>0?'O脚傾向':'X脚傾向',tip:'膝の内側・外側にかかる負担に関わるポイントです。'},
+ headFwd:{g:'side',label:'頭の前後位置',good:8,bad:18,dir:v=>v>0?'頭が肩より前に出ている':'頭が後ろ寄り',tip:v=>v>0?'頭の重さを首・肩の筋肉で支え続ける姿勢で、首こり・肩こりにつながりやすいポイントです。':'あごを引きすぎて立っている可能性があります。'},
+ trunkFwd:{g:'side',label:'上半身の前後の傾き',good:3,bad:8,dir:v=>v>0?'上半身が前に傾いている':'上半身が後ろに反っている',tip:v=>v>0?'背中が丸まりやすく、肩まわりや呼吸の動きにも影響しやすい姿勢です。':'上半身を後ろに倒してバランスをとる立ち方です。'},
+ pelvisFwd:{g:'side',label:'骨盤の前後位置',good:2,bad:6,dir:v=>v>0?'骨盤が前に出ている':'骨盤が後ろに引けている',tip:v=>v>0?'骨盤を前に突き出して立つ、腰に負担がかかりやすい立ち方です。':'お尻を後ろに引いた立ち方で、腰の反りが強くなりやすい傾向があります。'},
+ kneeFwd:{g:'side',label:'膝の曲がり・伸び',good:3,bad:8,dir:v=>v>0?'膝が軽く曲がっている':'膝が伸びきっている（反張傾向）',tip:v=>v>0?'太ももの前側が疲れやすい立ち方です。':'膝を伸ばしきって立つクセがあり、膝裏や腰への負担につながりやすいです。'},
+ bodyFwd:{g:'side',label:'全身の前後バランス',good:2,bad:5,dir:v=>v>0?'重心が前寄り':'重心が後ろ寄り',tip:'くるぶしを通る線から、頭の位置が前後にずれています。'},
+ headRot:{g:'rot',label:'顔の向き',good:4,bad:10,dir:v=>v>0?'顔が左を向いている':'顔が右を向いている',tip:'首を回すクセは、首・肩の片側だけのこりにつながりやすいです。'},
+ shoulderRot:{g:'rot',label:'肩のねじれ',good:4,bad:10,dir:v=>v>0?'左肩が前に出ている':'右肩が前に出ている',tip:'体のねじれは、背中や腰の片側だけに負担がかかる原因のひとつです。'},
+ pelvisRot:{g:'rot',label:'骨盤のねじれ',good:4,bad:10,dir:v=>v>0?'骨盤の左側が前に出ている':'骨盤の右側が前に出ている',tip:'骨盤のねじれは、腰や股関節の左右差につながりやすいポイントです。'},
+ twist:{g:'rot',label:'肩と骨盤のねじれの差',good:3,bad:8,dir:v=>v>0?'骨盤に対して上半身が右向きにねじれている':'骨盤に対して上半身が左向きにねじれている',tip:'上半身と骨盤が別々の方向を向いて立っている状態です。'}
+};
+const FRONT_KEYS=['headTilt','shoulderTilt','pelvisTilt','trunkLean','bodyShift','kneeAlign'];
+const SIDE_KEYS=['headFwd','trunkFwd','pelvisFwd','kneeFwd','bodyFwd'];
+const ROT_KEYS=['headRot','shoulderRot','pelvisRot','twist'];
+
+/* ---------- geometry & metrics ---------- */
+function rot_(v,x,y,sg){const a=sg*(v.roll||0)/D;if(!a)return {x,y};const cx=v.ar/2,cy=0.5,dx=x-cx,dy=y-cy,c=Math.cos(a),s=Math.sin(a);return {x:cx+dx*c-dy*s,y:cy+dx*s+dy*c}}
+const cor=(v,x,y)=>rot_(v,x,y,-1), uncor=(v,x,y)=>rot_(v,x,y,1);
+function pt(v,i){const l=v.lm[i];if(!l||l[3]<0.35||l[0]<-0.02||l[0]>1.02||l[1]<-0.02||l[1]>1.02)return null;return cor(v,l[0]*v.ar,l[1])}
+const UNC_T=0.012;
+const LMN={0:'鼻',7:'左耳',8:'右耳',11:'左肩',12:'右肩',23:'左股関節',24:'右股関節',25:'左膝',26:'右膝',27:'左足首',28:'右足首'};
+const mid=(a,b)=>a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:null;
+const tilt=(r,l)=>r&&l?Math.atan2(l.y-r.y,l.x-r.x)*D:null;
+const vang=(lo,hi,s=1)=>lo&&hi?Math.atan2((hi.x-lo.x)*s,lo.y-hi.y)*D:null;
+function kneeDev(h,k,a,lat){if(!h||!k||!a)return null;const t=(k.y-h.y)/((a.y-h.y)||1e-6);const lx=h.x+(a.x-h.x)*t;const L=Math.hypot(a.x-h.x,a.y-h.y)/2;return Math.atan2((k.x-lx)*lat,L)*D*2}
+function frontM(v,hcm){
+ const nose=pt(v,0),lE=pt(v,7),rE=pt(v,8),lS=pt(v,11),rS=pt(v,12),lH=pt(v,23),rH=pt(v,24),lK=pt(v,25),rK=pt(v,26),lA=pt(v,27),rA=pt(v,28);
+ const sM=mid(lS,rS),hM=mid(lH,rH),aM=mid(lA,rA),eM=mid(lE,rE);
+ const stat=aM&&nose?(aM.y-nose.y)/0.88:null, cm=stat&&hcm?hcm/stat:null;
+ const m={headTilt:tilt(rE,lE)};if(m.headTilt==null)m.headTilt=tilt(pt(v,5),pt(v,2));
+ m.shoulderTilt=tilt(rS,lS);m.pelvisTilt=tilt(rH,lH);m.trunkLean=vang(hM,sM);m.bodyShift=vang(aM,nose||eM);
+ const kl=kneeDev(lH,lK,lA,1),kr=kneeDev(rH,rK,rA,-1);m.kneeAlign=kl!=null&&kr!=null?(kl+kr)/2:(kl!=null?kl:kr);
+ const ex={};
+ if(cm){if(lS&&rS)ex.shoulderTilt='高低差 約'+f1(Math.abs(lS.y-rS.y)*cm)+'cm';if(lH&&rH)ex.pelvisTilt='高低差 約'+f1(Math.abs(lH.y-rH.y)*cm)+'cm';if(sM&&hM)ex.trunkLean='ずれ 約'+f1(Math.abs(sM.x-hM.x)*cm)+'cm';if(aM&&nose)ex.bodyShift='ずれ 約'+f1(Math.abs(nose.x-aM.x)*cm)+'cm'}
+ const rot={};
+ if(lE&&rE&&nose){const r=(nose.x-(lE.x+rE.x)/2)/((Math.abs(lE.x-rE.x)/2)||1e-6);rot.headRot=Math.atan(r*0.75)*D}
+ const w=v.w,vis=i=>v.lm[i]&&v.lm[i][3]>=0.35;
+ if(w){const wr=(a,b)=>Math.atan2(w[b][2]-w[a][2],w[a][0]-w[b][0])*D;if(vis(11)&&vis(12))rot.shoulderRot=wr(11,12);if(vis(23)&&vis(24))rot.pelvisRot=wr(23,24);if(rot.shoulderRot!=null&&rot.pelvisRot!=null)rot.twist=rot.shoulderRot-rot.pelvisRot}
+ return {m,ex,rot,stat,cm,aM};
+}
+function sideM(v,hcm,k){
+ const n=v.near||(k==='right'?'R':'L'),s=SIDE[n];
+ const nose=pt(v,0),ear=pt(v,s.ear),sh=pt(v,s.sh),hip=pt(v,s.hip),kn=pt(v,s.kn),an=pt(v,s.an);
+ let f=nose&&ear?Math.sign(nose.x-ear.x):0;if(!f)f=k==='right'?1:-1;
+ const stat=an&&nose?(an.y-nose.y)/0.88:null, cm=stat&&hcm?hcm/stat:null;
+ const m={headFwd:vang(sh,ear,f),trunkFwd:vang(hip,sh,f),pelvisFwd:vang(an,hip,f),kneeFwd:kneeDev(hip,kn,an,f),bodyFwd:vang(an,ear,f)};
+ const ex={},fb=d=>d*f>0?'前':'後ろ';
+ if(cm){if(ear&&sh)ex.headFwd='耳が肩より約'+f1(Math.abs(ear.x-sh.x)*cm)+'cm'+fb(ear.x-sh.x);if(hip&&an)ex.pelvisFwd='くるぶしより約'+f1(Math.abs(hip.x-an.x)*cm)+'cm'+fb(hip.x-an.x);if(ear&&an)ex.bodyFwd='耳がくるぶしより約'+f1(Math.abs(ear.x-an.x)*cm)+'cm'+fb(ear.x-an.x)}
+ return {m,ex,f,n,stat,cm,trunkCm:(sh&&hip&&cm)?(sh.x-hip.x)*f*cm:null};
+}
+let CFG={};const CFG_ID='__cfg__';
+const isDemo=()=>{try{return DEMO}catch(e){return false}};
+function specOf(k){const s=SPEC[k],o=CFG[k]||{};return {good:o.good!=null?o.good:s.good,bad:o.bad!=null?o.bad:s.bad,ofs:o.ofs||0}}
+function score(v,s){const a=Math.abs(v);if(a<=s.good)return 100-10*a/s.good;if(a<=s.bad)return 90-30*(a-s.good)/(s.bad-s.good);return Math.max(30,60-30*(a-s.bad)/s.bad)}
+const stOf=(v,s)=>{const a=Math.abs(v);return a<=s.good?'ok':a<=s.bad?'wn':'ng'};
+function analyze(c){
+ const rows=[];const add=(key,vk,val,extra)=>{if(val==null||!isFinite(val))return;const s=SPEC[key],q=specOf(key),d=val-q.ofs;rows.push({key,vk,val:d,raw:val,extra:extra||'',score:score(d,q),st:stOf(d,q),label:s.label,dir:s.dir(d),g:s.g})};
+ let F=null;const SD={};
+ if(c.views.front){F=frontM(c.views.front,c.height);FRONT_KEYS.forEach(k=>add(k,'front',F.m[k],F.ex[k]));ROT_KEYS.forEach(k=>add(k,'rot',F.rot[k]))}
+ ['right','left'].forEach(k=>{if(c.views[k]){const r=sideM(c.views[k],c.height,k);SD[k]=r;SIDE_KEYS.forEach(q=>add(q,k,r.m[q],r.ex[q]))}});
+ const gs=g=>avg(rows.filter(r=>r.g===g).map(r=>r.score));
+ const sc={front:gs('front'),side:gs('side'),rot:gs('rot')};
+ const W={front:.35,side:.4,rot:.25};let tw=0,ts=0;for(const g in W)if(sc[g]!=null){tw+=W[g];ts+=W[g]*sc[g]}
+ sc.total=tw?ts/tw:null;for(const g in sc)if(sc[g]!=null)sc[g]=Math.round(sc[g]);
+ const sv=q=>avg(['right','left'].filter(k=>SD[k]&&SD[k].m[q]!=null).map(k=>SD[k].m[q]));
+ const so=q=>{const v=sv(q);return v==null?null:v-specOf(q).ofs};const type=postureType(so('headFwd'),so('trunkFwd'),so('pelvisFwd'),so('kneeFwd'),rows);
+ const warn=qualityWarn(c,F,SD);
+ const tags=rows.filter(r=>r.g==='front'&&r.st!=='ok').map(r=>r.dir);
+ const findings=rows.filter(r=>r.st!=='ok').sort((a,b)=>a.score-b.score).slice(0,4);
+ return {rows,sc,type,tags,findings,F,SD,warn,n:Object.keys(c.views).length};
+}
+function qualityWarn(c,F,SD){const W=[];
+ if(F&&c.views.front&&!['manual','ref'].includes(c.views.front.rollSrc)){const a=[F.m.headTilt,F.m.shoulderTilt,F.m.pelvisTilt,F.m.trunkLean];
+  if(a.every(x=>x!=null)&&(a.every(x=>x>0)||a.every(x=>x<0))&&Math.min(...a.map(Math.abs))>=2){const m=a.map(Math.abs).sort((x,y)=>x-y),md=(m[1]+m[2])/2;
+   W.push({k:'cam',t:'正面の写真で、頭・肩・骨盤・上半身が<b>すべて同じ向きに約'+f1(md)+'°</b>傾いています。体ではなく<b>カメラが傾いていた</b>可能性があります。「写真に戻る」→「カメラの傾き補正」で、背景の柱やドア枠に方眼が合っているか確認してください。'})}}
+ if(SD.right&&SD.left){const L=SIDE_KEYS.map(q=>{const a=SD.right.m[q],b=SD.left.m[q];if(a==null||b==null)return null;const tol=Math.max(4,SPEC[q].good);return Math.abs(a-b)>tol?SPEC[q].label+'（右 '+f1(a)+'°・左 '+f1(b)+'°）':null}).filter(Boolean);
+  if(L.length)W.push({k:'lr',t:'右と左の側面で、差が大きい項目があります：'+L.join('、')+'。撮影のときの立ち方（重心・あごの位置）が違った可能性があります。気になる場合は撮り直すと安定します。'})}
+ return W}
+function postureType(h,t,p,k,rows){
+ if(h==null&&t==null&&p==null)return null;
+ if(p!=null&&t!=null&&p>3&&t<-2)return {name:'スウェイバック傾向',desc:'骨盤が前に出て、上半身を後ろに倒してバランスをとる立ち方です。'};
+ if(t!=null&&t>4&&h!=null&&h>12)return {name:'猫背＋頭が前に出る傾向',desc:'背中が丸まり、頭が肩より前に出ている立ち方です。'};
+ if(t!=null&&t>4)return {name:'前かがみ（猫背）傾向',desc:'上半身が前に傾いている立ち方です。'};
+ if(p!=null&&p<-3)return {name:'反り腰傾向',desc:'お尻を後ろに引き、腰の反りが強くなりやすい立ち方です。'};
+ if(h!=null&&h>12)return {name:'頭が前に出る（ストレートネック）傾向',desc:'頭が肩より前に出ている立ち方です。'};
+ if(k!=null&&k<-4)return {name:'膝が伸びきる（反張膝）傾向',desc:'膝を伸ばしきって立つ立ち方です。'};
+ return rows.some(r=>r.g==='side'&&r.st!=='ok')?{name:'軽いくずれ',desc:'大きな偏りはありませんが、いくつか気になるポイントがあります。'}:{name:'理想に近いバランス',desc:'横から見た重心のラインが整っています。'};
+}
+const tipOf=r=>tipF(SPEC[r.key].tip)(r.val);
+function defaultComment(A){
+ const t=A.type?'「'+A.type.name+'」':'';
+ const top=A.findings.slice(0,2).map(r=>'「'+r.dir+'」').join('');
+ return (top?'今回の分析では、'+top+'という点が特に目立ちました。':'今回の分析では、大きな偏りは見られませんでした。')+(t?'横から見た立ち方は'+t+'です。':'')+'\n痛みは「結果」で、その原因は毎日の姿勢の積み重ねにあることが多いです。一度ですべてが変わるわけではありませんが、施術と日常のセルフケアを組み合わせて、一緒に整えていきましょう。';
+}
+
+/* ---------- muscles, load estimates, self-care ---------- */
+const MUS={subocc:['後頭下筋群（首の付け根）',[['b','subocc']]],uptrap:['上部僧帽筋（肩の上）',[['b','uptrap'],['f','uptrap']]],levator:['肩甲挙筋（首〜肩甲骨）',[['b','levator']]],
+ scm:['胸鎖乳突筋（首の前〜横）',[['f','scm']]],scalene:['斜角筋（首の横）',[['f','scm']]],dnf:['首の深い筋肉（深部頸屈筋）',[['f','dnf']]],pec:['大胸筋・小胸筋（胸）',[['f','chest']]],
+ upabs:['腹直筋の上部（みぞおち）',[['f','upabs']]],midtrap:['中部・下部僧帽筋・菱形筋（肩甲骨の間）',[['b','midback']]],serratus:['前鋸筋（わきの下）',[['f','serratus']]],
+ erector:['脊柱起立筋（背骨沿い・腰）',[['b','lowback']]],ql:['腰方形筋（腰の横）',[['b','ql']]],lats:['広背筋（背中の外側）',[['b','lats']]],iliopsoas:['腸腰筋（股関節の前）',[['f','hipflex']]],
+ rectfem:['大腿直筋（太ももの前）',[['f','thighF']]],quads:['大腿四頭筋（太ももの前）',[['f','thighF']]],hams:['ハムストリングス（太ももの裏）',[['b','hams']]],gmax:['大殿筋（お尻）',[['b','glute']]],
+ gmed:['中殿筋（お尻の横）',[['b','gmed']]],tva:['腹横筋（お腹の深い筋肉）',[['f','abs']]],obl:['腹斜筋（わき腹）',[['f','obl']]],extobl:['外腹斜筋（わき腹）',[['f','obl']]],
+ adductor:['内転筋（内もも）',[['f','inner']]],tfl:['大腿筋膜張筋・腸脛靱帯（太ももの外側）',[['f','outer']]],calf:['ふくらはぎ（下腿三頭筋）',[['b','calf']]],rotators:['背中の回旋筋（背骨の深部）',[['b','midback']]]};
+const EX={chin:['あご引き運動','首の深い筋肉を働かせる','壁に背中と後頭部をつけて立ち、あごを軽く引いて首の後ろを長くする。5秒止める。','10回×1日2〜3セット'],
+ neckS:['首の後ろ〜肩のストレッチ','上部僧帽筋・肩甲挙筋をゆるめる','背すじを伸ばして座り、片手で頭を斜め前に倒す。反対の肩は下げたまま。','20〜30秒×2回'],
+ neckSide:['首の横のストレッチ','胸鎖乳突筋・斜角筋をゆるめる','あごを軽く引き、頭を真横に倒す。倒す側と反対の首すじが伸びるのを感じる。','20〜30秒×2回'],
+ pecS:['胸のストレッチ（壁・ドア枠）','大胸筋・小胸筋をゆるめる','肘を肩の高さで壁やドア枠に当て、体をゆっくり前に出して胸を開く。','左右20〜30秒×2回'],
+ wall:['壁で腕の上げ下げ（ウォールエンジェル）','肩甲骨の間の筋肉を働かせる','壁に背中をつけ、腕を「W」の形から「Y」の形へゆっくり上げ下げする。腰は反らさない。','10回×2セット'],
+ towel:['背中を伸ばすタオル寝','丸まった背中（胸椎）を伸ばす','丸めたバスタオルを肩甲骨の下に横向きに置き、仰向けで力を抜いて深呼吸する。','1〜2分'],
+ psoasS:['股関節の前のストレッチ（片膝立ち）','腸腰筋をゆるめる','片膝立ちになり、お尻を軽く締めたまま体を前へ。後ろ脚の付け根の前が伸びる。','左右20〜30秒×2回'],
+ quadS:['太もも前のストレッチ','大腿直筋をゆるめる','横向きに寝て上の足首を持ち、かかとをお尻に近づける。腰は反らさない。','左右20〜30秒×2回'],
+ drawin:['ドローイン（お腹を薄くする呼吸）','腹横筋を働かせる','仰向けで膝を立て、息を吐きながらおへそを背中に近づけるようにお腹を薄くする。呼吸は止めない。','10秒×10回'],
+ bridge:['ヒップリフト（お尻上げ）','大殿筋・ハムストリングスを働かせる','仰向けで膝を立て、お尻を締めながら持ち上げ、肩から膝まで一直線で2秒止める。','10回×2セット'],
+ hamS:['太もも裏のストレッチ','ハムストリングスをゆるめる','椅子に浅く座って片脚を前に伸ばし、背すじを伸ばしたまま股関節から体を前に倒す。','左右20〜30秒×2回'],
+ deadbug:['デッドバグ（体幹トレーニング）','腹斜筋・体幹を働かせる','仰向けで両腕を天井へ、膝を90度に上げる。腰を床につけたまま、対角の手と足をゆっくり伸ばす。','左右交互に10回'],
+ kneeup:['座ってもも上げ','腸腰筋を働かせる','椅子に座って背すじを伸ばし、片膝を少し持ち上げて5秒止める。体は後ろに倒さない。','左右10回'],
+ clam:['クラムシェル（お尻の横）','中殿筋を働かせる','横向きに寝て膝を軽く曲げ、かかとをつけたまま上の膝を開いて閉じる。骨盤は後ろに倒さない。','15回×2セット'],
+ sideS:['体の横のストレッチ','腰方形筋・わき腹をゆるめる','立って片腕を上げ、反対側へ体をゆっくり倒す。腕を上げた側のわき腹〜腰が伸びる。','20〜30秒×2回'],
+ openbook:['胸のひねりストレッチ（オープンブック）','背中のねじれをととのえる','横向きに寝て膝を曲げ、両腕を前でそろえる。上の腕を天井から反対側へ開き、目線も手を追う。','左右10回'],
+ adduct:['内もものトレーニング（クッション挟み）','内転筋を働かせる','椅子に座り、膝の間にクッションをはさんでぎゅっと押しつぶす。','5秒×10回'],
+ addS:['内もものストレッチ（四股の姿勢）','内転筋をゆるめる','足を大きく開いて腰を落とし、両手で膝を外へ軽く押す。背すじは伸ばしたまま。','20〜30秒×2回'],
+ softknee:['膝をゆるめて立つ練習','膝の伸ばしきり（反張）をやめる','鏡の横に立ち、膝のお皿が少し前に出る程度に膝をゆるめ、お尻とお腹に軽く力を入れる。','30秒×3回'],
+ calfS:['ふくらはぎのストレッチ','下腿三頭筋をゆるめる','壁に手をつき片脚を後ろへ引き、かかとを床につけたまま体重を前へ。','左右20〜30秒×2回']};
+const LIFE={screen:['スマホ・パソコンの画面は目の高さに','下を向く時間を減らし、30分に1回は首と肩をリセットしましょう。'],
+ sit:['座るときは骨盤を立てる','椅子に深く座り、お尻の下の骨（坐骨）で座る意識を。浅く座って背中を丸めないようにしましょう。'],
+ stand1:['片足重心・足組み・横座りを控える','いつも同じ側に体重をかけるクセは、骨盤や背骨の左右差を固定してしまいます。'],
+ bag:['荷物を同じ側で持たない','ショルダーバッグは左右交互に。重い荷物はリュックがおすすめです。'],
+ stand2:['立つときは膝を伸ばしきらない','膝を軽くゆるめ、かかとと足の親指の付け根に体重をのせる意識を。'],
+ sleep:['枕の高さと寝る向きを見直す','仰向けで額があごより少し高くなる程度が目安。毎晩同じ向きで寝続けないようにしましょう。'],
+ shoes:['高いヒールを毎日はかない','ヒールは反り腰を強めやすくなります。靴底の減り方の左右差もチェックしましょう。'],
+ face:['テレビやパソコンは体の正面に','画面が斜めにあると、毎日同じ方向にひねった姿勢が続きます。'],
+ walk:['1日20〜30分を目安に歩く','腕を軽く振り、少し大きめの歩幅で。体を支える筋肉が自然に働きます。'],
+ breath:['深い呼吸で胸を広げる','胸を開いてゆっくり深呼吸。猫背で縮こまった胸まわりがゆるみやすくなります。']};
+const jpS=s=>s==='L'?'左':s==='R'?'右':'';
+function careFrom(A){const T=[],Wk=[],trb=[],ex={},lf={};
+ const add=(arr,m,side,why)=>{const k=m+'|'+side,e=arr.find(x=>x.k===k);if(e){if(!e.why.includes(why))e.why.push(why)}else arr.push({k,m,side,why:[why]})};
+ const E=(id,w,note)=>{const e=ex[id]||(ex[id]={id,w:0,notes:[]});e.w+=w;if(note&&!e.notes.includes(note))e.notes.push(note)};
+ const Lf=(id,w)=>{lf[id]=(lf[id]||0)+w};const tr=t=>{if(!trb.includes(t))trb.push(t)};const op=x=>x==='L'?'R':'L';
+ const rows=A.rows.filter(r=>r.st!=='ok').sort((a,b)=>a.score-b.score);
+ for(const r of rows){const w=100-r.score,v=r.val,why=r.dir;
+  switch(r.key){
+   case 'headFwd':if(v>0){['subocc','uptrap','levator','scm'].forEach(m=>add(T,m,'B',why));['dnf','midtrap'].forEach(m=>add(Wk,m,'B',why));tr('首こり・肩こり・頭が重い感じ');E('chin',w);E('neckS',w*0.8);E('wall',w*0.6);Lf('screen',w);Lf('sleep',w*0.4)}else{add(T,'dnf','B',why);E('neckS',w*0.5)}break;
+   case 'trunkFwd':if(v>0){['pec','upabs'].forEach(m=>add(T,m,'B',why));['midtrap','serratus','erector'].forEach(m=>add(Wk,m,'B',why));tr('肩こり・背中のはり・呼吸が浅くなる');tr('腰への負担');E('pecS',w);E('wall',w);E('towel',w*0.8);Lf('sit',w);Lf('breath',w*0.6);Lf('screen',w*0.5)}
+    else{['hams','obl'].forEach(m=>add(T,m,'B',why));['extobl','midtrap'].forEach(m=>add(Wk,m,'B',why));E('hamS',w);E('deadbug',w);Lf('stand2',w*0.7)}break;
+   case 'pelvisFwd':if(v>0){['hams','obl'].forEach(m=>add(T,m,'B',why));['iliopsoas','extobl','gmax'].forEach(m=>add(Wk,m,'B',why));tr('腰や股関節の前側への負担');E('kneeup',w);E('deadbug',w*0.9);E('hamS',w*0.8);E('bridge',w*0.6);Lf('stand2',w);Lf('stand1',w*0.6)}
+    else{['iliopsoas','rectfem','erector'].forEach(m=>add(T,m,'B',why));['tva','gmax'].forEach(m=>add(Wk,m,'B',why));tr('腰痛（特に反らしたときの痛み）');E('psoasS',w);E('drawin',w);E('bridge',w*0.9);E('quadS',w*0.7);Lf('shoes',w*0.8);Lf('stand2',w*0.5)}break;
+   case 'kneeFwd':if(v<0){add(T,'calf','B',why);['hams','gmax'].forEach(m=>add(Wk,m,'B',why));tr('膝の裏の痛み・腰の反り');E('softknee',w);E('bridge',w*0.8);E('calfS',w*0.5);Lf('stand2',w)}
+    else{['hams','calf','iliopsoas'].forEach(m=>add(T,m,'B',why));add(T,'quads','B','太もも前ががんばり続ける');tr('太もも前の疲れ・膝の前の痛み');E('hamS',w);E('calfS',w*0.8);E('psoasS',w*0.6);Lf('walk',w*0.5)}break;
+   case 'bodyFwd':if(v>0){add(T,'calf','B',why);E('calfS',w*0.6)}Lf('stand2',w*0.5);break;
+   case 'shoulderTilt':{const lo=v>0?'L':'R',hi=op(lo);add(T,'uptrap',hi,why);add(T,'levator',hi,why);add(T,'lats',lo,why);add(T,'ql',lo,why);tr(jpS(hi)+'の肩こり・首の張り');E('neckS',w,jpS(hi)+'側を重点的に');E('sideS',w*0.8,jpS(lo)+'側を伸ばす');Lf('bag',w);Lf('stand1',w*0.5);break}
+   case 'pelvisTilt':{const lo=v>0?'L':'R',hi=op(lo);add(T,'ql',hi,why);add(Wk,'gmed',lo,why);tr('腰の片側の痛み・股関節の左右差');E('sideS',w,jpS(hi)+'側を伸ばす');E('clam',w,jpS(lo)+'側を重点的に');Lf('stand1',w);break}
+   case 'trunkLean':{const sd=v>0?'L':'R';add(T,'ql',sd,why);add(T,'obl',sd,why);E('sideS',w,jpS(sd)+'側を伸ばす');Lf('stand1',w);Lf('bag',w*0.5);break}
+   case 'bodyShift':Lf('stand1',w);break;
+   case 'headTilt':{const sd=v>0?'L':'R';add(T,'scm',sd,why);add(T,'scalene',sd,why);add(T,'uptrap',sd,why);E('neckSide',w,jpS(sd)+'側を伸ばす（頭を'+jpS(op(sd))+'へ倒す）');Lf('screen',w*0.5);Lf('sleep',w*0.5);break}
+   case 'kneeAlign':if(v>0){add(T,'tfl','B',why);add(Wk,'adductor','B',why);add(Wk,'gmed','B',why);tr('膝の内側の負担');E('adduct',w);E('clam',w*0.6)}else{add(T,'adductor','B',why);add(Wk,'gmed','B',why);tr('膝の内側・お皿まわりの負担');E('clam',w);E('addS',w*0.7)}Lf('stand1',w*0.5);break;
+   case 'shoulderRot':case 'pelvisRot':case 'twist':add(T,'obl','B',why);add(T,'rotators','B',why);tr('背中や腰の片側だけの張り');E('openbook',w);Lf('face',w);Lf('sleep',w*0.4);break;
+   case 'headRot':{const sd=v>0?'R':'L';add(T,'scm',sd,why);add(T,'subocc','B',why);E('neckSide',w*0.6,jpS(sd)+'側を伸ばす');Lf('face',w);break}}}
+ const merge=arr=>{const out=[];const mw=(a,b)=>b.why.forEach(w=>{if(!a.why.includes(w))a.why.push(w)});
+  for(const e of arr){const b=out.find(x=>x.m===e.m&&x.side==='B');
+   if(e.side==='B'){if(b){mw(b,e);continue}const rest=out.filter(x=>x.m===e.m);rest.forEach(r=>{mw(e,r);out.splice(out.indexOf(r),1)});out.push(e)}
+   else if(b)mw(b,e);else out.push(e)}return out};
+ const TT=merge(T),weak=merge(Wk).filter(x=>!TT.some(t=>t.m===x.m&&(t.side===x.side||t.side==='B'||x.side==='B')));
+ Object.values(ex).forEach(e=>{if(e.notes.includes('右側を伸ばす')&&e.notes.includes('左側を伸ばす'))e.notes=['左右とも伸ばす'].concat(e.notes.filter(n=>!/側を伸ばす$/.test(n)))});
+ return {tight:TT,weak,troubles:trb,ex:Object.values(ex).sort((a,b)=>b.w-a.w),life:Object.entries(lf).sort((a,b)=>b[1]-a[1]).map(e=>e[0])}}
+function loadEst(c,A){const out={};
+ const hf=['right','left'].map(k=>A.SD[k]&&A.SD[k].m.headFwd).filter(v=>v!=null);
+ if(hf.length){const a=Math.max(0,avg(hf)),T=[[0,5],[15,12.2],[30,18.1],[45,22.2],[60,27.2]];let kg=27.2;for(let i=1;i<T.length;i++){if(a<=T[i][0]){const p=T[i-1],q=T[i];kg=p[1]+(q[1]-p[1])*(a-p[0])/(q[0]-p[0]);break}}out.neck={kg:Math.round(kg*10)/10}}
+ const tc=['right','left'].map(k=>A.SD[k]&&A.SD[k].trunkCm).filter(v=>v!=null);
+ if(tc.length){const d=avg(tc);if(d>1){const pct=0.68*0.6*d/5*100;out.back={cm:Math.round(d*10)/10,pct:Math.round(pct),kg:c.weight?Math.round(pct/100*c.weight*10)/10:null}}else if(d<-1)out.back={cm:Math.round(d*10)/10,back:true}}
+ else if(['right','left'].some(k=>A.SD[k])&&!c.height)out.needH=true;
+ return out}
+function careSel(c,C){if(c.care)return c.care;return {ex:C.ex.slice(0,4).map(e=>e.id),life:C.life.slice(0,3)}}
+const BMAP={f:{scm:[7,56,4,9],dnf:[0,58,5,6],uptrap:[22,64,10,5],chest:[17,84,13,9],serratus:[30,100,5,9],upabs:[0,100,12,8],abs:[0,124,13,10],obl:[21,126,6,12],hipflex:[13,158,7,9],thighF:[13,205,9,24],inner:[4,198,4,20],outer:[24,200,4,22]},
+ b:{subocc:[0,44,9,4],levator:[10,57,4,8],uptrap:[22,64,10,5],midback:[11,92,7,13],lats:[25,108,7,14],lowback:[7,132,5,13],ql:[17,138,5,9],glute:[13,170,11,10],gmed:[24,160,6,7],hams:[13,212,9,24],calf:[13,264,7,18]}};
+function drawBodyMap(ctx,W,H,C,dark){const s=Math.min(W/360,H/336),ox0=(W-360*s)/2;ctx.save();ctx.translate(ox0,0);ctx.scale(s,s);
+ const fill=dark?'#22302a':'#efe8da',edge=dark?'#5d6b63':'#b9b09c',ink=dark?'#ece6d8':'#1b2420';
+ const fig=(ox)=>{const ln=(pts,w)=>{ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=edge;ctx.lineWidth=w+3;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(ox+p[0],p[1]):ctx.moveTo(ox+p[0],p[1]));ctx.stroke();ctx.strokeStyle=fill;ctx.lineWidth=w;ctx.stroke()};
+  ln([[50,68],[41,118],[38,164]],13);ln([[110,68],[119,118],[122,164]],13);ln([[68,168],[67,235],[67,300]],20);ln([[92,168],[93,235],[93,300]],20);
+  ctx.fillStyle=fill;ctx.strokeStyle=edge;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(ox+47,64);ctx.quadraticCurveTo(ox+80,55,ox+113,64);ctx.lineTo(ox+107,140);ctx.lineTo(ox+109,172);ctx.lineTo(ox+51,172);ctx.lineTo(ox+53,140);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillRect(ox+73,44,14,16);ctx.beginPath();ctx.arc(ox+80,30,16,0,7);ctx.fill();ctx.stroke()};
+ const views=[['f',10,'前から','右','左'],['b',190,'後ろから','左','右']];
+ views.forEach(([vw,ox,lab,l,r])=>{fig(ox);ctx.fillStyle=ink;ctx.font='12px "Zen Kaku Gothic New",sans-serif';ctx.textAlign='center';ctx.fillText(lab,ox+80,326);ctx.fillStyle=dark?'#a3ab9f':'#5f675f';ctx.font='10px "Zen Kaku Gothic New",sans-serif';ctx.fillText(l,ox+30,316);ctx.fillText(r,ox+130,316)});
+ const paint=(list,col)=>{list.forEach(e=>{const M=MUS[e.m];if(!M)return;M[1].forEach(([vw,key])=>{const g=BMAP[vw][key];if(!g)return;const ox=vw==='f'?10:190;
+   const xs=g[0]===0?[80]:(e.side==='B'?[80-g[0],80+g[0]]:[(vw==='f')===(e.side==='R')?80-g[0]:80+g[0]]);
+   xs.forEach(cx=>{ctx.globalAlpha=0.62;ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(ox+cx,g[1],g[2],g[3],0,0,7);ctx.fill();ctx.globalAlpha=1})})})};
+ paint(C.weak,'#3f8fd8');paint(C.tight,'#e0573f');ctx.restore()}
+
+/* ---------- drawing ---------- */
+function frameOf(v,asp,crop){
+ if(!crop)return {sx:0,sy:0,sw:v.ar,sh:1};
+ const xs=[],ys=[];for(let i=0;i<33;i++){const p=pt(v,i);if(p){xs.push(p.x);ys.push(p.y)}}
+ if(!xs.length)return {sx:0,sy:0,sw:v.ar,sh:1};
+ let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);const h=y1-y0;y0-=h*0.13;y1+=h*0.05;
+ const cx=(x0+x1)/2,cy=(y0+y1)/2;let sh=y1-y0,sw=x1-x0+h*0.12;if(sw/sh>asp)sh=sw/asp;else sw=sh*asp;
+ return {sx:cx-sw/2,sy:cy-sh/2,sw,sh};
+}
+function drawView(ctx,v,kind,W,H,o){
+ o=o||{};const fr=frameOf(v,W/H,o.crop),k=W/fr.sw,X=x=>(x-fr.sx)*k,Y=y=>(y-fr.sy)*k,u=Math.max(0.7,W/330)*(o.um||1);
+ const photo=o.photo!==false&&v.canvas;
+ ctx.save();ctx.fillStyle=photo?'#101a16':'#ece6d7';ctx.fillRect(0,0,W,H);
+ const rotPhoto=()=>{const cx=X(v.ar/2),cy=Y(0.5);ctx.translate(cx,cy);ctx.rotate(-(v.roll||0)/D);ctx.translate(-cx,-cy)};
+ if(photo){ctx.save();rotPhoto();ctx.drawImage(v.canvas,X(0),Y(0),v.ar*k,k);ctx.restore();
+  ctx.fillStyle='rgba(8,16,12,.2)';ctx.fillRect(0,0,W,H)}
+ const gstep=H/16;ctx.strokeStyle=photo?'rgba(255,255,255,.16)':'rgba(31,68,54,.12)';ctx.lineWidth=1;ctx.beginPath();
+ for(let y=gstep;y<H;y+=gstep){ctx.moveTo(0,y);ctx.lineTo(W,y)}for(let x=W/2%gstep;x<W;x+=gstep){ctx.moveTo(x,0);ctx.lineTo(x,H)}ctx.stroke();
+ const P=i=>{const p=pt(v,i);return p?{x:X(p.x),y:Y(p.y)}:null};
+ const isF=kind==='front',n=v.near||(kind==='right'?'R':'L'),s=SIDE[n];
+ const A=analyze({views:{[kind]:v},height:null});const val=key=>{const r=A.rows.find(r=>r.key===key&&r.vk===kind);return r||null};
+ // plumb line
+ const base=isF?mid(P(27),P(28))||mid(P(23),P(24)):(P(s.an)||P(s.hip));
+ if(base){ctx.save();ctx.strokeStyle='#d3b06c';ctx.lineWidth=2*u;ctx.setLineDash([7*u,6*u]);ctx.beginPath();ctx.moveTo(base.x,0);ctx.lineTo(base.x,H);ctx.stroke();ctx.restore()}
+ // bones
+ const bones=isF?FRONT_BONES:sideBones(n);
+ const stroke=(w,c)=>{ctx.lineWidth=w;ctx.strokeStyle=c;ctx.lineCap='round';ctx.beginPath();for(const [a,b] of bones){const p=P(a),q=P(b);if(p&&q){ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y)}}ctx.stroke()};
+ stroke(6.5*u,photo?'rgba(0,0,0,.4)':'rgba(255,255,255,.7)');stroke(3*u,photo?'#ffffff':'#2f6a54');
+ const labels=[];
+ const pill=(t,x,y,c,right)=>labels.push({t,x,y,c,right});
+ if(isF){
+  const lines=[[8,7,'headTilt','頭'],[12,11,'shoulderTilt','肩'],[24,23,'pelvisTilt','骨盤']];
+  for(const [a,b,key,lab] of lines){const p=P(a),q=P(b),r=val(key);if(!p||!q||!r)continue;const dx=(q.x-p.x)*0.22,dy=(q.y-p.y)*0.22;
+   ctx.strokeStyle=COL[r.st];ctx.lineWidth=3.2*u;ctx.beginPath();ctx.moveTo(p.x-dx,p.y-dy);ctx.lineTo(q.x+dx,q.y+dy);ctx.stroke();
+   pill(lab+' '+f1(Math.abs(r.val))+'°',q.x+dx+6*u,q.y+dy,COL[r.st],false)}
+ }else{
+  const chain=[[s.ear,'headFwd','頭'],[s.sh,'trunkFwd','上体'],[s.hip,'pelvisFwd','骨盤'],[s.kn,'kneeFwd','膝']];
+  const f=(A.SD[kind]&&A.SD[kind].f)||1;
+  for(const [i,key,lab] of chain){const p=P(i),r=val(key);if(!p)continue;
+   if(base){ctx.strokeStyle='rgba(211,176,108,.9)';ctx.lineWidth=1.5*u;ctx.beginPath();ctx.moveTo(base.x,p.y);ctx.lineTo(p.x,p.y);ctx.stroke()}
+   if(r)pill(lab+' '+f1(Math.abs(r.val))+'°',p.x-f*16*u,p.y,COL[r.st],f>0)}
+ }
+ // points
+ const pts=isF?FRONT_EDIT:sideEdit(n);
+ for(const i of pts){const p=P(i);if(!p&&!o.edit)continue;const l=v.lm[i];const c0=cor(v,l[0]*v.ar,l[1]);const q=p||{x:X(c0.x),y:Y(c0.y)};
+  const r=(o.edit?8:4.2)*u,sn=v.snap&&v.snap[i],un=!sn&&v.unc&&v.unc[i]>UNC_T;
+  if(un){ctx.save();ctx.setLineDash([3*u,3*u]);ctx.strokeStyle='#f0a030';ctx.lineWidth=2.2*u;ctx.beginPath();ctx.arc(q.x,q.y,r+5*u,0,7);ctx.stroke();ctx.restore()}
+  ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fillStyle=o.sel===i?'#d3b06c':(p?'#ffffff':'rgba(255,255,255,.5)');ctx.fill();ctx.lineWidth=2*u;ctx.strokeStyle='#1f4436';ctx.stroke();
+  if(sn){ctx.beginPath();ctx.arc(q.x,q.y,r*0.45,0,7);ctx.fillStyle='#c9962f';ctx.fill()}}
+ // labels
+ if(o.labels!==false){ctx.font='700 '+(11.5*u)+'px "Zen Kaku Gothic New",sans-serif';ctx.textBaseline='middle';
+  for(const L of labels){const tw=ctx.measureText(L.t).width+12*u,th=19*u;let x=L.right?L.x-tw:L.x;x=clamp(x,3,W-tw-3);const y=clamp(L.y-th/2,3,H-th-3);
+   ctx.fillStyle='rgba(16,26,22,.82)';rr(ctx,x,y,tw,th,th/2);ctx.fill();ctx.fillStyle=L.c;ctx.beginPath();ctx.arc(x+7*u,y+th/2,3*u,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(L.t,x+12*u,y+th/2+0.5)}}
+ // loupe
+ if(o.refLine){const L=o.refLine;ctx.save();ctx.strokeStyle='#4fd1ff';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(L.x0,L.y0);ctx.lineTo(L.x1,L.y1);ctx.stroke();ctx.fillStyle='#4fd1ff';[[L.x0,L.y0],[L.x1,L.y1]].forEach(a=>{ctx.beginPath();ctx.arc(a[0],a[1],5,0,7);ctx.fill()});ctx.restore()}
+ if(o.labels!==false&&Math.abs(v.roll||0)>=0.05){const t='傾き補正 '+(v.roll>0?'+':'')+f1(v.roll)+'°';ctx.font='700 '+(10.5*u)+'px "Zen Kaku Gothic New",sans-serif';const tw=ctx.measureText(t).width+12*u,th=18*u;ctx.fillStyle='rgba(16,26,22,.75)';rr(ctx,4,H-th-4,tw,th,th/2);ctx.fill();ctx.fillStyle='#d3b06c';ctx.textBaseline='middle';ctx.fillText(t,4+6*u,H-th/2-4)}
+ if(o.loupe&&photo){let px,py;if(o.loupe.x!=null){px=o.loupe.x;py=o.loupe.y}else{const l=v.lm[o.loupe.i],c0=cor(v,l[0]*v.ar,l[1]);px=X(c0.x);py=Y(c0.y)}const R=Math.min(62,W*0.2),z=2.6;
+  const cx=(px<W/2&&py<H/2)?W-R-10:R+10,cy=R+10;
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.clip();ctx.translate(cx,cy);ctx.scale(z,z);ctx.translate(-px,-py);rotPhoto();
+  ctx.drawImage(v.canvas,X(0),Y(0),v.ar*k,k);ctx.restore();
+  ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.lineWidth=3;ctx.strokeStyle='#d3b06c';ctx.stroke();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cx-10,cy);ctx.lineTo(cx+10,cy);ctx.moveTo(cx,cy-10);ctx.lineTo(cx,cy+10);ctx.stroke()}
+ ctx.restore();
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function fitCanvas(cv,w,h){const dpr=Math.min(2,window.devicePixelRatio||1);cv.style.width=w+'px';cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return c}
+function draw3D(cv,w,yaw){
+ const W=cv.clientWidth,H=cv.clientHeight;if(!W)return;const dpr=Math.min(2,window.devicePixelRatio||1);
+ if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+ const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+ const feet=Math.max(w[27][1],w[28][1]),head=w[0][1]-0.14,midY=(feet+head)/2,s=H/((feet-head)*1.35),pitch=0.22,c=Math.cos(yaw),sn=Math.sin(yaw);
+ const pr=p=>{const x1=p[0]*c-p[2]*sn,z1=p[0]*sn+p[2]*c,y=p[1]-midY;return [W/2+x1*s,H/2+(y*Math.cos(pitch)-z1*Math.sin(pitch))*s]};
+ x.lineWidth=1.5;x.strokeStyle=cssv('--line');x.beginPath();for(let i=0;i<=48;i++){const a=i/48*Math.PI*2,q=pr([Math.cos(a)*0.4,feet,Math.sin(a)*0.4]);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])}x.stroke();
+ const a0=pr([0,feet,-0.12]),a1=pr([0,feet,-0.5]);x.strokeStyle=cssv('--mut');x.lineWidth=2;x.beginPath();x.moveTo(a0[0],a0[1]);x.lineTo(a1[0],a1[1]);x.stroke();
+ x.fillStyle=cssv('--mut');x.font='12px "Zen Kaku Gothic New",sans-serif';x.textAlign='center';x.fillText('前',a1[0],a1[1]+14);
+ const line=(a,b,col,wd)=>{const p=pr(w[a]),q=pr(w[b]);x.strokeStyle=col;x.lineWidth=wd;x.lineCap='round';x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(q[0],q[1]);x.stroke()};
+ [...FRONT_BONES,[0,7],[0,8]].forEach(([a,b])=>line(a,b,cssv('--mut'),3));
+ line(11,12,cssv('--gd'),6);line(23,24,cssv('--g2'),6);
+ [0,11,12,13,14,23,24,25,26,27,28].forEach(i=>{const p=pr(w[i]);x.beginPath();x.arc(p[0],p[1],3.5,0,7);x.fillStyle=cssv('--ink');x.fill()});
+}
+function topSVG(rot){
+ const sr=(rot.shoulderRot||0)*2,pr=(rot.pelvisRot||0)*2;
+ const li=(key,cls)=>{const v=rot[key];return v==null?'':'<li><i style="background:var('+cls+')"></i>'+SPEC[key].label+'：'+(Math.abs(v)<1?'ほぼ正面':SPEC[key].dir(v))+'（'+f1(Math.abs(v))+'°）</li>'};
+ return '<svg viewBox="0 0 240 210" class="topv" role="img" aria-label="上から見た肩と骨盤の向き"><circle cx="120" cy="98" r="80" fill="none" stroke="var(--line)" stroke-dasharray="3 5"/>'+
+ '<ellipse cx="120" cy="98" rx="70" ry="30" fill="var(--soft)"/><g transform="rotate('+pr.toFixed(1)+' 120 98)"><line x1="66" y1="98" x2="174" y2="98" stroke="var(--g2)" stroke-width="8" stroke-linecap="round"/></g>'+
+ '<g transform="rotate('+sr.toFixed(1)+' 120 98)"><line x1="44" y1="98" x2="196" y2="98" stroke="var(--gd)" stroke-width="8" stroke-linecap="round"/></g>'+
+ '<circle cx="120" cy="98" r="16" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/><path d="M114 113 L120 125 L126 113 Z" fill="var(--ink)"/>'+
+ '<text x="120" y="200" text-anchor="middle">前（カメラ側）</text><text x="14" y="102">右</text><text x="226" y="102" text-anchor="end">左</text></svg>'+
+ '<ul class="legend">'+li('shoulderRot','--gd')+li('pelvisRot','--g2')+li('twist','--ink')+'</ul><p class="note">上から見た図です。わかりやすいよう角度を2倍にして描いています。前後のねじれはAIの奥行き推定によるため、参考値としてご覧ください。</p>';
+}
+function normSkel(v,kind){
+ const isF=kind==='front',n=v.near||(kind==='right'?'R':'L'),s=SIDE[n];
+ const nose=pt(v,0),an=isF?mid(pt(v,27),pt(v,28)):pt(v,s.an),hp=isF?mid(pt(v,23),pt(v,24)):pt(v,s.hip),sh=isF?mid(pt(v,11),pt(v,12)):pt(v,s.sh);
+ let f=1;if(!isF){const e=pt(v,s.ear);f=nose&&e?(Math.sign(nose.x-e.x)||1):(kind==='right'?1:-1)}
+ const anchor=an||hp;if(!anchor)return null;
+ const stat=an&&nose?(an.y-nose.y)/0.88:(sh&&hp?(hp.y-sh.y)*3.4:null);if(!stat)return null;
+ return {v,f,anchor,stat,useAnkle:!!an,bones:isF?FRONT_BONES:sideBones(n)};
+}
+function drawCompare(cv,kind,cur,prev){
+ const W=cv.parentElement.clientWidth,H=Math.round(W*1.25),c=fitCanvas(cv,W,H);
+ c.fillStyle=cssv('--soft');c.fillRect(0,0,W,H);c.strokeStyle='rgba(120,120,100,.18)';c.lineWidth=1;c.beginPath();for(let y=H/16;y<H;y+=H/16){c.moveTo(0,y);c.lineTo(W,y)}c.stroke();
+ c.strokeStyle=cssv('--gd');c.setLineDash([6,5]);c.beginPath();c.moveTo(W/2,0);c.lineTo(W/2,H);c.stroke();c.setLineDash([]);
+ const draw=(sk,col,dash,wd)=>{if(!sk)return;const sc=H*0.8/sk.stat,by=sk.useAnkle?H*0.93:H*0.55;const T=i=>{const p=pt(sk.v,i);return p?[W/2+(p.x-sk.anchor.x)*sk.f*sc,by+(p.y-sk.anchor.y)*sc]:null};
+  c.strokeStyle=col;c.lineWidth=wd;c.lineCap='round';c.setLineDash(dash);c.beginPath();for(const [a,b] of sk.bones){const p=T(a),q=T(b);if(p&&q){c.moveTo(p[0],p[1]);c.lineTo(q[0],q[1])}}c.stroke();c.setLineDash([]);
+  const hd=T(0);if(hd){c.beginPath();c.arc(hd[0],hd[1],5,0,7);c.fillStyle=col;c.fill()}};
+ draw(prev&&normSkel(prev,kind),'#8f948c',[5,5],3);draw(normSkel(cur,kind),cssv('--g2'),[],4);
+}
+
+/* ---------- storage ---------- */
+const LSK='hosaka-posture-v1';let MEM={patients:[],sessions:{}};
+function lsOK(){try{localStorage.setItem('__t','1');localStorage.removeItem('__t');return true}catch(e){return false}}
+function loadLocal(){try{const j=JSON.parse(localStorage.getItem(LSK)||'null');if(j&&j.patients)MEM=j}catch(e){}}
+function persist(){if(Store.mode==='local'){try{localStorage.setItem(LSK,JSON.stringify(MEM))}catch(e){}}}
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('データに接続できませんでした。通信状況を確認してください')),ms||30000))]);
+const DEMO=true;
+const hasGS=()=>!!(window.google&&google.script&&google.script.run);
+/* ---------- クラウド（院ごとの記録・名前は端末で暗号化） ---------- */
+const SUPA={url:'https://gyvthlwsicjhrmszkvdc.supabase.co',key:'sb_publishable_mv5iUEYAPpSlxTbpOkebVQ_xdw53or0',domain:'shisei.hosaka-seikotsuin.com',
+ appUrl:'https://script.google.com/macros/s/AKfycbx71CVnYKaW6VsOw8O_ABLG9or8XEFzvc8s2vP1uwMx-OoqFsHzM2F41pszCnyy-DMh/exec'};
+const PROFILE0={name:'ほさか整骨院',tagline:'Structural Body Care',addr:'栃木県宇都宮市上戸祭町702-4',tel:'028-666-6141'};
+let PROFILE=Object.assign({},PROFILE0);
+const LOCKED_NAME='（名前を読めません）';
+const CRY={
+ b64(u){u=new Uint8Array(u);let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s)},
+ ub(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0))},
+ async kek(pass,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(String(pass)),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:CRY.ub(salt),iterations:210000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])},
+ async seal(key,bytes){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,bytes);return CRY.b64(iv)+'.'+CRY.b64(ct)},
+ async open(key,str){const p=String(str).split('.');return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:CRY.ub(p[0])},key,CRY.ub(p[1])))},
+ dekKey(raw){return crypto.subtle.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt'])},
+ salt(){return CRY.b64(crypto.getRandomValues(new Uint8Array(16)))},
+ recCode(){const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',a=crypto.getRandomValues(new Uint8Array(16));let s='';a.forEach((x,i)=>{s+=ch[x%32];if(i%4===3&&i<15)s+='-'});return s},
+ norm(r){return String(r||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+};
+const CL={sb:null,clinic:null,dek:null,dekRaw:null,
+ init(){if(this.sb)return true;try{if(!window.supabase||!window.crypto||!crypto.subtle)return false;this.sb=supabase.createClient(SUPA.url,SUPA.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'shisei-auth'}});return true}catch(e){return false}},
+ email(code){return String(code).trim().toLowerCase()+'@'+SUPA.domain},
+ async me(){const r=await this.sb.auth.getSession();const ses=r&&r.data&&r.data.session;if(!ses){this.clinic=null;return null}
+  const {data,error}=await this.sb.from('clinics').select('*').eq('user_id',ses.user.id).maybeSingle();if(error)throw error;this.clinic=data||null;return this.clinic},
+ dekName(){return 'shisei-dek-'+(this.clinic&&this.clinic.id)},
+ async loadLocalDek(){try{const r=localStorage.getItem(this.dekName());if(!r)return false;const raw=CRY.ub(r),k=await CRY.dekKey(raw),chk=this.clinic.settings&&this.clinic.settings.dek_check;
+  if(chk)await CRY.open(k,chk);this.dek=k;this.dekRaw=raw;return true}catch(e){return false}},
+ async useDek(raw){this.dekRaw=raw;this.dek=await CRY.dekKey(raw);try{localStorage.setItem(this.dekName(),CRY.b64(raw))}catch(e){}},
+ async enc(o){return CRY.seal(this.dek,new TextEncoder().encode(JSON.stringify(o)))},
+ async dec(str){if(!str)return {};try{return JSON.parse(new TextDecoder().decode(await CRY.open(this.dek,str)))}catch(e){return {_locked:true}}},
+ async signIn(code,pass){const {error}=await this.sb.auth.signInWithPassword({email:this.email(code),password:String(pass)});
+  if(error)throw new Error(/invalid/i.test(error.message)?'院コードかパスコードが違います':(/rate|many/i.test(error.message)?'入力が続いたため、しばらく待ってからもう一度試してください':error.message));
+  const c=await this.me();if(!c){await this.sb.auth.signOut({scope:'local'});throw new Error('この院コードは使えません')}return c},
+ async unlock(pass){const c=this.clinic;if(!c||!c.wrapped_dek)throw new Error('先にパスコードの設定が必要です');let raw;
+  try{raw=await CRY.open(await CRY.kek(pass,c.kdf_salt),c.wrapped_dek)}catch(e){throw new Error('パスコードが違います')}await this.useDek(raw)},
+ async setup(newPass,rec,discard){const c=this.clinic;let raw=null,code=null;
+  if(c.wrapped_dek){if(this.dekRaw)raw=this.dekRaw;else if(rec){try{raw=await CRY.open(await CRY.kek(CRY.norm(rec),c.rec_salt),c.wrapped_dek_rec)}catch(e){throw new Error('復旧コードが違います')}}else if(!discard)throw new Error('NEED_REC')}
+  if(!raw){raw=crypto.getRandomValues(new Uint8Array(32));code=CRY.recCode()}
+  const up=await this.sb.auth.updateUser({password:String(newPass)});if(up.error)throw new Error(up.error.message);
+  const ks=CRY.salt(),patch={must_change:false,kdf_salt:ks,wrapped_dek:await CRY.seal(await CRY.kek(newPass,ks),raw)};
+  if(code){const rs=CRY.salt();patch.rec_salt=rs;patch.wrapped_dek_rec=await CRY.seal(await CRY.kek(CRY.norm(code),rs),raw)}
+  await this.useDek(raw);patch.settings=Object.assign({},c.settings||{},{dek_check:await this.enc('ok')});
+  const {error}=await this.sb.from('clinics').update(patch).eq('id',c.id);if(error)throw error;Object.assign(c,patch);return code},
+ async changePass(oldPass,newPass){const c=this.clinic;let raw;try{raw=await CRY.open(await CRY.kek(oldPass,c.kdf_salt),c.wrapped_dek)}catch(e){throw new Error('今のパスコードが違います')}
+  const si=await this.sb.auth.signInWithPassword({email:this.email(c.code),password:String(oldPass)});if(si.error)throw new Error('今のパスコードが違います');
+  const up=await this.sb.auth.updateUser({password:String(newPass)});if(up.error)throw new Error(up.error.message);
+  const ks=CRY.salt(),patch={kdf_salt:ks,wrapped_dek:await CRY.seal(await CRY.kek(newPass,ks),raw)};const {error}=await this.sb.from('clinics').update(patch).eq('id',c.id);if(error)throw error;Object.assign(c,patch);
+  try{await this.sb.auth.signOut({scope:'others'})}catch(e){}},
+ async logout(){try{localStorage.removeItem(this.dekName())}catch(e){}try{await this.sb.auth.signOut({scope:'local'})}catch(e){}this.clinic=null;this.dek=null;this.dekRaw=null},
+ async pages(make){let out=[],i=0;for(;;){const {data,error}=await make().range(i,i+999);if(error)throw error;out=out.concat(data||[]);if(!data||data.length<1000)break;i+=1000}return out},
+ async listPatients(){const rows=await this.pages(()=>this.sb.from('patients').select('*').eq('clinic_id',this.clinic.id).order('created_at'));const out=[];
+  for(const r of rows){const e=await this.dec(r.enc);out.push({id:r.id,kind:'patient',name:e._locked?LOCKED_NAME:(e.name||''),kana:e.kana||'',memo:e.memo||'',locked:!!e._locked,height:r.height!=null?+r.height:null,weight:r.weight!=null?+r.weight:null,sex:r.sex||'',ageBand:r.age_band||'',lastAt:r.last_at,lastTotal:r.last_total,count:r.count||0,createdAt:r.created_at})}return out},
+ async savePatient(p){const row={id:p.id,clinic_id:this.clinic.id,height:p.height||null,weight:p.weight||null,sex:p.sex||null,age_band:p.ageBand||null,last_at:p.lastAt||null,last_total:p.lastTotal!=null?Math.round(p.lastTotal):null,count:p.count||0};
+  if(!(p.locked&&p.name===LOCKED_NAME))row.enc=await this.enc({name:p.name||'',kana:p.kana||'',memo:p.memo||''});
+  const {error}=await this.sb.from('patients').upsert(row);if(error)throw error},
+ async deletePatient(id){const {error}=await this.sb.from('patients').delete().eq('id',id).eq('clinic_id',this.clinic.id);if(error)throw error},
+ async listSessions(pid){const rows=await this.pages(()=>this.sb.from('sessions').select('id,date,data,enc').eq('clinic_id',this.clinic.id).eq('patient_id',pid).order('date'));const out=[];
+  for(const r of rows){const e=await this.dec(r.enc);out.push(Object.assign({},r.data,{id:r.id,date:r.date,comment:e._locked?'':(e.comment!=null?e.comment:'')}))}return out},
+ async saveSession(pid,sid,b){const data=JSON.parse(JSON.stringify(b));const comment=data.comment||'';delete data.comment;delete data.id;
+  const {error}=await this.sb.from('sessions').upsert({id:sid,clinic_id:this.clinic.id,patient_id:pid,date:b.date,data,enc:await this.enc({comment})});if(error)throw error},
+ async deleteSession(pid,sid){const {error}=await this.sb.from('sessions').delete().eq('id',sid).eq('clinic_id',this.clinic.id);if(error)throw error},
+ async listAll(){const rows=await this.pages(()=>this.sb.from('sessions').select('id,date,data').eq('clinic_id',this.clinic.id).order('date'));return rows.map(r=>Object.assign({},r.data,{id:r.id,date:r.date}))},
+ async listResearch(){const rows=await this.pages(()=>this.sb.from('research_sessions').select('id,clinic_code,date,height,sex,age_band,data').order('date'));return rows.map(r=>Object.assign({},r.data,{id:r.id,date:r.date,height:r.data&&r.data.height!=null?r.data.height:r.height}))},
+ async saveSettings(patch){const set=Object.assign({},this.clinic.settings||{},patch);const {error}=await this.sb.from('clinics').update({settings:set}).eq('id',this.clinic.id);if(error)throw error;this.clinic.settings=set},
+ async adminCall(body){const {data,error}=await this.sb.functions.invoke('admin',{body});if(error){let m=error.message;try{const j=await error.context.json();if(j&&j.error)m=j.error}catch(_){}throw new Error(m)}if(data&&data.error)throw new Error(data.error);return data}
+};
+function applyClinic(){const set=(CL.clinic&&CL.clinic.settings)||{};CFG=set.cfg||{};PROFILE=Object.assign({},PROFILE0,set.profile||{});if(!PROFILE.name&&CL.clinic)PROFILE.name=CL.clinic.name;updBrand()}
+function updBrand(){const b=$('#brandName'),t=$('#brandTag');if(b)b.textContent=PROFILE.name?PROFILE.name+'　姿勢分析':'姿勢分析';if(t){t.textContent=PROFILE.tagline||'';t.hidden=!PROFILE.tagline}document.title=PROFILE.name?PROFILE.name+' 姿勢分析':'姿勢分析'}
+async function urlParams(){try{if(hasGS()&&google.script.url)return await withTimeout(new Promise(r=>google.script.url.getLocation(l=>r((l&&l.parameter)||{}))),5000)}catch(e){}try{return Object.fromEntries(new URLSearchParams(location.search))}catch(e){return {}}}
+const AUTH={key:'hosaka-auth',token:null,free:['apiAuthStatus','apiLogin'],
+ load(){try{this.token=localStorage.getItem(this.key)||null}catch(e){this.token=null}},
+ save(t){this.token=t;try{if(t)localStorage.setItem(this.key,t);else localStorage.removeItem(this.key)}catch(e){}}};
+AUTH.load();
+const gs=(fn,...a)=>withTimeout(new Promise((res,rej)=>{google.script.run.withSuccessHandler(res).withFailureHandler(e=>{const m=(e&&e.message)||String(e);if(/AUTH:/.test(m)){if(Store.mode==='cloud'){rej(new Error('この端末ではGoogleの記録を開けません（前のパスコードを入れた端末で取り込んでください）'));return}AUTH.save(null);setTimeout(()=>lockOut(),0);rej(new Error('パスコードの入力が必要です'))}else rej(new Error(m))})[fn](...(AUTH.free.includes(fn)?a:[AUTH.token,...a]))}));
+const Store={mode:'memory',
+ async init(){CL.init();if(DEMO){this.mode='memory';return}if(hasGS()){this.mode='gas';return}this.mode=lsOK()?'local':'memory';if(this.mode==='local')loadLocal()},
+ async listPatients(){if(this.mode==='cloud')return CL.listPatients();if(this.mode==='gas')return (await gs('apiListPatients'))||[];return MEM.patients.map(p=>Object.assign({},p))},
+ async savePatient(p){if(this.mode==='cloud')return CL.savePatient(p);if(this.mode==='gas')return gs('apiSavePatient',JSON.parse(JSON.stringify(p)));const i=MEM.patients.findIndex(x=>x.id===p.id);if(i>=0)MEM.patients[i]=Object.assign({},p);else MEM.patients.push(Object.assign({},p));persist()},
+ async deletePatient(id){if(this.mode==='cloud')return CL.deletePatient(id);if(this.mode==='gas')return gs('apiDeletePatient',id);MEM.patients=MEM.patients.filter(x=>x.id!==id);delete MEM.sessions[id];persist()},
+ async listSessions(pid){let a;if(this.mode==='cloud')a=await CL.listSessions(pid);else if(this.mode==='gas')a=(await gs('apiListSessions',pid))||[];else a=(MEM.sessions[pid]||[]).map(x=>Object.assign({},x));return a.sort((x,y)=>String(y.date).localeCompare(String(x.date)))},
+ async saveSession(pid,sid,b){if(this.mode==='cloud')return CL.saveSession(pid,sid,b);if(this.mode==='gas')return gs('apiSaveSession',pid,sid,JSON.parse(JSON.stringify(b)));const a=MEM.sessions[pid]||(MEM.sessions[pid]=[]);const r=Object.assign({id:sid},JSON.parse(JSON.stringify(b)));const i=a.findIndex(x=>x.id===sid);if(i>=0)a[i]=r;else a.push(r);persist()},
+ async deleteSession(pid,sid){if(this.mode==='cloud')return CL.deleteSession(pid,sid);if(this.mode==='gas')return gs('apiDeleteSession',pid,sid);MEM.sessions[pid]=(MEM.sessions[pid]||[]).filter(x=>x.id!==sid);persist()}
+};
+const r4=n=>Math.round(n*1e4)/1e4;
+function pack(c,A){const views={};for(const k in c.views){const v=c.views[k];views[k]={lm:[].concat(...v.lm.map(a=>a.map(r4))),w:v.w?[].concat(...v.w.map(a=>a.map(r4))):null,ar:r4(v.ar),near:v.near||null,roll:Math.round((v.roll||0)*100)/100,rollSrc:v.rollSrc||'none',unc:v.unc?v.unc.map(x=>Math.round(x*1000)/1000):null,snap:v.snap?Object.keys(v.snap).map(Number):null}}
+ return {date:c.date,height:c.height||null,weight:c.weight||null,care:c.care||null,comment:c.comment||'',judge:c.judge&&Object.keys(c.judge).length?c.judge:null,views,scores:A.sc,type:A.type?A.type.name:'',ver:2}}
+const chunk=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o};
+function unpack(s){const views={};const sv=s.views||{};for(const k in sv){const v=sv[k];views[k]={lm:chunk(v.lm,4),w:v.w?chunk(v.w,3):null,ar:v.ar,near:v.near||null,roll:v.roll||0,rollSrc:v.rollSrc||'none',unc:v.unc||null,snap:v.snap?Object.fromEntries(v.snap.map(i=>[i,1])):null}}
+ return {id:s.id,date:s.date,height:s.height||null,weight:s.weight||null,care:s.care||null,comment:s.comment==null?null:s.comment,judge:s.judge||null,views,saved:true,dirty:false,fromHistory:true}}
+
+/* ---------- pose engine ---------- */
+const MP='https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/';
+let enginePromise=null,queue=Promise.resolve();
+function ensureEngine(){
+ if(!enginePromise){st.engine='loading';updEngine();
+  enginePromise=(async()=>{if(typeof Pose==='undefined')throw new Error('AIエンジンのファイルを読み込めませんでした');
+   const p=new Pose({locateFile:f=>MP+f});p.setOptions({modelComplexity:2,smoothLandmarks:false,enableSegmentation:false,staticImageMode:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
+   await p.initialize();st.engine='ready';updEngine();return p})();
+  enginePromise.catch(e=>{st.engine='error';st.engineErr=msg(e);enginePromise=null;updEngine()})}
+ return enginePromise}
+function detectOnce(cv){const run=async()=>{const p=await ensureEngine();try{p.reset()}catch(_){}return new Promise((res,rej)=>{let done=false;p.onResults(r=>{done=true;res(r)});p.send({image:cv}).catch(rej);setTimeout(()=>{if(!done)rej(new Error('解析に時間がかかりすぎました'))},40000)})};const r=queue.then(run,run);queue=r.catch(()=>{});return r}
+const PAIRS=[[1,4],[2,5],[3,6],[7,8],[9,10],[11,12],[13,14],[15,16],[17,18],[19,20],[21,22],[23,24],[25,26],[27,28],[29,30],[31,32]];
+const SWAP=(()=>{const a=Array.from({length:33},(_,i)=>i);PAIRS.forEach(([x,y])=>{a[x]=y;a[y]=x});return a})();
+function variant(cv,flip,scale){const W=cv.width,H=cv.height,pw=Math.round(W/scale),ph=Math.round(H/scale),c=document.createElement('canvas');c.width=pw;c.height=ph;
+ const x=c.getContext('2d');x.fillStyle='#7f7f7f';x.fillRect(0,0,pw,ph);const ox=(pw-W)/2,oy=(ph-H)/2;x.save();if(flip){x.translate(pw,0);x.scale(-1,1)}x.drawImage(cv,ox,oy);x.restore();
+ return {c,toOrig:(nx,ny)=>{let px=nx*pw;if(flip)px=pw-px;return [(px-ox)/W,(ny*ph-oy)/H]}}}
+const medn=a=>{const s=a.slice().sort((x,y)=>x-y),n=s.length;return n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2};
+async function detectRobust(cv,onStep){
+ const runs=[[false,1],[true,1],[false,0.8],[true,0.8]],outs=[],ar=cv.width/cv.height;let j=0;
+ for(const [flip,sc] of runs){j++;if(onStep)onStep(j,runs.length);const vv=variant(cv,flip,sc);let r;try{r=await detectOnce(vv.c)}catch(e){if(j===1)throw e;continue}
+  if(!r||!r.poseLandmarks)continue;const lm=[],w=r.poseWorldLandmarks?[]:null;
+  for(let i=0;i<33;i++){const s=flip?SWAP[i]:i,l=r.poseLandmarks[s],o=vv.toOrig(l.x,l.y);lm.push([o[0],o[1],l.z,l.visibility==null?1:l.visibility]);if(w){const q=r.poseWorldLandmarks[s];w.push([flip?-q.x:q.x,q.y,q.z])}}
+  outs.push({lm,w})}
+ if(!outs.length)return null;
+ const agg=os=>{const lm=[],unc=[];for(let i=0;i<33;i++){const mx=medn(os.map(o=>o.lm[i][0])),my=medn(os.map(o=>o.lm[i][1]));lm.push([mx,my,medn(os.map(o=>o.lm[i][2])),avg(os.map(o=>o.lm[i][3]))]);
+   unc.push(os.length>1?Math.max(...os.map(o=>Math.hypot((o.lm[i][0]-mx)*ar,o.lm[i][1]-my))):0)}
+  const w=os.every(o=>o.w)?Array.from({length:33},(_,i)=>[0,1,2].map(d=>medn(os.map(o=>o.w[i][d])))):null;return {lm,w,unc,runs:os.length}};
+ let A=agg(outs);
+ if(outs.length>=3){const dev=outs.map(o=>avg(o.lm.slice(11,29).map((l,ii)=>{const m=A.lm[ii+11];return Math.hypot((l[0]-m[0])*ar,l[1]-m[1])})));const mn=Math.min(...dev);
+  const keep=outs.filter((o,i)=>dev[i]<=Math.max(mn*3,0.02));if(keep.length<outs.length&&keep.length>=2)A=agg(keep)}
+ return A}
+/* camera tilt (roll) from straight lines in the background */
+function estimateRoll(cv,lm){
+ const S=Math.min(1,720/Math.max(cv.width,cv.height)),W=Math.max(16,Math.round(cv.width*S)),H=Math.max(16,Math.round(cv.height*S));
+ const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(cv,0,0,W,H);
+ const d=x.getImageData(0,0,W,H).data,g=new Float32Array(W*H);for(let i=0,j=0;i<g.length;i++,j+=4)g[i]=0.299*d[j]+0.587*d[j+1]+0.114*d[j+2];
+ const mk=document.createElement('canvas');mk.width=W;mk.height=H;const mc=mk.getContext('2d',{willReadFrequently:true});
+ const vis=lm.filter(l=>l[3]>=0.3),ys=vis.map(l=>l[1]),bodyH=(ys.length>1?Math.max(...ys)-Math.min(...ys):0.6)*H;
+ const PP=i=>lm[i]&&lm[i][3]>=0.3?[lm[i][0]*W,lm[i][1]*H]:null;
+ mc.strokeStyle='#000';mc.fillStyle='#000';mc.lineCap='round';mc.lineJoin='round';mc.lineWidth=Math.max(6,bodyH*0.14);
+ [[0,7],[0,8],[7,8],[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[28,30],[30,32],[27,31],[28,32],[15,17],[15,19],[16,18],[16,20],[0,11],[0,12]].forEach(([a,b])=>{const p=PP(a),q=PP(b);if(p&&q){mc.beginPath();mc.moveTo(p[0],p[1]);mc.lineTo(q[0],q[1]);mc.stroke()}});
+ const tor=[11,12,24,23].map(PP);if(tor.every(Boolean)){mc.beginPath();tor.forEach((p,i)=>i?mc.lineTo(p[0],p[1]):mc.moveTo(p[0],p[1]));mc.closePath();mc.fill()}
+ const hd=PP(0);if(hd){mc.beginPath();mc.arc(hd[0],hd[1]-bodyH*0.02,bodyH*0.1,0,7);mc.fill()}
+ const MK=mc.getImageData(0,0,W,H).data;
+ const GX=new Float32Array(W*H),GY=new Float32Array(W*H),M=new Float32Array(W*H);
+ for(let yy=1;yy<H-1;yy++)for(let xx=1;xx<W-1;xx++){const i=yy*W+xx;
+  const gx=(g[i-W+1]+2*g[i+1]+g[i+W+1])-(g[i-W-1]+2*g[i-1]+g[i+W-1]),gy=(g[i+W-1]+2*g[i+W]+g[i+W+1])-(g[i-W-1]+2*g[i-W]+g[i-W+1]);GX[i]=gx;GY[i]=gy;M[i]=Math.hypot(gx,gy)}
+ const smp=[];for(let i=0;i<M.length;i+=5)smp.push(M[i]);smp.sort((a,b)=>a-b);const thr=Math.max(48,smp[Math.floor(smp.length*0.88)]||0);
+ const ev=[],eh=[];
+ for(let yy=3;yy<H-3;yy++)for(let xx=3;xx<W-3;xx++){const i=yy*W+xx;if(MK[i*4+3]>0)continue;const m=M[i];if(m<thr)continue;
+  const a=Math.atan2(GY[i],GX[i])*D;const av=a>90?a-180:(a<=-90?a+180:a);if(Math.abs(av)<=12)ev.push(xx,yy,m);
+  let ah=a-90;if(ah<=-90)ah+=180;if(ah>90)ah-=180;if(Math.abs(ah)<=12)eh.push(xx,yy,m)}
+ const L=Math.ceil(Math.hypot(W,H))+4,prof=new Float64Array(2*L+2);
+ const best=(E,vert)=>{const n=E.length/3;if(n<80)return {ang:0,ratio:0,n};let st=1;if(n>40000)st=Math.ceil(n/40000);
+  const sc=new Float64Array(161);
+  for(let q=0;q<161;q++){const a=(q/10-8)/D,c=Math.cos(a),sn=Math.sin(a);prof.fill(0);
+   for(let t=0;t<E.length;t+=3*st){const x=E[t],y=E[t+1],pv=vert?x*c+y*sn:-x*sn+y*c;prof[Math.round(pv)+L]+=E[t+2]}
+   let e=0;for(let z=0;z<prof.length;z++){const w=prof[z];if(w)e+=w*w}sc[q]=e}
+  let bi=0;for(let q=1;q<161;q++)if(sc[q]>sc[bi])bi=q;let off=0;
+  if(bi>0&&bi<160){const y0=sc[bi-1],y1=sc[bi],y2=sc[bi+1],den=y0-2*y1+y2;if(den<0)off=0.5*(y0-y2)/den}
+  const so=Array.from(sc).sort((a,b)=>a-b),med=so[80]||1;return {ang:(bi+off)/10-8,ratio:sc[bi]/med,n}};
+ const V=best(ev,true),Hz=best(eh,false),ok=P=>P.ratio>=1.5&&P.n>=150&&Math.abs(P.ang)<7.5;
+ const vo=ok(V),ho=ok(Hz);let roll=null,conf='none';
+ if(vo&&ho){if(Math.abs(V.ang-Hz.ang)<=0.8){roll=(V.ang*V.ratio+Hz.ang*Hz.ratio)/(V.ratio+Hz.ratio);conf='high'}else{const P=V.ratio>=Hz.ratio?V:Hz;roll=P.ang;conf='low'}}
+ else if(vo||ho){const P=vo?V:Hz;roll=P.ang;conf=P.ratio>=2?'high':'mid'}
+ if(roll!=null)roll=Math.round(roll*10)/10;
+ return {roll,conf,apply:roll!=null&&conf==='high'&&Math.abs(roll)<=6,v:Math.round(V.ang*10)/10,h:Math.round(Hz.ang*10)/10,vp:Math.round(V.ratio*100)/100,hp:Math.round(Hz.ratio*100)/100}}
+/* coloured marker stickers */
+function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),dd=mx-mn;let h=0;if(dd){if(mx===r)h=((g-b)/dd)%6;else if(mx===g)h=(b-r)/dd+2;else h=(r-g)/dd+4;h*=60;if(h<0)h+=360}return [h,mx?dd/mx:0,mx]}
+function colorMatcher(c){const t=rgb2hsv(c[0],c[1],c[2]);if(t[1]<0.25)return (r,g,b)=>Math.abs(r-c[0])+Math.abs(g-c[1])+Math.abs(b-c[2])<70;
+ return (r,g,b)=>{const q=rgb2hsv(r,g,b);let dh=Math.abs(q[0]-t[0]);if(dh>180)dh=360-dh;return dh<16&&q[1]>Math.max(0.25,t[1]*0.55)&&q[2]>Math.max(0.2,t[2]*0.45)}}
+function snapMarkers(v,kind,col){if(!v.canvas||!col)return 0;const cv=v.canvas,W=cv.width,H=cv.height,ctx=cv.getContext('2d');
+ const ys=v.lm.filter(l=>l[3]>0.4).map(l=>l[1]);const bodyPx=(ys.length?Math.max(...ys)-Math.min(...ys):0.8)*H;
+ const isF=kind==='front',s=SIDE[v.near||(kind==='right'?'R':'L')];const idx=isF?[11,12,23,24,25,26,27,28]:[s.sh,s.hip,s.kn,s.an];
+ const match=colorMatcher(col),minA=Math.max(4,Math.PI*Math.pow(0.0025*bodyPx,2)),maxA=Math.PI*Math.pow(0.02*bodyPx,2);let n=0;v.snap=v.snap||{};
+ for(const i of idx){const l=v.lm[i],R=Math.round(((i===23||i===24||i===s.hip)?0.06:0.045)*bodyPx),cx=Math.round(l[0]*W),cy=Math.round(l[1]*H);
+  const x0=Math.max(0,cx-R),y0=Math.max(0,cy-R),x1=Math.min(W,cx+R),y1=Math.min(H,cy+R),w=x1-x0,h=y1-y0;if(w<4||h<4)continue;
+  const dt=ctx.getImageData(x0,y0,w,h).data,m=new Uint8Array(w*h);for(let q=0;q<w*h;q++)m[q]=match(dt[q*4],dt[q*4+1],dt[q*4+2])?1:0;
+  const seen=new Uint8Array(w*h),stk=[];let best=null;
+  for(let q=0;q<w*h;q++){if(!m[q]||seen[q])continue;let a=0,sx=0,sy=0;stk.push(q);seen[q]=1;
+   while(stk.length){const z=stk.pop(),zx=z%w,zy=(z-zx)/w;a++;sx+=zx;sy+=zy;if(zx>0&&m[z-1]&&!seen[z-1]){seen[z-1]=1;stk.push(z-1)}if(zx<w-1&&m[z+1]&&!seen[z+1]){seen[z+1]=1;stk.push(z+1)}if(zy>0&&m[z-w]&&!seen[z-w]){seen[z-w]=1;stk.push(z-w)}if(zy<h-1&&m[z+w]&&!seen[z+w]){seen[z+w]=1;stk.push(z+w)}}
+   if(a<minA||a>maxA)continue;const mx=sx/a,my=sy/a,dist=Math.hypot(x0+mx-cx,y0+my-cy);if(!best||dist<best.dist)best={mx,my,dist}}
+  if(best){l[0]=(x0+best.mx+0.5)/W;l[1]=(y0+best.my+0.5)/H;l[3]=1;v.snap[i]=1;if(v.unc)v.unc[i]=0;n++}}
+ return n}
+function loadImg(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file),im=new Image();
+ im.onload=()=>{const M=1440,s=Math.min(1,M/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');cv.width=Math.round(im.naturalWidth*s);cv.height=Math.round(im.naturalHeight*s);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(url);res(cv)};
+ im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('画像を読み込めませんでした。JPEGかPNGの写真を選んでください'))};im.src=url})}
+function pickNear(v,k){const z=n=>avg(['ear','sh','hip','kn','an'].map(q=>v.lm[SIDE[n][q]][2]));const zr=z('R'),zl=z('L');v.near=Math.abs(zr-zl)<0.02?(k==='right'?'R':'L'):(zr<zl?'R':'L')}
+
+/* ---------- state & rendering ---------- */
+const st={view:'home',patients:[],patient:null,sessions:[],cur:null,tab:'front',adjust:false,busy:{},err:{},cmpId:null,loading:true,q:'',engine:'idle',engineErr:'',repPhoto:true,report:null,ref:false,pick:false,tool:{},marker:null,autoSnap:false};
+try{const mk=JSON.parse(localStorage.getItem('hosaka-marker')||'null');if(mk){st.marker=mk.c||null;st.autoSnap=!!mk.auto}}catch(e){}
+function saveMarker(){try{localStorage.setItem('hosaka-marker',JSON.stringify({c:st.marker,auto:st.autoSnap}))}catch(e){}}
+const newCur=(h,wt)=>({id:uid('s'),date:new Date().toISOString(),height:h||null,weight:wt||null,care:null,comment:null,judge:null,views:{},saved:false,dirty:false,fromHistory:false});
+function go(v){st.view=v;render();window.scrollTo(0,0)}
+let rendering=false;
+function render(){if(rendering){setTimeout(render,0);return}rendering=true;try{render_()}finally{rendering=false}}
+function backTarget(){const v=st.view,c=st.cur;if(v==='patient'||v==='calib'||v==='admin')return 'home';if(v==='capture')return st.patient&&st.patient.id?'patient':'home';if(v==='result')return c&&c.fromHistory?'patient':'capture';return null}
+function goBack(){const m=$('#modal');if(m&&!m.hidden){closeModal();return}const t=backTarget();if(!t)return;
+ const leave=()=>{if(t==='home')ACT.home();else go(t)};
+ if(st.view==='capture'&&st.cur&&!st.cur.saved&&Object.keys(st.cur.views).length){confirmBox('撮影した写真は消えます。前の画面に戻りますか？','戻る',async()=>leave());return}
+ leave()}
+const NAV={armed:false,gs(){return !!(window.google&&google.script&&google.script.history)},
+ arm(){const m=$('#modal'),need=(st.view!=='home'&&st.view!=='lock')||(m&&!m.hidden);if(!need||NAV.armed)return;NAV.armed=true;try{if(NAV.gs())google.script.history.push({t:Date.now()},{},'app');else history.pushState({t:Date.now()},'')}catch(e){NAV.armed=false}},
+ init(){const on=()=>{NAV.armed=false;goBack();setTimeout(NAV.arm,50)};try{if(NAV.gs())google.script.history.setChangeHandler(on);else window.addEventListener('popstate',on)}catch(e){}}};
+function render_(){const hb=$('#hback');if(hb)hb.hidden=st.view==='home'||st.view==='lock';const ht=$('header.top');if(ht)ht.classList.toggle('sub',st.view!=='home'&&st.view!=='lock');setTimeout(NAV.arm,0);const m=$('#main');m.innerHTML=({home:vHome,patient:vPatient,capture:vCapture,result:vResult,calib:vCalib,lock:vLock,admin:vAdmin})[st.view]();
+ if(st.view==='home'&&!DEMO)renderList();if(st.view==='patient')drawTrend();if(st.view==='capture')setupEditor();if(st.view==='result')afterResult();
+ $('#chip').textContent=DEMO?'お試し版':({cloud:'記録：クラウド（暗号化）',gas:'記録：Googleドライブ',local:'記録：この端末のみ',memory:'記録：保存なし'}[Store.mode]||'')}
+function storeNote(){return '<p class="store">'+({cloud:'記録はクラウドに保存しています。患者さんのお名前・ふりがな・メモ・コメントはこの端末で暗号化してから保存するため、この院のパスコードがないと誰も読めません（運営側でも読めません）。名前を含まない測定値は、姿勢分析の精度を上げるために統計として利用します。写真そのものは保存しません。',gas:'記録は院長のGoogleドライブ内のスプレッドシート「ほさか整骨院_姿勢分析データ」に保存されます（スプレッドシートは院長のアカウントでしか開けません。アプリは院のパスコードを入れた端末からだけ開けます）。写真そのものは保存せず、目印の位置と数値だけを保存します。',local:'いまは記録をこの端末のブラウザにだけ一時的に保存しています。',memory:'お試し版のため、記録は保存されません。写真はこの端末の中だけで解析し、どこにも送信・保存しません。'}[Store.mode]||'')+'</p>'}
+function calSamples(){const out={};Object.keys(SPEC).forEach(k=>out[k]=[]);(st.cal&&st.cal.sessions||[]).forEach(s=>{const c=unpack(s),A=analyze(c);A.rows.forEach(r=>{out[r.key].push({raw:r.raw,j:c.judge&&c.judge[jkey(r)]||null,vk:r.vk})})});return out}
+const ORD={ok:0,wn:1,ng:2};
+function calCost(S,q){let c=0;S.forEach(x=>{c+=Math.abs(ORD[stOf(x.raw-q.ofs,q)]-ORD[x.j])});return c}
+function calFit(S,cur){const J=S.filter(x=>x.j);if(J.length<8)return null;const oks=J.filter(x=>x.j==='ok').map(x=>x.raw).sort((a,b)=>a-b);
+ const ofsC=[cur.ofs];if(oks.length>=3){const m=oks[Math.floor(oks.length/2)];ofsC.push(Math.round(m*2)/2)}
+ let best=null;for(const ofs of ofsC)for(let g=0.5;g<=25;g+=0.5)for(let b=g+0.5;b<=35;b+=0.5){const q={ofs,good:g,bad:b},cost=calCost(J,q),dist=Math.abs(ofs-cur.ofs)*2+Math.abs(g-cur.good)+Math.abs(b-cur.bad)*0.5;if(!best||cost<best.cost||(cost===best.cost&&dist<best.dist))best={q,cost,dist}}
+ const agree=q=>Math.round(J.filter(x=>stOf(x.raw-q.ofs,q)===x.j).length/J.length*100);
+ return {q:best.q,n:J.length,now:agree(cur),next:agree(best.q),same:best.q.ofs===cur.ofs&&best.q.good===cur.good&&best.q.bad===cur.bad}}
+function calStat(a,q){const n=a.length;if(!n)return '<p class="meta">まだデータがありません</p>';const cnt={ok:0,wn:0,ng:0};a.forEach(x=>cnt[stOf(x.raw-q.ofs,q)]++);
+ const mean=a.reduce((x,y)=>x+y.raw,0)/n,mn=Math.min(...a.map(x=>x.raw)),mx=Math.max(...a.map(x=>x.raw)),J=a.filter(x=>x.j),agree=J.length?Math.round(J.filter(x=>stOf(x.raw-q.ofs,q)===x.j).length/J.length*100):null;
+ return '<p class="meta">'+n+'件・平均 '+(mean>0?'+':'')+f1(mean)+'°（'+f1(mn)+'〜'+f1(mx)+'°）・今の基準で 良好'+cnt.ok+'／注意'+cnt.wn+'／要改善'+cnt.ng+(J.length?'<br>先生の判定 '+J.length+'件・一致 '+agree+'%':'')+'</p><div class="bar" aria-label="今の基準での内訳">'+['ok','wn','ng'].map(x=>cnt[x]?'<i style="width:'+(cnt[x]/n*100)+'%;background:var(--'+x+')"></i>':'').join('')+'</div>'}
+function vCalib(){const C=st.cal||{};
+ const head='<div class="wrap"><div class="crumb"><button class="back" data-act="home">← 患者さん一覧</button></div><h1>判定基準の調整</h1><p class="lead">保存した記録の数値と「先生の判定」から、院の基準（良好・注意・要改善の境目）を調整します。</p>'+(Store.mode==='cloud'&&CL.clinic&&CL.clinic.is_admin?'<label class="chk"><input type="checkbox" id="calAll"'+(st.calAll?' checked':'')+'> 全院の記録（名前なし）で集計する</label>':'');
+ if(C.loading)return head+'<p class="empty">記録を読み込み中…（'+(C.done||0)+'/'+(C.total||0)+'人）</p></div>';
+ if(C.err)return head+'<div class="warn">'+esc(C.err)+'</div></div>';
+ const S=C.S||(C.S=calSamples()),ns=(C.sessions||[]).length,nj=(C.sessions||[]).filter(s=>s.judge&&Object.keys(s.judge).length).length;
+ const groups=[['front','正面',FRONT_KEYS],['side','側面（左右の写真をまとめて集計）',SIDE_KEYS],['rot','回旋',ROT_KEYS]];
+ const card=k=>{const a=S[k],sp=SPEC[k],q=specOf(k),ch=CFG[k]&&Object.keys(CFG[k]).length;
+  const J=a.filter(x=>x.j),fit=calFit(a,q);
+  return '<div class="card" data-ck="'+k+'"><h3>'+sp.label+(ch?' <span class="chg">院の基準</span>':'')+'</h3><div class="cst">'+calStat(a,q)+'</div>'+
+  '<div class="thr"><label>中心 °<input type="number" step="0.5" inputmode="decimal" data-cfg="'+k+'" data-f="ofs" value="'+q.ofs+'"></label><label>良好 ±<input type="number" step="0.5" min="0.5" inputmode="decimal" data-cfg="'+k+'" data-f="good" value="'+q.good+'"></label><label>要改善 ±<input type="number" step="0.5" min="1" inputmode="decimal" data-cfg="'+k+'" data-f="bad" value="'+q.bad+'"></label></div>'+
+  (fit&&!fit.same?'<div class="sug"><span>提案：中心 '+fit.q.ofs+'°・良好 ±'+fit.q.good+'°・要改善 ±'+fit.q.bad+'°（一致 '+fit.now+'% → '+fit.next+'%）</span><button class="btn" data-act="calApply" data-k="'+k+'" data-q="'+esc(JSON.stringify(fit.q))+'">提案を使う</button></div>':(J.length&&J.length<8?'<p class="note">先生の判定があと'+(8-J.length)+'件たまると、基準の提案を出します。</p>':''))+
+  (ch?'<p style="margin:6px 0 0"><button class="link" data-act="calReset" data-k="'+k+'">初期値（良好 ±'+sp.good+'°・要改善 ±'+sp.bad+'°）に戻す</button></p>':'')+'</div>'};
+ return head+'<div class="card"><p style="margin:0">集計した記録：<b>'+ns+'件</b>（先生の判定あり '+nj+'件）</p><p class="note">数値は「中心」からのずれで判定します。例：中心を+2°にすると、+2°が0°（理想）として扱われます。基準は10〜20人分の先生の判定がたまってから決めるのがおすすめです。変更は「基準を保存」を押すまで反映されません。</p></div>'+
+  groups.map(([g,lab,keys])=>'<h2>'+lab+'</h2><div class="cal">'+keys.map(card).join('')+'</div>').join('')+
+  '<div class="actbar"><button class="btn" data-act="calReload">集計しなおす</button><button class="btn pri" id="cfgSave" data-act="calSave"'+(C.dirty?'':' disabled')+'>'+(C.dirty?'基準を保存':'保存済み')+'</button></div><p class="note">保存済みの記録の点数（一覧やグラフの点数）は、記録を開いて保存しなおすと新しい基準で計算されます。</p></div>'}
+async function loadCalib(){const ps=st.patients.filter(p=>p.id&&p.id!==CFG_ID);st.cal={loading:true,done:0,total:ps.length,sessions:[],dirty:st.cal&&st.cal.dirty};if(st.view==='calib')render();
+ if(Store.mode==='cloud'){try{st.cal.sessions=st.calAll&&CL.clinic&&CL.clinic.is_admin?await CL.listResearch():await CL.listAll();st.cal.S=null}catch(e){st.cal.err='記録を読み込めませんでした：'+msg(e)}st.cal.loading=false;if(st.view==='calib')render();return}
+ try{const all=[];let i=0;const worker=async()=>{while(i<ps.length){const p=ps[i++];const a=await Store.listSessions(p.id);all.push(...a);st.cal.done++;const e=$('.empty');if(e&&st.view==='calib')e.textContent='記録を読み込み中…（'+st.cal.done+'/'+st.cal.total+'人）'}};
+  await Promise.all([worker(),worker(),worker(),worker()]);st.cal.sessions=all;st.cal.S=null;st.cal.loading=false}catch(e){st.cal.loading=false;st.cal.err='記録を読み込めませんでした：'+msg(e)}
+ if(st.view==='calib')render()}
+function vHome(){if(DEMO)return '<div class="wrap"><h1>姿勢分析（お試し版）</h1><p class="lead">スマホで正面・右側面・左側面の3枚を撮ると、AIが体の目印を見つけて、姿勢のくずれを角度とスコアで表示します。写真はこの端末の中だけで解析し、写真そのものは送信・保存しません。</p>'+
+ '<div class="card"><h2>使い方</h2><ol style="margin:0 0 14px;padding-left:1.3em"><li>「分析をはじめる」を押す</li><li>正面・右側面・左側面を撮影（または写真を選ぶ）</li><li>ずれている目印があれば指で調整（カメラの傾きは自動で補正）</li><li>「分析結果を見る」でスコア・3Dのねじれ・レポート画像を確認</li></ol><label class="chk" style="font-weight:500;font-size:14px"><input type="checkbox" id="demoShare" checked> 名前を含まない測定値（体の目印の位置と角度）を、精度向上のために送る</label><button class="btn pri big" data-act="trial">分析をはじめる</button></div>'+storeNote()+'<p class="note">ほさか整骨院（栃木県宇都宮市）が院内用に開発しているツールのお試し版です。</p></div>';
+ return '<div class="wrap"><h1>姿勢分析</h1><p class="lead">患者さんを選んで、正面・右側面・左側面の3枚を撮影します。写真は端末の中だけで分析します。</p>'+
+ '<div class="toolbar"><input id="q" type="search" placeholder="名前・ふりがなで検索" value="'+esc(st.q)+'" aria-label="患者さんを検索"><button class="btn pri" data-act="newPatient">＋ 新しい患者さん</button></div>'+
+ '<div id="plist"></div><p><button class="link" data-act="trial">登録せずにお試しで分析する</button>'+(isDemo()?'':'　<button class="link" data-act="calib">判定基準の調整</button>')+(Store.mode==='gas'&&!isDemo()?'　<button class="link" data-act="authMenu">パスコードと端末</button>':'')+(Store.mode==='cloud'?'　<button class="link" data-act="authMenu">院の設定</button>'+(CL.clinic&&CL.clinic.is_admin?'　<button class="link" data-act="admin">院の管理</button>':'')+(hasGS()&&AUTH.token&&CL.clinic&&!(CL.clinic.settings||{}).imported?'</p><div class="card"><p style="margin:0 0 8px">Googleドライブに前の記録があります。この院に取り込みますか？</p><button class="btn pri" id="impBtn" data-act="importGas">Googleドライブの記録を取り込む</button></div><p>':''):'')+'</p>'+(st.loadErr?'<div class="warn">'+esc(st.loadErr)+'</div>':'')+storeNote()+'</div>'}
+function renderList(){const el=$('#plist');if(!el)return;if(st.loading){el.innerHTML='<p class="empty">記録を読み込み中…</p>';return}
+ const q=st.q.trim(),list=st.patients.filter(p=>p.id!==CFG_ID).filter(p=>!q||(p.name+(p.kana||'')).includes(q)).sort((a,b)=>String(b.lastAt||b.createdAt||'').localeCompare(String(a.lastAt||a.createdAt||'')));
+ el.innerHTML=list.length?'<ul class="plist">'+list.map(p=>'<li><button data-act="openPatient" data-id="'+esc(p.id)+'"><span class="pn">'+esc(p.name)+'<small>'+esc(p.kana||'')+'</small></span><span class="pm">'+(p.lastAt?'前回 '+fmtDate(p.lastAt)+'・'+(p.count||0)+'回分析':'まだ分析なし')+'</span>'+(p.lastTotal!=null?'<span class="ps n s-'+band(p.lastTotal)+'">'+p.lastTotal+'<small>点</small></span>':'')+'</button></li>').join('')+'</ul>'
+ :'<div class="empty">'+(q?'「'+esc(q)+'」に当てはまる患者さんはいません。':'まだ患者さんが登録されていません。<br>「＋ 新しい患者さん」から登録すると、分析の記録を残して前回と比較できます。')+'</div>'}
+function vPatient(){const p=st.patient,ss=st.sessions;
+ return '<div class="wrap"><div class="crumb"><button class="back" data-act="home">← 患者さん一覧</button></div>'+
+ '<div class="phead"><div><h1>'+esc(p.name)+' <span>さん</span></h1><p class="mut">'+(p.kana?esc(p.kana)+'・':'')+(p.height?'身長 '+p.height+'cm':'身長は未入力')+(p.weight?'・体重 '+p.weight+'kg':'')+(p.sex?'・'+(p.sex==='f'?'女性':'男性'):'')+(p.ageBand?'・'+esc(p.ageBand):'')+(p.memo?'・'+esc(p.memo):'')+'</p></div>'+
+ '<div class="acts"><button class="btn" data-act="editPatient">編集</button><button class="btn pri big" data-act="startCapture">新しく分析する</button></div></div>'+
+ (ss.length>=2?'<div class="card"><h2>総合スコアの推移</h2><div class="fig" id="trend"></div></div>':'')+
+ '<div class="card"><h2>分析の記録</h2>'+(ss.length?'<ul class="slist">'+ss.map(s=>{const sc=s.scores||{};return '<li><button class="srow" data-act="openSession" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sc.total)+'">'+(sc.total!=null?sc.total:'-')+'<small>点</small></span><span class="st">'+esc(s.type||'')+'</span><span class="ss">正面 '+(sc.front!=null?sc.front:'-')+'・側面 '+(sc.side!=null?sc.side:'-')+'・回旋 '+(sc.rot!=null?sc.rot:'-')+'</span></button><button class="x" data-act="delSession" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':'<p class="empty">まだ分析の記録がありません。「新しく分析する」から始めましょう。</p>')+'</div></div>'}
+function drawTrend(){const el=$('#trend');if(!el)return;const ss=st.sessions.slice().reverse().filter(s=>s.scores&&s.scores.total!=null);
+ const draw=()=>{const W=el.clientWidth,H=el.clientHeight;if(!W)return;const pl=34,pr=16,pt_=14,pb=26,xs=i=>pl+(ss.length<2?0:i*(W-pl-pr)/(ss.length-1)),ys=v=>pt_+(100-clamp(v,30,100))/70*(H-pt_-pb);
+  let g='';[40,60,80,100].forEach(v=>{g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ys(v)+'" y2="'+ys(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(ys(v)+4)+'" text-anchor="end" font-size="11" fill="var(--mut)">'+v+'</text>'});
+  const d=ss.map((s,i)=>(i?'L':'M')+xs(i).toFixed(1)+' '+ys(s.scores.total).toFixed(1)).join(' ');
+  const dots=ss.map((s,i)=>'<circle cx="'+xs(i)+'" cy="'+ys(s.scores.total)+'" r="4" fill="var(--card)" stroke="var(--g)" stroke-width="2"/>').join('');
+  const last=ss[ss.length-1];const lab=W>420?ss.map((s,i)=>'<text x="'+xs(i)+'" y="'+(H-6)+'" text-anchor="'+(i===0?'start':i===ss.length-1?'end':'middle')+'" font-size="11" fill="var(--mut)">'+fmtDate(s.date).slice(5)+'</text>').filter((t,i)=>ss.length<=8||i===0||i===ss.length-1).join(''):'<text x="'+pl+'" y="'+(H-6)+'" font-size="11" fill="var(--mut)">'+fmtDate(ss[0].date)+'</text><text x="'+(W-pr)+'" y="'+(H-6)+'" font-size="11" text-anchor="end" fill="var(--mut)">'+fmtDate(last.date)+'</text>';
+  el.innerHTML='<svg width="'+W+'" height="'+H+'" role="img" aria-label="総合スコアの推移">'+g+'<path d="'+d+'" fill="none" stroke="var(--g)" stroke-width="2.5"/>'+dots+lab+'</svg>'};
+ draw();if(st.trendRO)st.trendRO.disconnect();st.trendRO=new ResizeObserver(draw);st.trendRO.observe(el)}
+const TIPS={front:['スマホは三脚などで固定し、おへその高さでまっすぐ構える','3〜4m離れて2倍ズームで撮ると、レンズのゆがみが減ります（頭の上からつま先まで入れる）','背景にドア枠や柱など、まっすぐな縦の線が入るようにすると、カメラの傾きを自動で補正できます','足は肩幅くらい、腕は自然に下ろして、普段どおりに立ってもらう','より正確にしたいときは、肩峰・上前腸骨棘・膝のお皿・足首に丸シールを貼って撮影'],
+ right:['体の右側がカメラに向くよう、真横から撮る（床に立ち位置の印があると毎回そろいます）','腕で腰や背中が隠れないよう、自然に下ろす','顔はまっすぐ前を向いてもらう','背景に縦の線が入ると、カメラの傾きを自動で補正できます','丸シールを使うときは、肩峰・大転子・膝の外側・外くるぶしに'],
+ left:['体の左側がカメラに向くよう、真横から撮る（床に立ち位置の印があると毎回そろいます）','腕で腰や背中が隠れないよう、自然に下ろす','顔はまっすぐ前を向いてもらう','背景に縦の線が入ると、カメラの傾きを自動で補正できます','丸シールを使うときは、肩峰・大転子・膝の外側・外くるぶしに']};
+function guideSVG(k){const side=k!=='front',flip=k==='left'?' transform="translate(160 0) scale(-1 1)"':'';
+ const body=side?'<circle cx="84" cy="42" r="14"/><path d="M96 44 l6 4 -6 2z"/><path d="M72 62 Q86 58 94 64 L96 124 Q84 128 72 124 Z"/><path d="M74 126 L74 210 L88 210 L94 126 Z"/><path d="M78 66 L80 118 L88 118 L88 70Z"/>'
+ :'<circle cx="80" cy="40" r="14"/><path d="M58 62 Q80 56 102 62 L106 122 Q80 128 54 122Z"/><path d="M60 124 L66 210 L77 210 L79 130 L81 130 L83 210 L94 210 L100 124Z"/><path d="M56 64 L46 120 L53 122 L61 82Z"/><path d="M104 64 L114 120 L107 122 L99 82Z"/>';
+ return '<svg viewBox="0 0 160 240" class="gsvg" aria-hidden="true"><rect x="8" y="8" width="144" height="224" rx="14" fill="none" stroke="var(--line)" stroke-width="2"/><path d="M8 34V8h26M126 8h26v26M152 206v26h-26M34 232H8v-26" fill="none" stroke="var(--gd)" stroke-width="3"/><line x1="80" y1="16" x2="80" y2="226" stroke="var(--gd)" stroke-dasharray="4 4"/><g fill="var(--soft)" stroke="var(--mut)" stroke-width="1.5"'+flip+'>'+body+'</g></svg>'}
+function vCapture(){const c=st.cur,k=st.tab,v=c.views[k],lab=VIEWS.find(o=>o.k===k).label,cnt=Object.keys(c.views).length;
+ const next=VIEWS.find(o=>!c.views[o.k]&&o.k!==k);
+ const tabs='<div class="tabs" role="tablist">'+VIEWS.map(o=>'<button role="tab" aria-selected="'+(k===o.k)+'" class="tab'+(k===o.k?' on':'')+(c.views[o.k]?' done':'')+'" data-act="tab" data-k="'+o.k+'"><b>'+o.label+'</b><small>'+(st.busy[o.k]?'分析中…':c.views[o.k]?'✓ 撮影済み':'未撮影')+'</small></button>').join('')+'</div>';
+ let stage;
+ if(st.busy[k])stage='<div class="busy"><div><div class="spin"></div><span id="prog">'+(st.engine==='ready'?'AIが体の目印を探しています…':'高精度AIモデルを準備しています（初回は約30MBを読み込むため、少し時間がかかります）…')+'</span></div></div>';
+ else if(!v)stage='<div class="guide">'+guideSVG(k)+'<div><h2>'+lab+'の撮り方</h2><ul>'+TIPS[k].map(t=>'<li>'+t+'</li>').join('')+'</ul><label class="btn pri big" for="file">'+lab+'を撮影・写真を選ぶ</label>'+(st.err[k]?'<div class="warn">'+esc(st.err[k])+'</div>':'')+'</div></div>';
+ else{const miss=[];const isF=k==='front',s=SIDE[v.near||'R'];if(isF?(!pt(v,27)||!pt(v,28)):!pt(v,s.an))miss.push('足首');if(isF?(!pt(v,7)||!pt(v,8)):!pt(v,s.ear))miss.push('耳');
+  stage='<div class="stagebox" id="sbox"><canvas id="ed" aria-label="'+lab+'の写真と目印"></canvas></div>'+
+  '<div class="edbar"><button class="btn'+(st.adjust?' on':'')+'" data-act="adjust">'+(st.adjust?'✓ 調整を終える':'目印を指で調整')+'</button><label class="btn" for="file">撮り直す</label>'+(next?'<button class="btn pri" data-act="tab" data-k="'+next.k+'">次へ：'+next.label+' →</button>':'')+'</div>'+
+  (st.adjust?'<p class="hint">ずれている目印を指でドラッグして、正しい位置に合わせてください。拡大鏡で位置を確認できます。オレンジの点線の目印は、AIの推定がぶれていたところです。</p>':'')+
+  (st.ref?'<p class="hint"><b>基準線：</b>写真の中のドア枠・柱・下げ振りの糸など、本当にまっすぐ縦（または水平）な線を、指でなぞってください。</p>':'')+
+  (st.pick?'<p class="hint"><b>シールの色：</b>写真の中のシールを1つタップしてください。</p>':'')+'<div class="quick" id="quick"></div>'+toolPanels(v,k)+
+  (miss.length?'<div class="warn">'+miss.join('・')+'が写っていないか、見つけにくい状態です。該当する項目は計算できないため、頭からつま先まで入れて撮り直すと精度が上がります。</div>':'')+uncWarn(v,k)}
+ return '<div class="wrap"><div class="crumb"><button class="back" data-act="back">← 戻る</button><b>'+esc(st.patient.name)+' さん</b><span class="mut">新しい分析</span></div>'+
+ '<div class="eng" id="eng"></div>'+tabs+stage+'<input type="file" id="file" accept="image/*" class="vh" tabindex="-1">'+
+ '<div class="hrow"><label for="height">身長</label><input id="height" inputmode="decimal" placeholder="例 165" value="'+(c.height||'')+'"><span>cm</span><label for="weight" style="margin-left:6px">体重</label><input id="weight" inputmode="decimal" placeholder="例 60" value="'+(c.weight||'')+'"><span>kg</span><span class="note">身長は左右差のcm表示に、体重は腰の負担の目安に使います</span></div></div>'+
+ '<div class="actbar"><button class="btn pri big" data-act="toResult"'+(cnt?'':' disabled')+'>分析結果を見る（'+cnt+'/3）</button></div>'}
+function rollLabel(v){return {auto:'自動',manual:'手動',ref:'基準線',none:'補正なし'}[v.rollSrc||'none']||''}
+function toolPanels(v,k){const r=v.roll||0,e=v.rollEst;
+ const est=e&&e.roll!=null?('背景の線からの推定：'+(e.roll>0?'+':'')+f1(e.roll)+'°（'+{high:'信頼度 高',mid:'信頼度 中',low:'信頼度 低'}[e.conf]+'）'):'背景にまっすぐな線が見つからず、傾きを自動推定できませんでした。';
+ const sw=st.marker?'<i class="sw" style="background:rgb('+st.marker.join(',')+')"></i>':'';
+ return '<details class="tool" data-t="tilt"'+(st.tool.tilt?' open':'')+'><summary>カメラの傾き補正：<b id="rollV">'+(r>0?'+':'')+f1(r)+'°</b>（'+rollLabel(v)+'）</summary><div class="tbody">'+
+ '<input type="range" id="rollR" min="-6" max="6" step="0.1" value="'+r+'" aria-label="傾き補正の角度"><p class="hint">'+est+' 方眼が背景のドア枠や柱と平行なら、正しく補正できています。</p>'+
+ '<div class="row">'+(e&&e.roll!=null?'<button class="btn" data-act="rollAuto">推定値を使う</button>':'')+'<button class="btn" data-act="rollZero">補正しない</button><button class="btn'+(st.ref?' on':'')+'" data-act="rollRef">'+(st.ref?'基準線をやめる':'基準線を引いて補正')+'</button></div></div></details>'+
+ '<details class="tool" data-t="mk"'+(st.tool.mk?' open':'')+'><summary>マーカーシール：'+sw+(st.marker?'色を登録済み':'未設定')+(v.snap&&Object.keys(v.snap).length?'・'+Object.keys(v.snap).length+'点をシールに合わせました':'')+'</summary><div class="tbody">'+
+ '<p class="hint">肩峰・上前腸骨棘（側面は大転子）・膝・足首に、はっきりした色の丸シール（直径1.5cmほど）を貼って撮影すると、目印をシールの中心にぴったり合わせられます。</p>'+
+ '<div class="row"><button class="btn'+(st.pick?' on':'')+'" data-act="pickMarker">'+(st.pick?'色選びをやめる':'シールの色を登録（写真のシールをタップ）')+'</button><button class="btn" data-act="snapNow"'+(st.marker?'':' disabled')+'>シールに合わせる</button></div>'+
+ '<label class="chk"><input type="checkbox" id="autoSnap"'+(st.autoSnap?' checked':'')+'> 撮影後に自動でシールに合わせる</label></div></details>'}
+function uncWarn(v,k){if(!v.unc)return '';const isF=k==='front',pts=isF?FRONT_EDIT:sideEdit(v.near||'R');const bad=pts.filter(i=>v.unc[i]>UNC_T&&!(v.snap&&v.snap[i])&&v.lm[i][3]>=0.35);
+ return bad.length?'<div class="warn"><b>要確認：</b>'+bad.map(i=>LMN[i]||'').filter(Boolean).join('・')+'。AIの推定がぶれていた目印です（写真ではオレンジの点線）。「目印を指で調整」で位置を確かめてください。</div>':''}
+function updEngine(){const el=$('#eng');if(!el)return;const t={idle:'AIエンジン：未起動',loading:'AIエンジン（高精度）：準備中…',ready:'AIエンジン（高精度）：準備完了',error:'AIエンジン：読み込みに失敗しました（'+esc(st.engineErr)+'）'}[st.engine];el.innerHTML='<span class="dot '+st.engine+'"></span>'+t}
+function renderQuick(){const el=$('#quick');if(!el)return;const k=st.tab,v=st.cur.views[k];if(!v){el.innerHTML='';return}
+ const A=analyze({views:{[k]:v},height:st.cur.height});const rows=A.rows.filter(r=>r.vk===k).slice(0,k==='front'?4:3);
+ el.innerHTML=rows.map(r=>'<span><b class="b-'+r.st+'">●</b> '+r.label+' '+f1(Math.abs(r.val))+'°'+(r.st==='ok'?'':'・'+r.dir)+'</span>').join('')}
+function setupEditor(){updEngine();const cv=$('#ed');if(!cv){return}const v=st.cur.views[st.tab],box=$('#sbox');
+ const maxW=box.clientWidth,maxH=Math.min(window.innerHeight*0.66,760);let w=maxW,h=w/v.ar;if(h>maxH){h=maxH;w=h*v.ar}
+ const ctx=fitCanvas(cv,w,h),kk=w/v.ar;let drag=null,line=null;const pts=st.tab==='front'?FRONT_EDIT:sideEdit(v.near||'R');
+ const scr=i=>{const l=v.lm[i],c=cor(v,l[0]*v.ar,l[1]);return {x:c.x*kk,y:c.y*kk}};
+ const toRaw=(px,py)=>{const q=uncor(v,px/kk,py/kk);return {x:q.x/v.ar,y:q.y}};
+ const draw=lp=>drawView(ctx,v,st.tab,w,h,{crop:false,edit:st.adjust,loupe:lp,sel:drag?drag.i:null,refLine:line});
+ draw();renderQuick();cv.style.touchAction=(st.adjust||st.ref||st.pick)?'none':'auto';
+ const pos=e=>{const r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
+ cv.onpointerdown=e=>{const p=pos(e);
+  if(st.pick){const q=toRaw(p.x,p.y),W=v.canvas.width,H=v.canvas.height,cx=Math.round(q.x*W),cy=Math.round(q.y*H),d=v.canvas.getContext('2d').getImageData(Math.max(0,cx-2),Math.max(0,cy-2),5,5).data;
+   let r=0,g=0,b=0,n=0;for(let z=0;z<d.length;z+=4){r+=d[z];g+=d[z+1];b+=d[z+2];n++}st.marker=[Math.round(r/n),Math.round(g/n),Math.round(b/n)];st.pick=false;saveMarker();
+   const nn=snapMarkers(v,st.tab,st.marker);if(st.cur.saved)st.cur.dirty=true;toast(nn?nn+'点の目印をシールに合わせました':'シールの色を登録しました（近くにシールが見つかりませんでした）');render();return}
+  if(st.ref){line={x0:p.x,y0:p.y,x1:p.x,y1:p.y};try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();draw({x:p.x,y:p.y});return}
+  if(!st.adjust)return;let best=null,bd=36;
+  for(const i of pts){const q=scr(i),d=Math.hypot(q.x-p.x,q.y-p.y);if(d<bd){bd=d;best=i}}if(best==null)return;
+  const q=scr(best);drag={i:best,ox:q.x-p.x,oy:q.y-p.y};try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();draw({i:best})};
+ cv.onpointermove=e=>{const p=pos(e);
+  if(line){line.x1=p.x;line.y1=p.y;draw({x:p.x,y:p.y});return}
+  if(!drag)return;const q=toRaw(p.x+drag.ox,p.y+drag.oy),l=v.lm[drag.i];l[0]=clamp(q.x,0,1);l[1]=clamp(q.y,0,1);l[3]=1;if(v.unc)v.unc[drag.i]=0;if(v.snap)delete v.snap[drag.i];draw({i:drag.i})};
+ cv.onpointerup=cv.onpointercancel=()=>{
+  if(line){const a=toRaw(line.x0,line.y0),b=toRaw(line.x1,line.y1);line=null;let ux=(b.x-a.x)*v.ar,uy=b.y-a.y;
+   if(Math.hypot(ux,uy)*kk<40){toast('もう少し長く線をなぞってください');draw();return}
+   let ang;if(Math.abs(uy)>=Math.abs(ux)){if(uy>0){ux=-ux;uy=-uy}ang=Math.atan2(ux,-uy)*D}else{if(ux<0){ux=-ux;uy=-uy}ang=Math.atan2(uy,ux)*D}
+   if(Math.abs(ang)>8){toast('傾きが大きすぎます（8°以内の線をなぞってください）');draw();return}
+   v.roll=Math.round(ang*10)/10;v.rollSrc='ref';st.ref=false;st.tool.tilt=true;if(st.cur.saved)st.cur.dirty=true;toast('基準線で '+(v.roll>0?'+':'')+f1(v.roll)+'° 補正しました');render();return}
+  if(!drag)return;drag=null;if(st.cur.saved)st.cur.dirty=true;render()}}
+async function handlePhoto(k,file){st.busy[k]=true;st.err[k]='';st.adjust=false;st.ref=false;st.pick=false;render();
+ try{const cv=await loadImg(file);
+  const R=await detectRobust(cv,(j,n)=>{const el=$('#prog');if(el)el.textContent='AIが体の目印を探しています（'+j+'/'+n+'回目）…'});
+  if(!R){st.err[k]='人物を見つけられませんでした。頭からつま先まで入るように撮り直してください。'}
+  else{const v={canvas:cv,ar:cv.width/cv.height,lm:R.lm,w:R.w,runs:R.runs};
+   const ys=R.lm.filter(l=>l[3]>0.4).map(l=>l[1]),bh=ys.length>1?(Math.max(...ys)-Math.min(...ys)):0.8;v.unc=R.unc.map(u=>Math.round(u/(bh||0.8)*1000)/1000);
+   if(k!=='front')pickNear(v,k);
+   v.roll=0;v.rollSrc='none';try{const e=estimateRoll(cv,R.lm);v.rollEst=e;if(e.apply){v.roll=e.roll;v.rollSrc='auto'}}catch(_){}
+   if(st.autoSnap&&st.marker){try{snapMarkers(v,k,st.marker)}catch(_){}}
+   st.cur.views[k]=v;if(st.cur.saved)st.cur.dirty=true}}
+ catch(e){st.err[k]='分析できませんでした：'+msg(e)}
+ st.busy[k]=false;if(st.view==='capture')render()}
+
+/* ---------- result ---------- */
+function precNote(v,k){const a=[];if(Math.abs(v.roll||0)>=0.05)a.push('傾き補正'+(v.roll>0?'+':'')+f1(v.roll)+'°');const sn=v.snap?Object.keys(v.snap).length:0;if(sn)a.push('シール'+sn+'点');
+ if(v.unc){const pts=k==='front'?FRONT_EDIT:sideEdit(v.near||'R');const b=pts.filter(i=>v.unc[i]>UNC_T&&!(v.snap&&v.snap[i])&&v.lm[i][3]>=0.35).length;if(b)a.push('要確認'+b+'点')}
+ return a.length?'<br><small>'+a.join('・')+'</small>':''}
+function cmpList(){return st.sessions.filter(s=>s.id!==st.cur.id)}
+function cmpSession(){const list=cmpList();if(!list.length)return null;let s=st.cmpId?list.find(x=>x.id===st.cmpId):null;
+ if(!s)s=list.filter(x=>String(x.date)<String(st.cur.date)).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]||null;if(s)st.cmpId=s.id;return s?unpack(s):null}
+function gauge(v){const C=2*Math.PI*52,d=v==null?0:v/100*C,col=v==null?'var(--line)':'var(--'+band(v)+')';return '<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--soft)" stroke-width="11"/><circle cx="60" cy="60" r="52" fill="none" stroke="'+col+'" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+d.toFixed(1)+' '+C.toFixed(1)+'"/></svg>'}
+const delta=(a,b)=>{if(a==null||b==null)return '';const d=a-b;return '<span class="dl '+(d>0?'up':d<0?'dn':'')+'">前回比 '+(d>0?'+':'')+d+'</span>'};
+function vResult(){const c=st.cur,A=analyze(c),pv=cmpSession(),PA=pv?analyze(pv):null;st.A=A;st.PA=PA;st.pv=pv;
+ if(c.comment==null)c.comment=defaultComment(A);
+ const hasW=c.views.front&&c.views.front.w&&A.F;
+ const tiles=['front','side','rot'].map(g=>'<div class="tile"><small>'+{front:'正面',side:'側面',rot:'回旋'}[g]+'</small><b class="n s-'+band(A.sc[g])+'">'+(A.sc[g]!=null?A.sc[g]:'—')+'</b>'+delta(A.sc[g],PA&&PA.sc[g])+'</div>').join('');
+ const others=cmpList();
+ const rowsCmp=PA?A.rows.map(r=>{const p=PA.rows.find(q=>q.key===r.key&&q.vk===r.vk);if(!p)return '';const d=Math.abs(r.val)-Math.abs(p.val);const t=Math.abs(d)<0.5?'<span class="mut">変化なし</span>':d<0?'<span class="b-ok">改善 '+f1(-d)+'°</span>':'<span class="b-ng">悪化 '+f1(d)+'°</span>';return '<tr><td>'+VL[r.vk]+'・'+r.label+'</td><td class="r n">'+f1(Math.abs(p.val))+'°</td><td class="r n">'+f1(Math.abs(r.val))+'°</td><td class="r">'+t+'</td></tr>'}).join(''):'';
+ const sideK=PA?(['right','left'].find(k=>c.views[k]&&pv.views[k])):null;
+ return '<div class="wrap"><div class="crumb"><button class="back" data-act="'+(c.fromHistory?'toPatient':'toCapture')+'">'+(c.fromHistory?'← 記録の一覧':'← 写真に戻る')+'</button><b>'+esc(st.patient.name)+' さん</b><span class="mut">'+fmtDT(c.date)+'</span></div>'+
+ '<h1>姿勢分析の結果</h1>'+(A.n<3?'<div class="warn">'+A.n+'/3方向で計算しています。3方向そろうと総合スコアの精度が上がります。</div>':'')+A.warn.map(w=>'<div class="warn">'+w.t+'</div>').join('')+
+ '<div class="card scores"><div class="gauge">'+gauge(A.sc.total)+'<div class="gl"><small>総合スコア</small><b class="n">'+(A.sc.total!=null?A.sc.total:'—')+'</b><span>点 / 100</span>'+delta(A.sc.total,PA&&PA.sc.total)+'</div></div><div class="tiles">'+tiles+'</div>'+
+ '<div class="type"><small>姿勢タイプ（横から見た立ち方）</small><b>'+(A.type?A.type.name:'側面の写真で判定します')+'</b><p class="mut">'+(A.type?A.type.desc:'')+'</p>'+(A.tags.length?'<div class="tags">'+A.tags.map(t=>'<span>'+t+'</span>').join('')+'</div>':'')+'</div></div>'+
+ '<div class="shots">'+VIEWS.filter(o=>c.views[o.k]).map(o=>'<figure><canvas class="shot" data-k="'+o.k+'"></canvas><figcaption>'+o.label+(c.views[o.k].canvas?'':'（骨格のみ）')+precNote(c.views[o.k],o.k)+'</figcaption></figure>').join('')+'</div>'+
+ '<div class="grid2"><div class="card"><h2>気になったポイント</h2>'+(A.findings.length?'<ol class="finds">'+A.findings.map(r=>'<li class="b-'+r.st+'"><b>'+VL[r.vk]+'｜'+r.dir+'<span class="n">'+f1(Math.abs(r.val))+'°'+(r.extra?'・'+r.extra:'')+'</span></b><p>'+tipOf(r)+'</p></li>').join('')+'</ol>':'<p>大きな偏りは見られませんでした。</p>')+
+ '<h3><label for="comment">先生からのコメント</label></h3><textarea id="comment" rows="6">'+esc(c.comment)+'</textarea><p class="note">レポート画像にもこのコメントが入ります。自由に書き換えてください。</p></div>'+
+ (hasW?'<div class="card"><h2>体のねじれ</h2><div class="three"><canvas id="c3d" aria-label="3Dの骨格モデル"></canvas></div><p class="hint">モデルは指で左右にドラッグして回せます。金＝肩のライン、緑＝骨盤のライン。</p>'+topSVG(A.F.rot)+'</div>':'<div class="card"><h2>体のねじれ</h2><p class="mut">正面の写真を撮ると、肩と骨盤のねじれを3Dで確認できます。</p></div>')+'</div>'+
+ careCard(c,A)+'<div class="card"><h2>測定項目の詳細</h2>'+judgeHead(c,A)+'<ul class="mlist">'+A.rows.map((r,i)=>(i===0||A.rows[i-1].vk!==r.vk?'<li class="gh">'+VL[r.vk]+'</li>':'')+'<li><div><small>'+r.label+'</small><b>'+(r.st==='ok'?'<span class="mut">わずかに</span>':'')+r.dir+'</b>'+(r.extra?'<small>'+r.extra+'</small>':'')+judgeChips(c,r)+'</div><div class="mv"><span class="n">'+f1(Math.abs(r.val))+'°</span><span class="badge b-'+r.st+'">'+STL[r.st]+'</span></div></li>').join('')+
+ '</ul><p class="note">スコアは写真から計算した独自の指標で、医学的な診断ではありません。立ち方や撮影の角度でも数値は変わるため、毎回同じ条件で撮影すると比較しやすくなります。</p></div>'+
+ '<div class="card"><h2>前回との比較</h2>'+(others.length?'<label class="hrow"><span>比較する記録</span><select id="cmpSel" style="width:auto">'+others.map(s=>'<option value="'+esc(s.id)+'"'+(pv&&pv.id===s.id?' selected':'')+'>'+fmtDT(s.date)+'（'+((s.scores&&s.scores.total)!=null?s.scores.total:'-')+'点）</option>').join('')+'</select></label>'+
+  (PA?'<div class="cmpgrid">'+(c.views.front&&pv.views.front?'<figure><canvas class="cmp" data-k="front"></canvas><figcaption>正面</figcaption></figure>':'')+(sideK?'<figure><canvas class="cmp" data-k="'+sideK+'"></canvas><figcaption>'+VL[sideK]+'</figcaption></figure>':'')+'</div><p class="note">灰色の点線＝'+fmtDate(pv.date)+'、緑＝今回。足元をそろえて重ねています。</p>'+
+  '<table><thead><tr><th>項目</th><th class="r">前回</th><th class="r">今回</th><th class="r">変化</th></tr></thead><tbody><tr><td><b>総合スコア</b></td><td class="r n">'+(PA.sc.total!=null?PA.sc.total:'-')+'</td><td class="r n">'+(A.sc.total!=null?A.sc.total:'-')+'</td><td class="r">'+(A.sc.total!=null&&PA.sc.total!=null?((A.sc.total-PA.sc.total>=0?'+':'')+(A.sc.total-PA.sc.total)+'点'):'')+'</td></tr>'+rowsCmp+'</tbody></table>':'')
+  :(DEMO?'<p class="mut">院内版では結果を患者さんごとに保存して、前回の姿勢と並べて比べられます（お試し版では保存しません）。</p>':'<p class="mut">比較できる記録がまだありません。結果を保存すると、次回からここで前回と並べて比べられます。</p>'))+'</div>'+storeNote()+'</div>'+
+ '<div class="actbar"><button class="btn" data-act="report">レポート画像を作る</button>'+(st.patient.id?'<button class="btn pri" id="saveBtn" data-act="save"'+(c.saved&&!c.dirty?' disabled':'')+'>'+(c.saved?(c.dirty?'変更を保存':'保存済み ✓'):'結果を保存')+'</button>':(DEMO?'':'<button class="btn pri" data-act="saveTrial">患者さんの記録に保存</button>'))+'</div>'}
+const JL={ok:'良好',wn:'注意',ng:'要改善'};
+const jkey=r=>r.key+'|'+r.vk;
+function judgeChips(c,r){if(isDemo())return '';const k=jkey(r),v=c.judge&&c.judge[k];return '<div class="jg" data-jk="'+k+'"><span>先生の判定</span>'+['ok','wn','ng'].map(x=>'<button type="button" class="'+x+(v===x?' on':'')+'" data-act="judge" data-k="'+k+'" data-v="'+x+'" aria-pressed="'+(v===x)+'">'+JL[x]+'</button>').join('')+'</div>'}
+function judgeHead(c,A){if(isDemo())return '';const n=c.judge?A.rows.filter(r=>c.judge[jkey(r)]).length:0;return '<div class="jhead"><span class="mut" id="jcount">先生の判定 '+n+'/'+A.rows.length+'項目</span><button class="btn" data-act="judgeRest">残りはアプリの判定どおり</button></div><p class="note" style="margin-top:0">先生の見立てを付けて保存すると、「判定基準の調整」で院の基準づくりに使えます。患者さんのレポートには出ません。</p>'}
+function markDirty(){const c=st.cur;if(c&&c.saved&&!c.dirty){c.dirty=true;const b=$('#saveBtn');if(b){b.disabled=false;b.textContent='変更を保存'}}}
+function syncJudge(){const c=st.cur,A=st.A;if(!c||!A)return;$$('.jg').forEach(el=>{const v=c.judge&&c.judge[el.dataset.jk];el.querySelectorAll('button').forEach(b=>{const on=b.dataset.v===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)})});
+ const n=c.judge?A.rows.filter(r=>c.judge[jkey(r)]).length:0,e=$('#jcount');if(e)e.textContent='先生の判定 '+n+'/'+A.rows.length+'項目'}
+function careCard(c,A){const C=careFrom(A),L=loadEst(c,A),sel=careSel(c,C);st.C=C;
+ if(!C.tight.length&&!C.weak.length&&!C.ex.length)return '<div class="card"><h2>体への負担とセルフケア</h2><p class="mut">大きな偏りがないため、特に負担が集中している筋肉は見つかりませんでした。今の立ち方を保つために、毎日の歩く習慣を続けましょう。</p></div>';
+ const mus=(arr,cls)=>arr.length?'<ul class="mus '+cls+'">'+arr.map(e=>'<li><b>'+(e.side!=='B'?'<span class="sd">'+jpS(e.side)+'</span>':'')+MUS[e.m][0]+'</b><small>'+e.why.join('・')+'</small></li>').join('')+'</ul>':'<p class="mut">特になし</p>';
+ const loads=(L.neck?'<div class="load"><small>首にかかる負担の目安</small><b class="n">約'+f1(L.neck.kg)+'<span>kg</span></b><p>頭が肩の真上にあると約5kg</p></div>':'')+
+  (L.back&&!L.back.back?'<div class="load"><small>腰の筋肉が余分に支えている重さの目安</small><b class="n">'+(L.back.kg!=null?'約'+f1(L.back.kg)+'<span>kg</span>':'体重の約'+L.back.pct+'<span>%</span>')+'</b><p>上半身が骨盤より約'+f1(L.back.cm)+'cm前'+(L.back.kg==null?'（体重を入れるとkgで表示）':'')+'</p></div>':'')+
+  (L.back&&L.back.back?'<div class="load"><small>腰の支え方</small><b style="font-size:18px">お腹側・靱帯で支える立ち方</b><p>上半身が骨盤より約'+f1(-L.back.cm)+'cm後ろ</p></div>':'')+
+  (L.needH?'<div class="load"><small>腰の負担の目安</small><p>身長を入れると計算できます</p></div>':'');
+ return '<div class="card"><h2>体への負担と、おすすめのセルフケア</h2>'+(loads?'<div class="loads">'+loads+'</div><p class="note">首はスマホ首の研究（Hansraj, 2014）の数値を当てはめた目安、腰は単純な力学モデルで計算した目安です。</p>':'')+
+ '<div class="cgrid"><div class="bmapbox"><canvas id="bmap" aria-label="負担がかかりやすい筋肉の図"></canvas><p class="leg"><i style="background:#e0573f"></i>縮こまって負担がかかりやすい　<i style="background:#3f8fd8"></i>働きにくくなりやすい</p></div>'+
+ '<div><h3>縮こまって負担がかかりやすい筋肉</h3>'+mus(C.tight,'t')+'<h3>働きにくくなりやすい筋肉</h3>'+mus(C.weak,'w')+(C.troubles.length?'<h3>出やすい不調（傾向）</h3><p>'+C.troubles.join('、')+'</p>':'')+'</div></div>'+
+ (C.ex.length?'<h3>おすすめの運動 <small class="mut">チェックしたものがレポートに入ります</small></h3><div class="exlist">'+C.ex.slice(0,8).map(e=>{const X=EX[e.id];return '<label class="exi"><input type="checkbox" data-care="ex" value="'+e.id+'"'+(sel.ex.includes(e.id)?' checked':'')+'><span><b>'+X[0]+'</b><small>'+X[1]+'・'+X[3]+(e.notes.length?'・'+e.notes.join('、'):'')+'</small><span class="how">'+X[2]+'</span></span></label>'}).join('')+'</div>':'')+
+ (C.life.length?'<h3>生活のポイント</h3><div class="exlist">'+C.life.slice(0,6).map(id=>{const X=LIFE[id];return '<label class="exi"><input type="checkbox" data-care="life" value="'+id+'"'+(sel.life.includes(id)?' checked':'')+'><span><b>'+X[0]+'</b><span class="how">'+X[1]+'</span></span></label>'}).join('')+'</div>':'')+
+ '<p class="note">筋肉の状態は、姿勢の傾向から推定したものです。実際の状態は検査で確かめます。運動中に痛みやしびれが出たら中止して、ご相談ください。</p></div>'}
+let anim3d=0;
+function afterResult(){const c=st.cur;
+ if(isDemo()&&CL.sb&&st.demoShare!==false&&!c.sent&&Object.keys(c.views).length){c.sent=true;try{const b=pack(c,analyze(c));delete b.comment;delete b.judge;CL.sb.from('demo_measurements').insert({data:b}).then(()=>{},()=>{})}catch(e){}}
+ $$('canvas.shot').forEach(cv=>{const k=cv.dataset.k,W=cv.parentElement.clientWidth,H=Math.round(W*4/3),ctx=fitCanvas(cv,W,H);drawView(ctx,c.views[k],k,W,H,{crop:true})});
+ $$('canvas.cmp').forEach(cv=>{const k=cv.dataset.k;drawCompare(cv,k,c.views[k],st.pv&&st.pv.views[k])});
+ const bm=$('#bmap');if(bm&&st.C){const W=bm.parentElement.clientWidth,H=Math.round(W*336/360),ctx=fitCanvas(bm,W,H);drawBodyMap(ctx,W,H,st.C,cssv('--bg').toLowerCase()==='#0f1613')}
+ const cv=$('#c3d');cancelAnimationFrame(anim3d);
+ if(cv&&c.views.front&&c.views.front.w){const w=c.views.front.w;let yaw=0.6,user=false;const t0=performance.now(),reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const frame=t=>{if(!document.body.contains(cv))return;if(!user&&!reduce)yaw=0.6+Math.sin((t-t0)/2400)*0.75;draw3D(cv,w,yaw);if(!user&&!reduce)anim3d=requestAnimationFrame(frame)};
+  frame(performance.now());let sx=null,y0=0;
+  cv.onpointerdown=e=>{user=true;cancelAnimationFrame(anim3d);sx=e.clientX;y0=yaw;try{cv.setPointerCapture(e.pointerId)}catch(_){}};
+  cv.onpointermove=e=>{if(sx==null)return;yaw=y0+(e.clientX-sx)/80;draw3D(cv,w,yaw)};cv.onpointerup=cv.onpointercancel=()=>{sx=null}}}
+async function doSave(){const c=st.cur,p=st.patient;if(!p||!p.id)return;const A=analyze(c),body=pack(c,A),b=$('#saveBtn');if(b){b.disabled=true;b.textContent='保存中…'}
+ try{await Store.saveSession(p.id,c.id,body);st.sessions=[Object.assign({id:c.id},body)].concat(st.sessions.filter(x=>x.id!==c.id)).sort((x,y)=>String(y.date).localeCompare(String(x.date)));
+  const L=st.sessions[0],np=Object.assign({},p,{lastAt:L.date,lastTotal:L.scores?L.scores.total:null,count:st.sessions.length});await Store.savePatient(np);st.patient=np;upsertPatient(np);c.saved=true;c.dirty=false;toast('保存しました')}
+ catch(e){toast('保存できませんでした：'+msg(e))}
+ if(st.view==='result')render()}
+async function loadPatients(){st.loading=true;try{st.patients=takeCfg(await Store.listPatients())}catch(e){st.loadErr=msg(e)}st.loading=false;render()}
+function lockOut(){if(st.view==='lock')return;closeModal();st.lock=Store.mode==='cloud'?{mode:'login'}:{set:true};st.patients=[];st.patient=null;go('lock')}
+function vLockCloud(){const L=st.lock||{mode:'login'},c=CL.clinic,err=st.lockErr?'<div class="warn">'+esc(st.lockErr)+'</div>':'',
+ pw=(id,lab,ac)=>'<label>'+lab+'<input id="'+id+'" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="'+ac+'" required></label>';
+ if(L.mode==='recovery')return '<div class="wrap lock"><h1>復旧コードを控えてください</h1><p class="lead">パスコードを忘れたときに、患者さんのお名前を読み戻すための大切なコードです。この画面は一度しか出ません。</p><div class="card"><p class="reccode" id="recCode">'+esc(L.rec)+'</p>'+
+  '<p class="note">紙に書いて、院内の決まった場所に保管してください。運営側でも再発行できません。なくすと、パスコードを忘れたときに患者さんのお名前が読めなくなります（測定の記録とグラフは残ります）。</p><label class="chk"><input type="checkbox" id="recOk"> 書き留めました</label><button class="btn pri big" data-act="recDone">はじめる</button></div></div>';
+ if(L.mode==='setup'){const reset=c&&c.wrapped_dek&&!CL.dekRaw&&!L.discard;
+  return '<div class="wrap lock"><h1>院のパスコードを決める</h1><p class="lead">'+esc(c?c.name:'')+'（院コード：'+esc(c?c.code:'')+'）<br>院のスマホで使うパスコード（6桁以上の数字）を決めてください。お知らせした最初のパスコードは、これで使えなくなります。</p><form id="lockForm" class="form card">'+
+  pw('np1','新しいパスコード（6桁以上の数字）','new-password')+pw('np2','もう一度入力','new-password')+
+  (reset?'<label>復旧コード<input id="rec" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX"></label><p class="note" style="margin:0">最初に控えた復旧コードを入れると、今までの患者さんのお名前を読み戻せます。<button type="button" class="link" data-act="recLost">復旧コードがない</button></p>':'')+
+  (L.discard?'<div class="warn">新しい暗号キーで始めます。これまでの患者さんのお名前・メモ・コメントは読めなくなります。</div>':'')+err+'<button class="btn pri big" type="submit" id="lockBtn">このパスコードにする</button></form></div>'}
+ if(L.mode==='unlock')return '<div class="wrap lock"><h1>院のパスコードを入力</h1><p class="lead">'+esc(c?c.name:'')+'<br>この端末で患者さんのお名前を読むために、院のパスコードを入れてください。</p><form id="lockForm" class="form card">'+pw('lp1','パスコード','current-password')+err+'<button class="btn pri big" type="submit" id="lockBtn">開く</button></form><p><button class="link" data-act="logout">別の院コードでログインする</button></p></div>';
+ return '<div class="wrap lock"><h1>院コードとパスコードを入力</h1><p class="lead">この端末で初めて開くときだけ必要です。次からは自動で開きます。</p><form id="lockForm" class="form card"><label>院コード<input id="lcode" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" required value="'+esc(st.lockCode||'')+'"></label>'+
+  pw('lp1','パスコード','current-password')+err+'<button class="btn pri big" type="submit" id="lockBtn">開く</button></form><p class="note">院コードと最初のパスコードは、導入のときにお知らせしたものです。</p></div>'}
+async function submitLockCloud(){const L=st.lock||{mode:'login'},v=id=>(($('#'+id)||{}).value||'').trim(),b=$('#lockBtn');st.lockErr='';
+ const busy=()=>{if(b){b.disabled=true;b.textContent='確認中…'}};
+ try{
+  if(L.mode==='login'){const code=v('lcode'),p=v('lp1');if(!code||!p)return;busy();await CL.signIn(code,p);try{localStorage.setItem('shisei-last-code',code.toLowerCase())}catch(e){}await CL.loadLocalDek();if(CL.clinic.must_change){st.lock={mode:'setup'};return render()}if(!CL.dek)await CL.unlock(p);return enterApp()}
+  if(L.mode==='unlock'){busy();await CL.unlock(v('lp1'));return enterApp()}
+  if(L.mode==='setup'){const n1=v('np1'),n2=v('np2');if(!/^[0-9]{6,}$/.test(n1)){st.lockErr='パスコードは6桁以上の数字にしてください';return render()}if(n1!==n2){st.lockErr='2回目の入力が違います';return render()}busy();
+   const code=await CL.setup(n1,v('rec')||null,!!L.discard);if(code){st.lock={mode:'recovery',rec:code};return render()}return enterApp()}
+ }catch(e){st.lockErr=msg(e)==='NEED_REC'?'復旧コードを入れてください（ない場合は「復旧コードがない」を押してください）':msg(e);render()}}
+async function enterApp(){st.lock=null;st.lockErr='';applyClinic();go('home');await loadPatients()}
+function vLock(){if(Store.mode==='cloud')return vLockCloud();const L=st.lock||{set:true};
+ return '<div class="wrap lock"><h1>'+(L.set?'院のパスコードを入力':'院のパスコードを決める')+'</h1><p class="lead">'+(L.set?'この端末で初めて開くときだけ必要です。次からは自動で開きます。':'院のスマホから開くためのパスコードを決めてください（6桁以上の数字）。決めたパスコードは、ほかの端末で初めて開くときに使います。')+'</p>'+
+ '<form id="lockForm" class="form card"><label>'+(L.set?'パスコード':'新しいパスコード（6桁以上の数字）')+'<input id="lp1" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="'+(L.set?'current-password':'new-password')+'" required></label>'+
+ (L.set?'':'<label>もう一度入力<input id="lp2" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" required></label>')+
+ '<label>この端末の名前（任意）<input id="lname" autocomplete="off" placeholder="例：受付のiPhone"></label>'+(st.lockErr?'<div class="warn">'+esc(st.lockErr)+'</div>':'')+
+ '<button class="btn pri big" type="submit" id="lockBtn">'+(L.set?'開く':'このパスコードにする')+'</button></form>'+
+ '<p class="note">パスコードを続けて間違えると、10分ほど入力できなくなります。パスコードは院長が管理し、院の外の人には伝えないでください。</p></div>'}
+async function submitLock(){const L=st.lock||{set:true},p1=($('#lp1')||{}).value||'',p2=($('#lp2')||{}).value||'',nm=($('#lname')||{}).value||'',b=$('#lockBtn');
+ st.lockErr='';if(!L.set){if(!/^[0-9]{6,}$/.test(p1)){st.lockErr='パスコードは6桁以上の数字にしてください';return render()}if(p1!==p2){st.lockErr='2回目の入力が違います';return render()}}
+ if(b){b.disabled=true;b.textContent='確認中…'}
+ try{const tok=await gs('apiLogin',p1,nm);AUTH.save(tok);st.lock=null;st.lockErr='';toast(L.set?'この端末を登録しました':'パスコードを決めました');go('home');await loadPatients()}
+ catch(e){st.lockErr=msg(e);render()}}
+function cloudMenu(){const c=CL.clinic||{},p=PROFILE,f=(n,l,v,ph)=>'<label>'+l+'<input name="'+n+'" value="'+esc(v||'')+'" placeholder="'+esc(ph||'')+'" autocomplete="off"></label>',pw=(id,l,ac)=>'<label>'+l+'<input id="'+id+'" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="'+ac+'" required></label>';
+ openModal('<h2>院の設定</h2><p class="mut">'+esc(c.name||'')+'（院コード：'+esc(c.code||'')+'）</p>'+
+ '<form id="profForm" class="form"><h3 style="margin:4px 0 0">レポートに入る院の情報</h3>'+f('name','院名',p.name,'例：〇〇整骨院')+f('tagline','ひとこと（英語のキャッチなど・任意）',p.tagline,'')+f('addr','住所（任意）',p.addr,'')+f('tel','電話番号（任意）',p.tel,'')+'<div class="macts"><button class="btn pri" type="submit">院の情報を保存</button></div></form>'+
+ '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><form id="passForm" class="form"><h3 style="margin:0">パスコードを変える</h3>'+pw('op','今のパスコード','current-password')+pw('np1','新しいパスコード（6桁以上の数字）','new-password')+pw('np2','新しいパスコードをもう一度','new-password')+
+ '<p class="note" style="margin:0">変えると、この端末以外はもう一度ログインが必要になります（スマホをなくしたときにも使えます）。</p><div class="macts"><button class="btn" type="submit">パスコードを変える</button></div></form>'+
+ (c.is_admin?'':'<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><label class="chk"><input type="checkbox" id="shareRes"'+(c.share_research?' checked':'')+'> 名前を含まない測定値を、姿勢分析の精度向上のために提供する</label>')+
+ '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><div class="macts"><button class="btn" data-act="logout">この端末からログアウト</button><button class="btn" data-act="closeModal">閉じる</button></div>');
+ $('#profForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),np={name:String(fd.get('name')||'').trim()||c.name,tagline:String(fd.get('tagline')||'').trim(),addr:String(fd.get('addr')||'').trim(),tel:String(fd.get('tel')||'').trim()};
+  try{await CL.saveSettings({profile:np});applyClinic();toast('院の情報を保存しました')}catch(er){toast('保存できませんでした：'+msg(er))}};
+ $('#passForm').onsubmit=async e=>{e.preventDefault();const o=$('#op').value.trim(),n1=$('#np1').value.trim(),n2=$('#np2').value.trim();if(!/^[0-9]{6,}$/.test(n1))return toast('新しいパスコードは6桁以上の数字にしてください');if(n1!==n2)return toast('新しいパスコードの2回目の入力が違います');
+  const sb=e.target.querySelector('[type=submit]');sb.disabled=true;sb.textContent='変更中…';try{await CL.changePass(o,n1);closeModal();toast('パスコードを変えました')}catch(er){toast(msg(er));sb.disabled=false;sb.textContent='パスコードを変える'}};
+ const sr=$('#shareRes');if(sr)sr.onchange=async()=>{try{const {error}=await CL.sb.from('clinics').update({share_research:sr.checked}).eq('id',c.id);if(error)throw error;c.share_research=sr.checked;toast(sr.checked?'測定値の提供をオンにしました':'測定値の提供をオフにしました')}catch(er){toast(msg(er));sr.checked=!sr.checked}}}
+function vAdmin(){const A=st.adm||{};
+ return '<div class="wrap"><div class="crumb"><button class="back" data-act="home">← 患者さん一覧</button></div><h1>院の管理</h1><p class="lead">販売先・デモ先の院を追加して、院コードと最初のパスコードをお渡しします。各院の患者さんのお名前は暗号化されていて、ここからは見えません。</p>'+
+ '<form id="newClinic" class="card form"><h2>院を追加</h2><label>院名<input id="ncName" required autocomplete="off" placeholder="例：〇〇整骨院"></label><button class="btn pri" type="submit">追加して院コードを発行</button>'+
+ (A.issued?'<div class="issued"><p style="margin:0 0 6px">'+(A.issued.reset?'パスコードを再発行しました':'院を追加しました')+'</p><p style="margin:0">院名：<b>'+esc(A.issued.name||'')+'</b><br>院コード：<b class="n">'+esc(A.issued.code)+'</b><br>最初のパスコード：<b class="n">'+esc(A.issued.temp)+'</b></p><p class="note">先方が初めて開いたときに、院のパスコードを決めてもらいます。この表示は画面を離れると消えます。</p><button class="btn" type="button" data-act="copyIssued">案内文をコピー</button></div>':'')+'</form>'+
+ '<div class="card"><h2>院の一覧</h2>'+(A.loading?'<p class="empty">読み込み中…</p>':A.err?'<div class="warn">'+esc(A.err)+'</div>':'<ul class="clist">'+(A.list||[]).map(c=>'<li><div><b>'+esc(c.name)+'</b>'+(c.is_admin?' <span class="chg">管理者</span>':'')+'<small>院コード '+esc(c.code)+'・患者 '+c.patients+'人・記録 '+c.sessions+'件'+(c.must_change?'・初回設定まだ':'')+(c.share_research?'':'・測定値の提供なし')+'</small></div>'+
+ (c.is_admin?'':'<div class="acts"><button class="btn" data-act="admReset" data-code="'+esc(c.code)+'" data-name="'+esc(c.name)+'">パスコード再発行</button><button class="btn danger" data-act="admDel" data-code="'+esc(c.code)+'" data-name="'+esc(c.name)+'">削除</button></div>')+'</li>').join('')+'</ul><p class="note">お試し版から集まった測定値：'+(A.demo||0)+'件</p>')+'</div></div>'}
+async function loadAdmin(){st.adm=Object.assign({},st.adm||{},{loading:true,err:''});if(st.view==='admin')render();try{const r=await CL.adminCall({action:'list'});st.adm.list=r.clinics||[];st.adm.demo=r.demo||0}catch(e){st.adm.err=msg(e)}st.adm.loading=false;if(st.view==='admin')render()}
+function issuedText(i){return '【姿勢分析アプリのご案内】\nURL：'+SUPA.appUrl+'?c='+i.code+'\n院コード：'+i.code+'\n最初のパスコード：'+i.temp+'\n\n初めて開いたときに、院で使うパスコード（6桁以上の数字）を決めてください。そのあと表示される「復旧コード」は、紙に書いて大切に保管してください。'}
+async function importGas(){const b=$('#impBtn');if(b){b.disabled=true;b.textContent='取り込み中…'}let np=0,ns=0;
+ try{const ps=(await gs('apiListPatients'))||[];for(const p of ps){if(p.id===CFG_ID){if(p.cfg){CFG=p.cfg;await saveCfg()}continue}await CL.savePatient(p);np++;const ss=(await gs('apiListSessions',p.id))||[];for(const x of ss){await CL.saveSession(p.id,x.id,x);ns++}}
+  await CL.saveSettings({imported:new Date().toISOString()});toast(np+'人・'+ns+'件の記録を取り込みました');await loadPatients()}catch(e){toast('取り込めませんでした：'+msg(e));if(b){b.disabled=false;b.textContent='Googleドライブの記録を取り込む'}}}
+function authMenu(){if(Store.mode==='cloud')return cloudMenu();openModal('<h2>パスコードと端末</h2><p class="mut">この端末は登録済みです。</p><form id="passForm" class="form"><label>今のパスコード<input id="op" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" required></label><label>新しいパスコード（6桁以上の数字）<input id="np1" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" required></label><label>新しいパスコードをもう一度<input id="np2" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" required></label><p class="note" style="margin:0">変えると、この端末以外はもう一度パスコードの入力が必要になります（スマホをなくしたときにも使えます）。</p><div class="macts"><button class="btn pri" type="submit">パスコードを変える</button><button class="btn" type="button" data-act="closeModal">閉じる</button></div></form><hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><button class="btn" data-act="logout">この端末からログアウト</button>');
+ $('#passForm').onsubmit=async e=>{e.preventDefault();const o=$('#op').value,n1=$('#np1').value,n2=$('#np2').value;if(!/^[0-9]{6,}$/.test(n1))return toast('新しいパスコードは6桁以上の数字にしてください');if(n1!==n2)return toast('新しいパスコードの2回目の入力が違います');
+  const sb=e.target.querySelector('[type=submit]');sb.disabled=true;try{await gs('apiChangePass',o,n1);closeModal();toast('パスコードを変えました')}catch(er){toast(msg(er));sb.disabled=false}}}
+function takeCfg(list){const c=list.find(p=>p.id===CFG_ID);if(c&&c.cfg)CFG=c.cfg;return list.filter(p=>p.id!==CFG_ID)}
+async function saveCfg(){if(Store.mode==='cloud')return CL.saveSettings({cfg:JSON.parse(JSON.stringify(CFG))});await Store.savePatient({id:CFG_ID,name:'',kind:'cfg',cfg:JSON.parse(JSON.stringify(CFG)),updatedAt:new Date().toISOString()})}
+function upsertPatient(p){const i=st.patients.findIndex(x=>x.id===p.id);if(i>=0)st.patients[i]=p;else st.patients.push(p)}
+
+/* ---------- report image ---------- */
+async function makeReport(withPhoto){
+ const c=st.cur,A=analyze(c),pv=st.pv,PA=pv?analyze(pv):null,name=st.patient.id?st.patient.name:'',W=1080,M=48;
+ const txt=(PROFILE.name||'')+(PROFILE.tagline||'')+(PROFILE.addr||'')+(PROFILE.tel||'')+'TEL姿勢分析レポート様総合スコア正面側面回旋点前回比気になったポイント先生からのコメント姿勢タイプ栃木県宇都宮市上戸祭町702-4TEL028-666-6141※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。'+name+c.comment+(A.type?A.type.name+A.type.desc:'')+A.findings.map(r=>VL[r.vk]+r.dir+r.extra+tipOf(r)).join('')+'右側面左側面骨格のみ（ねじれ）体への負担の目安首にかかる負担腰の筋肉が余分に支える重さ頭が肩の真上にあると約5kg上半身が骨盤よりcm前体重の約%※首はスマホ首の研究（Hansraj, 2014）の数値、腰は単純な力学モデルで計算した目安です。負担がかかりやすい筋肉（推定）縮こまって負担がかかりやすい働きにくくなりやすい赤＝縮こまりやすい　青＝働きにくい出やすい不調（傾向）：おすすめのセルフケア生活のポイント※筋肉の状態は姿勢の傾向からの推定です。運動中に痛みやしびれが出たら中止して、ご相談ください。左右前から後ろから'+Object.values(MUS).map(m=>m[0]).join('')+Object.values(EX).map(e=>e.join('')).join('')+Object.values(LIFE).map(e=>e.join('')).join('')+'0123456789';
+ try{await Promise.all(['400','500','700'].map(w=>document.fonts.load(w+' 24px "Zen Kaku Gothic New"',txt)).concat(document.fonts.load('700 24px "Inter Tight"','0123456789+-')))}catch(e){}
+ const cv=document.createElement('canvas');cv.width=W;cv.height=8000;const x=cv.getContext('2d');
+ const C={paper:'#f7f3ea',card:'#fffdf8',g:'#1f4436',g2:'#2f6a54',gold:'#a8843f',gl:'#d3b06c',ink:'#1b2420',mut:'#5f675f',line:'#e2dac8',ok:'#2f7a5a',wn:'#a8650f',ng:'#b23b27'};
+ const F=(w,s,fam)=>x.font=w+' '+s+'px '+(fam==='n'?'"Inter Tight",':'')+'"Zen Kaku Gothic New",sans-serif';
+ const wrapT=(t,mw)=>{const out=[];String(t).split('\n').forEach(par=>{let line='';for(const ch of par){const tt=line+ch;if(x.measureText(tt).width>mw&&line){if('、。」）・'.includes(ch)){line=tt;continue}out.push(line);line=ch}else line=tt}out.push(line)});return out};
+ x.fillStyle=C.paper;x.fillRect(0,0,W,8000);
+ x.fillStyle=C.g;x.fillRect(0,0,W,236);x.fillStyle=C.gl;x.fillRect(0,236,W,5);
+ x.textBaseline='alphabetic';F(500,24);x.fillStyle=C.gl;x.fillText(PROFILE.tagline||'',M,64);
+ F(700,52);x.fillStyle='#fff';x.fillText((PROFILE.name||'')+'　姿勢分析レポート',M,134);
+ F(500,30);x.fillStyle='#e9e3d4';x.fillText((name?name+' 様　':'')+fmtDate(c.date),M,192);
+ let y=280;
+ const card=(h)=>{x.fillStyle=C.card;rr(x,M,y,W-2*M,h,24);x.fill();x.strokeStyle=C.line;x.lineWidth=2;x.stroke()};
+ card(300);const gc=[M+150,y+150],R=104,col=v=>v==null?C.line:C[band(v)];
+ x.lineWidth=22;x.strokeStyle='#ece5d4';x.beginPath();x.arc(gc[0],gc[1],R,0,7);x.stroke();
+ if(A.sc.total!=null){x.strokeStyle=col(A.sc.total);x.lineCap='round';x.beginPath();x.arc(gc[0],gc[1],R,-Math.PI/2,-Math.PI/2+Math.PI*2*A.sc.total/100);x.stroke();x.lineCap='butt'}
+ x.textAlign='center';F(500,22);x.fillStyle=C.mut;x.fillText('総合スコア',gc[0],gc[1]-42);F(700,84,'n');x.fillStyle=C.ink;x.fillText(A.sc.total!=null?A.sc.total:'—',gc[0],gc[1]+34);F(500,22);x.fillStyle=C.mut;x.fillText('点 / 100',gc[0],gc[1]+70);
+ const tx0=M+330,tw=(W-M-24-tx0-2*16)/3;
+ ['front','side','rot'].forEach((g,i)=>{const tx=tx0+i*(tw+16),ty=y+46;x.fillStyle=C.paper;rr(x,tx,ty,tw,208,18);x.fill();x.textAlign='left';F(500,24);x.fillStyle=C.mut;x.fillText({front:'正面',side:'側面',rot:'回旋'}[g],tx+20,ty+46);
+  F(700,70,'n');x.fillStyle=col(A.sc[g]);x.fillText(A.sc[g]!=null?A.sc[g]:'—',tx+20,ty+132);
+  if(PA&&A.sc[g]!=null&&PA.sc[g]!=null){const d=A.sc[g]-PA.sc[g];F(500,22);x.fillStyle=d>0?C.ok:d<0?C.ng:C.mut;x.fillText('前回比 '+(d>0?'+':'')+d,tx+20,ty+178)}});
+ y+=300+40;x.textAlign='left';
+ F(500,24);x.fillStyle=C.mut;x.fillText('姿勢タイプ（横から見た立ち方）',M,y);y+=48;F(700,40);x.fillStyle=C.g;x.fillText(A.type?A.type.name:'側面の写真で判定します',M,y);y+=14;
+ if(A.type){F(400,26);x.fillStyle=C.ink;wrapT(A.type.desc,W-2*M).forEach(l=>{y+=40;x.fillText(l,M,y)})}
+ if(A.tags.length){y+=22;F(500,24);let tx=M;A.tags.forEach(t=>{const w=x.measureText(t).width+32;if(tx+w>W-M){tx=M;y+=52}x.fillStyle='#ece5d4';rr(x,tx,y,w,42,21);x.fill();x.fillStyle=C.ink;x.fillText(t,tx+16,y+30);tx+=w+10});y+=42}
+ y+=36;
+ const vs=VIEWS.filter(o=>c.views[o.k]);if(vs.length){const gw=20,iw=(W-2*M-gw*2)/3,ih=Math.round(iw*4/3),off=(W-2*M-(vs.length*iw+(vs.length-1)*gw))/2;
+  vs.forEach((o,i)=>{const oc=document.createElement('canvas');oc.width=Math.round(iw*2);oc.height=ih*2;const ox=oc.getContext('2d');ox.scale(2,2);drawView(ox,c.views[o.k],o.k,iw,ih,{crop:true,photo:withPhoto,um:1.45});
+   const ix=M+off+i*(iw+gw);x.save();rr(x,ix,y,iw,ih,18);x.clip();x.drawImage(oc,ix,y,iw,ih);x.restore();x.textAlign='center';F(500,24);x.fillStyle=C.mut;x.fillText(o.label,ix+iw/2,y+ih+36)});
+  x.textAlign='left';y+=ih+110}
+ F(700,32);x.fillStyle=C.ink;x.fillText('気になったポイント',M,y);y+=18;
+ if(!A.findings.length){y+=40;F(400,26);x.fillText('大きな偏りは見られませんでした。',M,y);y+=10}
+ A.findings.forEach(r=>{y+=34;x.fillStyle=C[r.st];x.beginPath();x.arc(M+10,y+14,9,0,7);x.fill();F(700,28);x.fillStyle=C.ink;const head=VL[r.vk]+'｜'+r.dir+'（'+f1(Math.abs(r.val))+'°'+(r.extra?'・'+r.extra:'')+'）';
+  wrapT(head,W-2*M-34).forEach((l,i)=>{y+=i?40:24;x.fillText(l,M+34,y)});F(400,24);x.fillStyle=C.mut;wrapT(tipOf(r),W-2*M-34).forEach(l=>{y+=36;x.fillText(l,M+34,y)});y+=8});
+ y+=60;
+ {const CC=careFrom(A),LL=loadEst(c,A),sel=careSel(c,CC);
+  const lds=[];if(LL.neck)lds.push(['首にかかる負担の目安','約'+f1(LL.neck.kg)+'kg','頭が肩の真上にあると約5kg']);
+  if(LL.back&&!LL.back.back)lds.push(['腰の筋肉が余分に支える重さ',LL.back.kg!=null?'約'+f1(LL.back.kg)+'kg':'体重の約'+LL.back.pct+'%','上半身が骨盤より約'+f1(LL.back.cm)+'cm前']);
+  if(lds.length){F(700,32);x.fillStyle=C.ink;x.fillText('体への負担の目安',M,y);y+=24;const bw=(W-2*M-16*(lds.length-1))/lds.length;
+   lds.forEach((d,i)=>{const bx=M+i*(bw+16);x.fillStyle=C.card;rr(x,bx,y,bw,150,18);x.fill();x.strokeStyle=C.line;x.lineWidth=2;x.stroke();F(500,22);x.fillStyle=C.mut;x.fillText(d[0],bx+22,y+40);F(700,52,'n');x.fillStyle=C.ng;x.fillText(d[1],bx+22,y+100);F(400,20);x.fillStyle=C.mut;x.fillText(d[2],bx+22,y+134)});
+   y+=150+16;F(400,18);x.fillStyle=C.mut;x.fillText('※首はスマホ首の研究（Hansraj, 2014）の数値、腰は単純な力学モデルで計算した目安です。',M,y+12);y+=72}
+  if(CC.tight.length||CC.weak.length){F(700,32);x.fillStyle=C.ink;x.fillText('負担がかかりやすい筋肉（推定）',M,y);y+=20;
+   const mw=420,mh=Math.round(mw*336/360),bm=document.createElement('canvas');bm.width=mw*2;bm.height=mh*2;const bx=bm.getContext('2d');bx.scale(2,2);drawBodyMap(bx,mw,mh,CC,false);x.drawImage(bm,M,y,mw,mh);
+   let ty=y+10;const tx=M+mw+30,twd=W-M-tx;
+   const sec=(title,arr,col)=>{if(!arr.length)return;F(700,24);x.fillStyle=col;x.fillText(title,tx,ty+24);ty+=34;F(500,22);x.fillStyle=C.ink;arr.slice(0,7).forEach(e=>{wrapT((e.side!=='B'?jpS(e.side)+'：':'')+MUS[e.m][0],twd-20).forEach((l,i)=>{ty+=i?30:32;if(!i){x.fillStyle=col;x.beginPath();x.arc(tx+7,ty-8,6,0,7);x.fill();x.fillStyle=C.ink}x.fillText(l,tx+20,ty)})});ty+=18};
+   sec('縮こまって負担がかかりやすい',CC.tight,'#d24a35');sec('働きにくくなりやすい',CC.weak,'#2f7fc8');
+   F(400,18);x.fillStyle=C.mut;x.fillText('赤＝縮こまりやすい　青＝働きにくい',M,y+mh+22);y=Math.max(y+mh+40,ty)+20;
+   if(CC.troubles.length){F(500,24);x.fillStyle=C.ink;wrapT('出やすい不調（傾向）：'+CC.troubles.join('、'),W-2*M).forEach(l=>{y+=36;x.fillText(l,M,y)});y+=56}}
+  const exs=sel.ex.filter(id=>EX[id]),lfs=sel.life.filter(id=>LIFE[id]);
+  if(exs.length){y+=10;F(700,32);x.fillStyle=C.ink;x.fillText('おすすめのセルフケア',M,y);y+=16;
+   exs.forEach((id,i)=>{const X=EX[id],en=CC.ex.find(e=>e.id===id);F(400,23);const lines=wrapT(X[2],W-2*M-90);const h=96+lines.length*34;x.fillStyle=C.card;rr(x,M,y+14,W-2*M,h,18);x.fill();x.strokeStyle=C.line;x.lineWidth=2;x.stroke();
+    x.fillStyle=C.g;x.beginPath();x.arc(M+40,y+58,22,0,7);x.fill();F(700,26,'n');x.fillStyle='#fff';x.textAlign='center';x.fillText(String(i+1),M+40,y+67);x.textAlign='left';
+    F(700,27);x.fillStyle=C.ink;x.fillText(X[0],M+80,y+56);F(500,21);x.fillStyle=C.gold;x.fillText(X[3]+((en&&en.notes.length)?'・'+en.notes.join('、'):''),M+80,y+88);F(400,23);x.fillStyle=C.ink;lines.forEach((l,j)=>x.fillText(l,M+80,y+124+j*34));y+=h+14});y+=56}
+  if(lfs.length){F(700,32);x.fillStyle=C.ink;x.fillText('生活のポイント',M,y);y+=10;
+   lfs.forEach(id=>{const X=LIFE[id];y+=36;x.fillStyle=C.gold;x.fillRect(M,y-22,6,28);F(700,25);x.fillStyle=C.ink;x.fillText(X[0],M+22,y);F(400,22);x.fillStyle=C.mut;wrapT(X[1],W-2*M-22).forEach(l=>{y+=33;x.fillText(l,M+22,y)});y+=8});y+=30}
+  if(exs.length||CC.tight.length){F(400,19);x.fillStyle=C.mut;wrapT('※筋肉の状態は姿勢の傾向からの推定です。運動中に痛みやしびれが出たら中止して、ご相談ください。',W-2*M).forEach(l=>{x.fillText(l,M,y);y+=28});y+=24}}
+ if(PA&&pv){F(700,32);x.fillStyle=C.ink;x.fillText('前回（'+fmtDate(pv.date)+'）との比較',M,y);y+=24;const items=[['総合',A.sc.total,PA.sc.total],['正面',A.sc.front,PA.sc.front],['側面',A.sc.side,PA.sc.side],['回旋',A.sc.rot,PA.sc.rot]];const bw=(W-2*M-3*14)/4;
+  items.forEach((it,i)=>{const bx=M+i*(bw+14);x.fillStyle=C.card;rr(x,bx,y,bw,120,16);x.fill();x.strokeStyle=C.line;x.lineWidth=2;x.stroke();F(500,22);x.fillStyle=C.mut;x.fillText(it[0],bx+18,y+36);
+   F(700,40,'n');x.fillStyle=C.ink;x.fillText((it[2]!=null?it[2]:'-')+' → '+(it[1]!=null?it[1]:'-'),bx+18,y+84);
+   if(it[1]!=null&&it[2]!=null){const d=it[1]-it[2];F(700,22);x.fillStyle=d>0?C.ok:d<0?C.ng:C.mut;x.fillText((d>0?'+':'')+d+'点',bx+18,y+110)}});y+=120+48}
+ if(c.comment){F(400,26);const lines=wrapT(c.comment,W-2*M-56);const h=70+lines.length*42+24;card(h);F(700,28);x.fillStyle=C.g;x.fillText('先生からのコメント',M+28,y+50);F(400,26);x.fillStyle=C.ink;lines.forEach((l,i)=>x.fillText(l,M+28,y+100+i*42));y+=h+40}
+ x.fillStyle=C.g;x.fillRect(0,y,W,186);F(700,32);x.fillStyle='#fff';x.fillText(PROFILE.name||'',M,y+58);F(500,24);x.fillStyle='#e9e3d4';x.fillText([PROFILE.addr,PROFILE.tel?'TEL '+PROFILE.tel:''].filter(Boolean).join('　'),M,y+100);
+ F(400,20);x.fillStyle=C.gl;wrapT('※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。',W-2*M).forEach((l,i)=>x.fillText(l,M,y+142+i*28));y+=186;
+ const out=document.createElement('canvas');out.width=W;out.height=y;out.getContext('2d').drawImage(cv,0,0);return out}
+async function openReport(){openModal('<h2>レポート画像</h2><div class="seg2" role="group" aria-label="写真の有無"><button data-act="rep" data-p="1" class="'+(st.repPhoto?'on':'')+'">写真あり</button><button data-act="rep" data-p="0" class="'+(st.repPhoto?'':'on')+'">骨格のみ</button></div>'+
+ '<div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
+ '<p class="hint" id="repHint">iPhoneでは、画像を長押し→「写真に保存」や「共有」からLINEに送れます。</p><textarea id="lineTxt" class="vh" readonly tabindex="-1"></textarea>');
+ try{const out=await makeReport(st.repPhoto);st.report=out;const url=out.toDataURL('image/jpeg',0.9);const box=$('#repBox');if(box)box.innerHTML='<img src="'+url+'" alt="姿勢分析レポート">'}catch(e){const box=$('#repBox');if(box)box.innerHTML='<div class="warn">画像を作れませんでした：'+esc(msg(e))+'</div>'}}
+function repName(){const d=new Date(st.cur.date);return '姿勢分析_'+(st.patient.id?st.patient.name+'_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.jpg'}
+function lineText(){const c=st.cur,A=analyze(c),n=st.patient.id?st.patient.name+'様':'';
+ return '【姿勢分析の結果】'+n+'（'+fmtDate(c.date)+'）\n総合スコア '+(A.sc.total!=null?A.sc.total:'-')+'点（正面 '+(A.sc.front!=null?A.sc.front:'-')+'・側面 '+(A.sc.side!=null?A.sc.side:'-')+'・回旋 '+(A.sc.rot!=null?A.sc.rot:'-')+'）\n'+(A.type?'姿勢タイプ：'+A.type.name+'\n':'')+
+ (A.findings.length?'気になったポイント：\n'+A.findings.map(r=>'・'+r.dir+'（'+f1(Math.abs(r.val))+'°）').join('\n')+'\n':'')+careText(c,A)+'\n'+(c.comment||'')+'\n\n'+(PROFILE.name||'')}
+function careText(c,A){const C=careFrom(A),L=loadEst(c,A),sel=careSel(c,C);let t='';if(L.neck)t+='首にかかる負担の目安：約'+f1(L.neck.kg)+'kg\n';if(L.back&&!L.back.back&&L.back.kg!=null)t+='腰の筋肉が余分に支える重さの目安：約'+f1(L.back.kg)+'kg\n';
+ const ex=sel.ex.filter(id=>EX[id]);if(ex.length)t+='おすすめのセルフケア：\n'+ex.map((id,i)=>(i+1)+'. '+EX[id][0]+'（'+EX[id][3]+'）').join('\n')+'\n';const lf=sel.life.filter(id=>LIFE[id]);if(lf.length)t+='生活のポイント：\n'+lf.map(id=>'・'+LIFE[id][0]).join('\n')+'\n';return t}
+
+/* ---------- modal & toast ---------- */
+function openModal(html){const m=$('#modal');$('#mbody').innerHTML=html;m.hidden=false;setTimeout(()=>NAV.arm(),0);const f=$('#mbody input,#mbody select,#mbody button');if(f)f.focus()}
+function closeModal(){$('#modal').hidden=true;$('#mbody').innerHTML=''}
+let toastT=0;function toast(t){let el=$('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},2600)}
+function confirmBox(text,ok,fn){openModal('<h2>'+esc(text)+'</h2><div class="macts"><button class="btn pri danger" data-act="cfOk" style="background:var(--ng);border-color:var(--ng);color:#fff">'+esc(ok)+'</button><button class="btn" data-act="closeModal">やめる</button></div>');st.cf=fn}
+function patientForm(p){openModal('<h2>'+(p?'患者さん情報の編集':'新しい患者さん')+'</h2><form id="pform" class="form"><label>お名前<span class="req">必須</span><input name="name" required autocomplete="off" value="'+esc(p?p.name:'')+'"></label>'+
+ '<label>ふりがな<input name="kana" autocomplete="off" value="'+esc(p?p.kana||'':'')+'"></label><label>身長（cm）<input name="height" inputmode="decimal" placeholder="例 165" value="'+(p&&p.height?p.height:'')+'"></label>'+
+ '<label>体重（kg）<input name="weight" inputmode="decimal" placeholder="例 60" value="'+(p&&p.weight?p.weight:'')+'"></label><div class="row2"><label>性別<select name="sex">'+[['','未選択'],['f','女性'],['m','男性']].map(o=>'<option value="'+o[0]+'"'+(p&&p.sex===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label><label>年代<select name="age">'+['','10代以下','20代','30代','40代','50代','60代','70代','80代以上'].map(o=>'<option value="'+o+'"'+(p&&p.ageBand===o?' selected':'')+'>'+(o||'未選択')+'</option>').join('')+'</select></label></div><label>メモ<input name="memo" autocomplete="off" placeholder="例 腰痛・デスクワーク" value="'+esc(p?p.memo||'':'')+'"></label><div class="macts"><button class="btn pri" type="submit">保存</button><button class="btn" type="button" data-act="closeModal">キャンセル</button>'+(p?'<button class="btn danger" type="button" data-act="delPatient">この患者さんを削除</button>':'')+'</div></form>');
+ $('#pform').onsubmit=async e=>{e.preventDefault();const sb=e.target.querySelector('[type=submit]');if(sb.disabled)return;const fd=new FormData(e.target),name=String(fd.get('name')||'').trim();if(!name)return;const h=parseFloat(fd.get('height'));sb.disabled=true;sb.textContent='保存中…';
+  const body=Object.assign({kind:'patient',createdAt:new Date().toISOString(),count:0},p||{},{id:p?p.id:uid('p'),kind:'patient',name,kana:String(fd.get('kana')||'').trim(),height:h>80&&h<230?h:null,weight:(parseFloat(fd.get('weight'))>15&&parseFloat(fd.get('weight'))<250)?parseFloat(fd.get('weight')):null,memo:String(fd.get('memo')||'').trim(),sex:String(fd.get('sex')||''),ageBand:String(fd.get('age')||'')});
+  try{await Store.savePatient(body)}catch(err){toast('保存できませんでした：'+msg(err));sb.disabled=false;sb.textContent='保存';return}
+  upsertPatient(body);closeModal();st.patient=body;if(!p){st.sessions=[];go('patient')}else render()}}
+function trialSaveModal(){openModal('<h2>どの患者さんの記録として保存しますか？</h2><form id="tform" class="form">'+(st.patients.length?'<label>登録済みの患者さん<select name="pid"><option value="">選んでください</option>'+st.patients.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select></label><p class="or">または</p>':'')+
+ '<label>新しい患者さんのお名前<input name="name" autocomplete="off"></label><div class="macts"><button class="btn pri" type="submit">保存</button><button class="btn" type="button" data-act="closeModal">キャンセル</button></div></form>');
+ $('#tform').onsubmit=async e=>{e.preventDefault();const sb=e.target.querySelector('[type=submit]');if(sb.disabled)return;const fd=new FormData(e.target),pid=fd.get('pid'),name=String(fd.get('name')||'').trim();let p=null;sb.disabled=true;
+  try{if(pid){p=st.patients.find(x=>x.id===pid);st.sessions=await Store.listSessions(pid)}else if(name){p={id:uid('p'),kind:'patient',name,kana:'',height:st.cur.height||null,memo:'',createdAt:new Date().toISOString(),count:0};await Store.savePatient(p);upsertPatient(p);st.sessions=[]}else{sb.disabled=false;return}}
+  catch(err){toast('保存できませんでした：'+msg(err));sb.disabled=false;return}
+  st.patient=p;closeModal();await doSave()}}
+
+/* ---------- events ---------- */
+const ACT={
+ home:async()=>{st.patient=null;go('home')},
+ newPatient:()=>patientForm(null),
+ editPatient:()=>patientForm(st.patient),
+ openPatient:async b=>{const p=st.patients.find(x=>x.id===b.dataset.id);if(!p)return;st.patient=p;st.sessions=[];try{st.sessions=await Store.listSessions(p.id)}catch(e){toast(msg(e))}go('patient')},
+ toPatient:()=>go('patient'),
+ startCapture:()=>{st.cur=newCur(st.patient.height,st.patient.weight);st.tab='front';st.adjust=false;st.err={};go('capture');ensureEngine().catch(()=>{})},
+ trial:()=>{st.patient={id:null,name:'お試し',height:null};st.sessions=[];ACT.startCapture()},
+ tab:b=>{st.tab=b.dataset.k;st.adjust=false;st.ref=false;st.pick=false;render()},
+ adjust:()=>{st.adjust=!st.adjust;st.ref=false;st.pick=false;render()},
+ rollAuto:()=>{const v=st.cur.views[st.tab];if(!v||!v.rollEst||v.rollEst.roll==null)return;v.roll=v.rollEst.roll;v.rollSrc='auto';if(st.cur.saved)st.cur.dirty=true;render()},
+ rollZero:()=>{const v=st.cur.views[st.tab];if(!v)return;v.roll=0;v.rollSrc='none';if(st.cur.saved)st.cur.dirty=true;render()},
+ rollRef:()=>{st.ref=!st.ref;st.adjust=false;st.pick=false;st.tool.tilt=true;render()},
+ pickMarker:()=>{st.pick=!st.pick;st.adjust=false;st.ref=false;st.tool.mk=true;render()},
+ snapNow:()=>{const v=st.cur.views[st.tab];if(!v||!st.marker)return;const n=snapMarkers(v,st.tab,st.marker);if(st.cur.saved)st.cur.dirty=true;toast(n?n+'点の目印をシールに合わせました':'目印の近くにシールが見つかりませんでした');render()},
+ toCapture:()=>{if(st.cur&&st.cur.fromHistory)return go('patient');go('capture')},
+ toResult:()=>{st.cmpId=null;go('result')},
+ openSession:b=>{const s=st.sessions.find(x=>x.id===b.dataset.id);if(!s)return;st.cur=unpack(s);st.cmpId=null;go('result')},
+ delSession:b=>{const sid=b.dataset.id;confirmBox('この分析の記録を削除しますか？','削除する',async()=>{try{await Store.deleteSession(st.patient.id,sid);st.sessions=st.sessions.filter(x=>x.id!==sid);const L=st.sessions[0];const np=Object.assign({},st.patient,{lastAt:L?L.date:null,lastTotal:L&&L.scores?L.scores.total:null,count:st.sessions.length});await Store.savePatient(np);st.patient=np;upsertPatient(np);toast('削除しました')}catch(e){toast(msg(e))}render()})},
+ delPatient:()=>{const p=st.patient;confirmBox(p.name+'さんと、すべての分析の記録を削除しますか？','削除する',async()=>{try{await Store.deletePatient(p.id);st.patients=st.patients.filter(x=>x.id!==p.id);st.patient=null;toast('削除しました');go('home')}catch(e){toast(msg(e))}})},
+ cfOk:async()=>{const fn=st.cf;st.cf=null;closeModal();if(fn)await fn()},
+ back:()=>goBack(),
+ authMenu:()=>authMenu(),
+ logout:()=>confirmBox('この端末からログアウトしますか？次に開くときは院コードとパスコードの入力が必要です。','ログアウト',async()=>{if(Store.mode==='cloud'){await CL.logout();st.patients=[];st.patient=null;st.lock={mode:'login'};go('lock');return}try{await gs('apiLogout',AUTH.token)}catch(e){}AUTH.save(null);lockOut()}),
+ recDone:()=>{const c=$('#recOk');if(!c||!c.checked)return toast('「書き留めました」にチェックを入れてください');enterApp()},
+ recLost:()=>confirmBox('復旧コードがない場合は、新しい暗号キーで始めます。これまでの患者さんのお名前・メモ・コメントは読めなくなります（測定の記録とグラフは残ります）。よろしいですか？','新しく始める',async()=>{st.lock={mode:'setup',discard:true};st.lockErr='';render()}),
+ admin:()=>{st.adm={loading:true};go('admin');loadAdmin()},
+ copyIssued:async()=>{const i=st.adm&&st.adm.issued;if(!i)return;try{await navigator.clipboard.writeText(issuedText(i));toast('案内文をコピーしました')}catch(e){toast('コピーできませんでした。画面の内容を写してください')}},
+ admReset:b=>{const code=b.dataset.code,name=b.dataset.name;confirmBox('「'+name+'」のパスコードを再発行しますか？先方は新しい最初のパスコードでログインし、復旧コードを使ってお名前を読み戻します。','再発行する',async()=>{try{const r=await CL.adminCall({action:'reset',code});st.adm.issued={code:r.code,temp:r.temp,name,reset:true};render()}catch(e){toast(msg(e))}})},
+ admDel:b=>{const code=b.dataset.code,name=b.dataset.name;confirmBox('「'+name+'」と、その院のすべての記録を削除しますか？元に戻せません。','削除する',async()=>{try{await CL.adminCall({action:'delete',code});toast('削除しました');loadAdmin()}catch(e){toast(msg(e))}})},
+ importGas:()=>confirmBox('Googleドライブに保存されている記録（患者さんと分析の記録、判定基準）を、この院に取り込みます。お名前は暗号化して保存します。','取り込む',async()=>{go('home');await importGas()}),
+ save:()=>doSave(),
+ judge:b=>{const c=st.cur;if(!c)return;c.judge=c.judge||{};const k=b.dataset.k,v=b.dataset.v;if(c.judge[k]===v)delete c.judge[k];else c.judge[k]=v;syncJudge();markDirty()},
+ judgeRest:()=>{const c=st.cur,A=st.A;if(!c||!A)return;c.judge=c.judge||{};let n=0;A.rows.forEach(r=>{const k=jkey(r);if(!c.judge[k]){c.judge[k]=r.st;n++}});syncJudge();if(n)markDirty();toast(n?n+'項目をアプリの判定どおりにしました':'すべて判定済みです')},
+ calib:()=>{st.cal=null;go('calib');loadCalib()},
+ calReload:()=>loadCalib(),
+ calApply:b=>{const k=b.dataset.k,q=JSON.parse(b.dataset.q);CFG[k]={ofs:q.ofs,good:q.good,bad:q.bad};st.cal.dirty=true;render()},
+ calReset:b=>{delete CFG[b.dataset.k];st.cal.dirty=true;render()},
+ calSave:async()=>{const b=$('#cfgSave');if(b){b.disabled=true;b.textContent='保存中…'}try{await saveCfg();st.cal.dirty=false;toast('判定基準を保存しました')}catch(e){toast('保存できませんでした：'+msg(e))}render()},
+ saveTrial:()=>trialSaveModal(),
+ report:()=>openReport(),
+ rep:b=>{st.repPhoto=b.dataset.p==='1';openReport()},
+ shareReport:async()=>{if(!st.report)return;const blob=await new Promise(r=>st.report.toBlob(r,'image/jpeg',0.92));const file=new File([blob],repName(),{type:'image/jpeg'});
+  try{if(navigator.canShare&&!navigator.canShare({files:[file]}))throw new Error('x');await navigator.share({files:[file],title:'姿勢分析レポート'})}catch(e){if(!(e&&e.name==='AbortError'))toast('この画面からは共有できませんでした。画像を長押しして保存してください')}},
+ driveReport:async b=>{if(!st.report)return;b.disabled=true;b.textContent='保存中…';const b64=st.report.toDataURL('image/jpeg',0.92).split(',')[1];
+  try{const url=await gs('apiSaveReport',repName(),b64);const h=$('#repHint');if(h)h.innerHTML='Googleドライブの「ほさか整骨院_姿勢分析レポート」フォルダに保存しました。<a href="'+esc(url)+'" target="_blank" rel="noopener">開く</a>';b.textContent='保存しました ✓'}catch(e){toast('保存できませんでした：'+msg(e));b.disabled=false;b.textContent='Googleドライブに保存'}},
+ copyLine:async()=>{const t=lineText();try{await navigator.clipboard.writeText(t);toast('LINE用の文章をコピーしました')}catch(e){const ta=$('#lineTxt');if(ta){ta.className='';ta.value=t;ta.rows=8;ta.removeAttribute('tabindex');ta.focus();ta.select()}toast('文章を選択しました。コピーしてお使いください')}},
+ closeModal:()=>closeModal()
+};
+document.addEventListener('click',e=>{const m=$('#modal');if(e.target===m){closeModal();return}const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const fn=ACT[b.dataset.act];if(fn){e.preventDefault();Promise.resolve(fn(b,e)).catch(err=>toast(msg(err)))}});
+document.addEventListener('submit',e=>{if(e.target&&e.target.id==='newClinic'){e.preventDefault();const n=(($('#ncName')||{}).value||'').trim();if(!n)return;const b=e.target.querySelector('[type=submit]');b.disabled=true;b.textContent='発行中…';CL.adminCall({action:'create',name:n}).then(r=>{st.adm.issued=r;loadAdmin()}).catch(er=>{toast(msg(er));b.disabled=false;b.textContent='追加して院コードを発行'});return}
+ if(e.target&&e.target.id==='lockForm'){e.preventDefault();if(Store.mode==='cloud')submitLockCloud();else submitLock()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)closeModal()});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.id==='calAll'){st.calAll=t.checked;loadCalib()}
+ if(t.id==='demoShare'){st.demoShare=t.checked}
+ if(t.dataset&&t.dataset.cfg&&st.cal){const k=t.dataset.cfg,f=t.dataset.f,v=parseFloat(t.value),q=specOf(k);if(isFinite(v)){const o=CFG[k]=Object.assign({ofs:q.ofs,good:q.good,bad:q.bad},CFG[k]||{});o[f]=f==='ofs'?v:Math.max(0.5,v);if(o.bad<=o.good)o.bad=o.good+0.5;const s=SPEC[k];if(!o.ofs&&o.good===s.good&&o.bad===s.bad)delete CFG[k];st.cal.dirty=true;
+  setTimeout(()=>{const el=document.querySelector('.cal .card[data-ck="'+k+'"] .cst');if(el&&st.cal.S)el.innerHTML=calStat(st.cal.S[k],specOf(k));const b=$('#cfgSave');if(b){b.disabled=false;b.textContent='基準を保存'}},0)}}if(t.id==='file'){const f=t.files&&t.files[0];const k=st.tab;t.value='';if(f)handlePhoto(k,f)}
+ if(t.id==='cmpSel'){st.cmpId=t.value;render()}
+ if(t.id==='autoSnap'){st.autoSnap=t.checked;saveMarker()}
+ if(t.dataset&&t.dataset.care&&st.cur){st.cur.care={ex:$$('input[data-care=ex]:checked').map(i=>i.value),life:$$('input[data-care=life]:checked').map(i=>i.value)};if(st.cur.saved){st.cur.dirty=true;const b=$('#saveBtn');if(b){b.disabled=false;b.textContent='変更を保存'}}}
+ if(t.id==='rollR'){render()}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){st.q=t.value;renderList()}
+ if(t.id==='comment'&&st.cur){st.cur.comment=t.value;if(st.cur.saved&&!st.cur.dirty){st.cur.dirty=true;const b=$('#saveBtn');if(b){b.disabled=false;b.textContent='変更を保存'}}}
+ if(t.id==='height'&&st.cur){const h=parseFloat(t.value);st.cur.height=h>80&&h<230?h:null;renderQuick()}
+ if(t.id==='weight'&&st.cur){const w=parseFloat(t.value);st.cur.weight=w>15&&w<250?w:null}
+ if(t.id==='rollR'&&st.cur){const v=st.cur.views[st.tab];if(!v)return;v.roll=parseFloat(t.value)||0;v.rollSrc='manual';if(st.cur.saved)st.cur.dirty=true;const l=$('#rollV');if(l)l.textContent=(v.roll>0?'+':'')+f1(v.roll)+'°';setupEditor()}});
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details.tool'))st.tool[d.dataset.t]=d.open},true);
+let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(st.view==='capture')setupEditor();if(st.view==='result')afterResult()},200)});
+window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE};
+(async()=>{NAV.init();render();await Store.init();
+ if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.c||last||'').toLowerCase();
+  const c=await CL.me();if(!c||c.must_change||!CL.dekRaw){PROFILE={name:c?c.name:'',tagline:''};updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
+  if(c.must_change){st.lock={mode:'setup'};st.loading=false;go('lock');return}if(!CL.dek){st.lock={mode:'unlock'};st.loading=false;go('lock');return}applyClinic()}catch(e){st.loadErr=msg(e)}}
+ if(Store.mode==='gas'){try{const a=await gs('apiAuthStatus',AUTH.token);if(!a||!a.ok){st.lock={set:!!(a&&a.set)};st.loading=false;go('lock');return}}catch(e){st.loadErr=msg(e)}}
+ await loadPatients()})();
+}
+</script>
+</body>
+</html>
