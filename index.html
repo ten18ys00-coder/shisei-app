@@ -542,11 +542,18 @@ const CL={sb:null,clinic:null,dek:null,dekRaw:null,
 const THEMES={orange:{label:'オレンジ',
   light:{bg:'#fbf4ec',card:'#fffcf8',soft:'#f8eadb',ink:'#2a1d14',mut:'#6b5d52',line:'#efdcc8',g:'#C2410C',g2:'#B8460B',gd:'#B8620E',band:'#D35A0F',onG:'#fff'},
   dark:{bg:'#17110d',card:'#211812',soft:'#2e2119',ink:'#f3e9df',mut:'#b5a596',line:'#3d2c21',g:'#F59E5B',g2:'#E8873F',gd:'#F4B26B',band:'#3B1E0D',onG:'#17110d'},
-  report:{paper:'#fbf4ec',card:'#fffcf8',g:'#C2410C',g2:'#D9600F',gold:'#E8862F',gl:'#FFE4CC',line:'#efdcc8'},head:'#fff',tag:'#ffe2c4'}};
+  report:{paper:'#fbf4ec',card:'#fffcf8',g:'#C2410C',g2:'#D9600F',gold:'#E8862F',gl:'#FFE4CC',line:'#efdcc8'},head:'#fff',tag:'#ffe2c4'},
+ lime:{label:'きみどり',
+  light:{bg:'#F7FAF0',card:'#FFFFFC',soft:'#EEF5E1',ink:'#1E2616',mut:'#5B6650',line:'#DCE8C6',g:'#4D7C0F',g2:'#3F6212',gd:'#6B8E23',band:'#8DC63F',onG:'#fff'},
+  dark:{bg:'#11160B',card:'#192110',soft:'#222C17',ink:'#EAF2DD',mut:'#A8B59A',line:'#2F3B22',g:'#A6D86A',g2:'#8CC152',gd:'#C5E39A',band:'#24360D',onG:'#11160B'},
+  report:{paper:'#F7FAF0',card:'#FFFFFC',g:'#4D7C0F',g2:'#65A30D',gold:'#8DC63F',gl:'#E4F5C8',line:'#DCE8C6'},head:'#1B2A0A',tag:'#2E4A0E',
+  extra:'header.top .hback{color:#1B2A0A;border-color:rgba(27,42,10,.35);background:rgba(255,255,255,.3)}header.top .chip{border-color:rgba(27,42,10,.35)}'}};
 let THEME=null;
 function applyTheme(name,keep){THEME=THEMES[name]||null;let el=document.getElementById('themeStyle');if(!el){el=document.createElement('style');el.id='themeStyle';document.head.appendChild(el)}
  const v=o=>Object.keys(o).map(k=>'--'+k+':'+o[k]).join(';');
- el.textContent=THEME?':root{'+v(THEME.light)+'}@media (prefers-color-scheme:dark){:root:not([data-theme=light]){'+v(THEME.dark)+'}}:root[data-theme=dark]{'+v(THEME.dark)+'}header.top{color:'+THEME.head+'}.brand small{color:'+THEME.tag+'}':'';
+ const darkHead=(p)=>p+' header.top{color:#f4efe3}'+p+' .brand small{color:#ffe2c4}'+p+' header.top .hback{color:#f4efe3;border-color:rgba(244,239,227,.4);background:rgba(244,239,227,.12)}'+p+' header.top .chip{border-color:rgba(244,239,227,.35)}';
+ el.textContent=THEME?':root{'+v(THEME.light)+'}header.top{color:'+THEME.head+'}.brand small{color:'+THEME.tag+'}'+(THEME.extra||'')+
+  '@media (prefers-color-scheme:dark){:root:not([data-theme=light]){'+v(THEME.dark)+'}'+darkHead(':root:not([data-theme=light])')+'}:root[data-theme=dark]{'+v(THEME.dark)+'}'+darkHead(':root[data-theme=dark]'):'';
  if(keep!==false)try{localStorage.setItem('shisei-theme',name||'')}catch(e){}}
 function applyClinic(){const set=(CL.clinic&&CL.clinic.settings)||{};CFG=set.cfg||{};applyTheme(set.theme||'');PROFILE=Object.assign({},PROFILE0,set.profile||{});if(!PROFILE.name&&CL.clinic)PROFILE.name=CL.clinic.name;updBrand()}
 function updBrand(){const b=$('#brandName'),t=$('#brandTag');if(b)b.textContent=PROFILE.name?PROFILE.name+'　姿勢分析':'姿勢分析';if(t){t.textContent=PROFILE.tagline||'';t.hidden=!PROFILE.tagline}document.title=PROFILE.name?PROFILE.name+' 姿勢分析':'姿勢分析'}
@@ -677,7 +684,7 @@ function goBack(){const m=$('#modal');if(m&&!m.hidden){closeModal();return}const
 const NAV={armed:false,gs(){return !!(window.google&&google.script&&google.script.history)},
  arm(){const m=$('#modal'),need=(st.view!=='home'&&st.view!=='lock')||(m&&!m.hidden);if(!need||NAV.armed)return;NAV.armed=true;try{if(NAV.gs())google.script.history.push({t:Date.now()},{},'app');else history.pushState({t:Date.now()},'')}catch(e){NAV.armed=false}},
  init(){const on=()=>{NAV.armed=false;goBack();setTimeout(NAV.arm,50)};try{if(NAV.gs())google.script.history.setChangeHandler(on);else window.addEventListener('popstate',on)}catch(e){}}};
-function render_(){const hb=$('#hback');if(hb)hb.hidden=st.view==='home'||st.view==='lock';const ht=$('header.top');if(ht)ht.classList.toggle('sub',st.view!=='home'&&st.view!=='lock');setTimeout(NAV.arm,0);const m=$('#main');m.innerHTML=({home:vHome,patient:vPatient,capture:vCapture,result:vResult,calib:vCalib,lock:vLock,admin:vAdmin})[st.view]();
+function render_(){const hb=$('#hback');if(hb)hb.hidden=st.view==='home'||st.view==='lock';const ht=$('header.top');if(ht)ht.classList.toggle('sub',st.view!=='home');setTimeout(NAV.arm,0);const m=$('#main');m.innerHTML=({home:vHome,patient:vPatient,capture:vCapture,result:vResult,calib:vCalib,lock:vLock,admin:vAdmin})[st.view]();
  if(st.view==='home')renderList();if(st.view==='patient')drawTrend();if(st.view==='capture')setupEditor();if(st.view==='result')afterResult();
  $('#chip').textContent={cloud:'記録：クラウド（暗号化）',gas:'記録：Googleドライブ',local:'記録：この端末のみ',memory:'記録：保存なし'}[Store.mode]||''}
 function storeNote(){return '<p class="store">'+({cloud:'記録はクラウドに保存しています。患者さんのお名前・ふりがな・メモ・コメントはこの端末で暗号化してから保存するため、この院のパスコードを知らない人には読めません。パスコードは運営側にも伝わりません。名前を含まない測定値は、姿勢分析の精度を上げるために統計として利用します。写真そのものは保存しません。',gas:'記録は院長のGoogleドライブ内のスプレッドシート「ほさか整骨院_姿勢分析データ」に保存されます（スプレッドシートは院長のアカウントでしか開けません。アプリは院のパスコードを入れた端末からだけ開けます）。写真そのものは保存せず、目印の位置と数値だけを保存します。',local:'いまは記録をこの端末のブラウザにだけ一時的に保存しています。',memory:'この環境では記録を保存できません。ページを閉じると消えます。'}[Store.mode]||'')+'</p>'}
@@ -943,12 +950,12 @@ function cloudMenu(){const c=CL.clinic||{},p=PROFILE,f=(n,l,v,ph)=>'<label>'+l+'
  const sr=$('#shareRes');if(sr)sr.onchange=async()=>{try{const {error}=await CL.sb.from('clinics').update({share_research:sr.checked}).eq('id',c.id);if(error)throw error;c.share_research=sr.checked;toast(sr.checked?'測定値の提供をオンにしました':'測定値の提供をオフにしました')}catch(er){toast(msg(er));sr.checked=!sr.checked}}}
 function vAdmin(){const A=st.adm||{};
  return '<div class="wrap"><div class="crumb"><button class="back" data-act="home">← 患者さん一覧</button></div><h1>院の管理</h1><p class="lead">販売先・デモ先の院を追加して、院コードと最初のパスコードをお渡しします。各院の患者さんのお名前は暗号化されていて、ここからは見えません。</p>'+
- '<form id="newClinic" class="card form"><h2>院を追加</h2><label>院名<input id="ncName" required autocomplete="off" placeholder="例：〇〇整骨院"></label><button class="btn pri" type="submit">追加して院コードを発行</button>'+
+ '<form id="newClinic" class="card form"><h2>院を追加</h2><label>院名<input id="ncName" required autocomplete="off" placeholder="例：〇〇整骨院"></label><div class="row2"><label>アプリの色<select id="ncTheme"><option value="">緑（標準）</option>'+Object.keys(THEMES).map(k=>'<option value="'+k+'">'+THEMES[k].label+'</option>').join('')+'</select></label><label>院コード（任意）<input id="ncCode" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="空なら自動"></label></div><button class="btn pri" type="submit">追加して院コードを発行</button>'+
  (A.issued?'<div class="issued"><p style="margin:0 0 6px">'+(A.issued.reset?'パスコードを再発行しました':'院を追加しました')+'</p><p style="margin:0">院名：<b>'+esc(A.issued.name||'')+'</b><br>院コード：<b class="n">'+esc(A.issued.code)+'</b><br>最初のパスコード：<b class="n">'+esc(A.issued.temp)+'</b></p><p class="note">先方が初めて開いたときに、院のパスコードを決めてもらいます。この表示は画面を離れると消えます。</p><button class="btn" type="button" data-act="copyIssued">案内文をコピー</button></div>':'')+'</form>'+
  '<div class="card"><h2>院の一覧</h2>'+(A.loading?'<p class="empty">読み込み中…</p>':A.err?'<div class="warn">'+esc(A.err)+'</div>':'<ul class="clist">'+(A.list||[]).map(c=>'<li><div><b>'+esc(c.name)+'</b>'+(c.is_admin?' <span class="chg">管理者</span>':'')+'<small>院コード '+esc(c.code)+'・患者 '+c.patients+'人・記録 '+c.sessions+'件'+(c.must_change?'・初回設定まだ':'')+(c.share_research?'':'・測定値の提供なし')+'</small></div>'+
  (c.is_admin?'':'<div class="acts"><button class="btn" data-act="admReset" data-code="'+esc(c.code)+'" data-name="'+esc(c.name)+'">パスコード再発行</button><button class="btn danger" data-act="admDel" data-code="'+esc(c.code)+'" data-name="'+esc(c.name)+'">削除</button></div>')+'</li>').join('')+'</ul><p class="note">お試し版から集まった測定値：'+(A.demo||0)+'件</p>')+'</div></div>'}
 async function loadAdmin(){st.adm=Object.assign({},st.adm||{},{loading:true,err:''});if(st.view==='admin')render();try{const r=await CL.adminCall({action:'list'});st.adm.list=r.clinics||[];st.adm.demo=r.demo||0}catch(e){st.adm.err=msg(e)}st.adm.loading=false;if(st.view==='admin')render()}
-function issuedText(i){return '【姿勢分析アプリのご案内】\nURL：'+SUPA.appUrl+'?clinic='+i.code+'\n院コード：'+i.code+'\n最初のパスコード：'+i.temp+'\n\n初めて開いたときに、院で使うパスコード（4桁・6桁・8桁の数字から選べます）を決めてください。そのあと表示される「復旧コード」は、紙に書いて大切に保管してください。'}
+function issuedText(i){return '【'+(i.name?i.name+' ':'')+'姿勢分析アプリのご案内】\nURL：'+SUPA.appUrl+'?clinic='+i.code+'\n院コード：'+i.code+'\n最初のパスコード：'+i.temp+'\n\n初めて開いたときに、院で使うパスコード（4桁・6桁・8桁の数字から選べます）を決めてください。そのあと表示される「復旧コード」は、紙に書いて大切に保管してください。'}
 async function importGas(){const b=$('#impBtn');if(b){b.disabled=true;b.textContent='取り込み中…'}let np=0,ns=0;
  try{const ps=(await gs('apiListPatients'))||[];for(const p of ps){if(p.id===CFG_ID){if(p.cfg){CFG=p.cfg;await saveCfg()}continue}await CL.savePatient(p);np++;const ss=(await gs('apiListSessions',p.id))||[];for(const x of ss){await CL.saveSession(p.id,x.id,x);ns++}}
   await CL.saveSettings({imported:new Date().toISOString()});toast(np+'人・'+ns+'件の記録を取り込みました');await loadPatients()}catch(e){toast('取り込めませんでした：'+msg(e));if(b){b.disabled=false;b.textContent='Googleドライブの記録を取り込む'}}}
@@ -1107,7 +1114,7 @@ const ACT={
  closeModal:()=>closeModal()
 };
 document.addEventListener('click',e=>{const m=$('#modal');if(e.target===m){closeModal();return}const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const fn=ACT[b.dataset.act];if(fn){e.preventDefault();Promise.resolve(fn(b,e)).catch(err=>toast(msg(err)))}});
-document.addEventListener('submit',e=>{if(e.target&&e.target.id==='newClinic'){e.preventDefault();const n=(($('#ncName')||{}).value||'').trim();if(!n)return;const b=e.target.querySelector('[type=submit]');b.disabled=true;b.textContent='発行中…';CL.adminCall({action:'create',name:n}).then(r=>{st.adm.issued=r;loadAdmin()}).catch(er=>{toast(msg(er));b.disabled=false;b.textContent='追加して院コードを発行'});return}
+document.addEventListener('submit',e=>{if(e.target&&e.target.id==='newClinic'){e.preventDefault();const n=(($('#ncName')||{}).value||'').trim();if(!n)return;const b=e.target.querySelector('[type=submit]');b.disabled=true;b.textContent='発行中…';CL.adminCall({action:'create',name:n,theme:(($('#ncTheme')||{}).value||''),code:((($('#ncCode')||{}).value||'').trim()||undefined)}).then(r=>{st.adm.issued=r;loadAdmin()}).catch(er=>{toast(msg(er));b.disabled=false;b.textContent='追加して院コードを発行'});return}
  if(e.target&&e.target.id==='lockForm'){e.preventDefault();if(Store.mode==='cloud')submitLockCloud();else submitLock()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)closeModal()});
 document.addEventListener('change',e=>{const t=e.target;
@@ -1129,8 +1136,8 @@ document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.match
 let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(st.view==='capture')setupEditor();if(st.view==='result')afterResult()},200)});
 window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE};
 (async()=>{try{if(!isDemo())applyTheme(localStorage.getItem('shisei-theme')||'',false)}catch(e){}NAV.init();render();await Store.init();
- if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.clinic||last||'').toLowerCase();if(prm.clinic&&({fukufuku:'orange'})[st.lockCode])applyTheme(({fukufuku:'orange'})[st.lockCode],false);
-  const c=await CL.me();if(!c||c.must_change||!CL.dekRaw){PROFILE={name:c?c.name:'',tagline:''};updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
+ if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.clinic||last||'').toLowerCase();PROFILE={name:'',tagline:''};if(prm.clinic&&st.lockCode){try{const br=await CL.sb.rpc('clinic_brand',{p_code:st.lockCode});if(br&&br.data){applyTheme(br.data.theme||'',false);PROFILE={name:br.data.name||'',tagline:''}}}catch(e){}}updBrand();
+  const c=await CL.me();if(c&&(c.must_change||!CL.dekRaw)){PROFILE={name:(c.settings&&c.settings.profile&&c.settings.profile.name)||c.name,tagline:''};applyTheme((c.settings||{}).theme||'',false);updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
   if(c.must_change){st.lock={mode:'setup'};st.loading=false;go('lock');return}if(!CL.dek){st.lock={mode:'unlock'};st.loading=false;go('lock');return}applyClinic()}catch(e){st.loadErr=msg(e)}}
  if(Store.mode==='gas'){try{const a=await gs('apiAuthStatus',AUTH.token);if(!a||!a.ok){st.lock={set:!!(a&&a.set)};st.loading=false;go('lock');return}}catch(e){st.loadErr=msg(e)}}
  await loadPatients()})();
