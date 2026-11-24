@@ -103,6 +103,7 @@ td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(-
 .clist{list-style:none;margin:0;padding:0}.clist li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--line)}.clist small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
 .issued{background:var(--soft);border-radius:12px;padding:12px 14px;margin-top:12px}.issued b.n{font-size:20px;letter-spacing:.04em}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.agecmp{color:var(--g2);font-weight:700;font-size:13px;margin:4px 0 0}.mlist small.agecmp{color:var(--g2)}
 .mlist small{display:block;font-size:12px;color:var(--mut)}.mlist b{font-weight:500}.mv{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}.mv .n{font-size:17px;font-weight:700}
 .tool{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:8px 0}.tool summary{cursor:pointer;padding:12px 14px;font-size:14px;min-height:44px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.tool .tbody{padding:0 14px 14px}.tool .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.tool input[type=range]{width:100%;min-height:32px;padding:0;border:0;background:none;accent-color:var(--g2)}
 .sw{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid var(--line);vertical-align:-2px;margin-right:2px}.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px}.chk input{width:20px;min-height:20px}
@@ -567,10 +568,10 @@ const Store={mode:'memory',
 };
 const r4=n=>Math.round(n*1e4)/1e4;
 function pack(c,A){const views={};for(const k in c.views){const v=c.views[k];views[k]={lm:[].concat(...v.lm.map(a=>a.map(r4))),w:v.w?[].concat(...v.w.map(a=>a.map(r4))):null,ar:r4(v.ar),near:v.near||null,roll:Math.round((v.roll||0)*100)/100,rollSrc:v.rollSrc||'none',unc:v.unc?v.unc.map(x=>Math.round(x*1000)/1000):null,snap:v.snap?Object.keys(v.snap).map(Number):null}}
- return {date:c.date,height:c.height||null,weight:c.weight||null,care:c.care||null,comment:c.comment||'',judge:c.judge&&Object.keys(c.judge).length?c.judge:null,views,scores:A.sc,type:A.type?A.type.name:'',ver:2}}
+ return {date:c.date,height:c.height||null,weight:c.weight||null,care:c.care||null,ageBand:c.ageBand||null,sex:c.sex||null,comment:c.comment||'',judge:c.judge&&Object.keys(c.judge).length?c.judge:null,views,scores:A.sc,type:A.type?A.type.name:'',ver:2}}
 const chunk=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o};
 function unpack(s){const views={};const sv=s.views||{};for(const k in sv){const v=sv[k];views[k]={lm:chunk(v.lm,4),w:v.w?chunk(v.w,3):null,ar:v.ar,near:v.near||null,roll:v.roll||0,rollSrc:v.rollSrc||'none',unc:v.unc||null,snap:v.snap?Object.fromEntries(v.snap.map(i=>[i,1])):null}}
- return {id:s.id,date:s.date,height:s.height||null,weight:s.weight||null,care:s.care||null,comment:s.comment==null?null:s.comment,judge:s.judge||null,views,saved:true,dirty:false,fromHistory:true}}
+ return {id:s.id,date:s.date,height:s.height||null,weight:s.weight||null,care:s.care||null,comment:s.comment==null?null:s.comment,ageBand:s.ageBand||null,sex:s.sex||null,judge:s.judge||null,views,saved:true,dirty:false,fromHistory:true}}
 
 /* ---------- pose engine ---------- */
 const MP='https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/';
@@ -832,20 +833,30 @@ function vResult(){const c=st.cur,A=analyze(c),pv=cmpSession(),PA=pv?analyze(pv)
  const rowsCmp=PA?A.rows.map(r=>{const p=PA.rows.find(q=>q.key===r.key&&q.vk===r.vk);if(!p)return '';const d=Math.abs(r.val)-Math.abs(p.val);const t=Math.abs(d)<0.5?'<span class="mut">変化なし</span>':d<0?'<span class="b-ok">改善 '+f1(-d)+'°</span>':'<span class="b-ng">悪化 '+f1(d)+'°</span>';return '<tr><td>'+VL[r.vk]+'・'+r.label+'</td><td class="r n">'+f1(Math.abs(p.val))+'°</td><td class="r n">'+f1(Math.abs(r.val))+'°</td><td class="r">'+t+'</td></tr>'}).join(''):'';
  const sideK=PA?(['right','left'].find(k=>c.views[k]&&pv.views[k])):null;
  return '<div class="wrap"><div class="crumb"><button class="back" data-act="'+(c.fromHistory?'toPatient':'toCapture')+'">'+(c.fromHistory?'← 記録の一覧':'← 写真に戻る')+'</button><b>'+esc(st.patient.name)+' さん</b><span class="mut">'+fmtDT(c.date)+'</span></div>'+
- '<h1>姿勢分析の結果</h1>'+(A.n<3?'<div class="warn">'+A.n+'/3方向で計算しています。3方向そろうと総合スコアの精度が上がります。</div>':'')+A.warn.map(w=>'<div class="warn">'+w.t+'</div>').join('')+
+ '<h1>姿勢分析の結果</h1>'+(st.patient&&st.patient.id&&!ageInfo(c).band&&A.rows.some(r=>AGE_WORD[r.key])?'<p class="note">患者さん情報に「年代」を入れると、同年代の目安と比べた結果も表示します（判定は理想の姿勢が基準のままです）。</p>':'')+(A.n<3?'<div class="warn">'+A.n+'/3方向で計算しています。3方向そろうと総合スコアの精度が上がります。</div>':'')+A.warn.map(w=>'<div class="warn">'+w.t+'</div>').join('')+
  '<div class="card scores"><div class="gauge">'+gauge(A.sc.total)+'<div class="gl"><small>総合スコア</small><b class="n">'+(A.sc.total!=null?A.sc.total:'—')+'</b><span>点 / 100</span>'+delta(A.sc.total,PA&&PA.sc.total)+'</div></div><div class="tiles">'+tiles+'</div>'+
  '<div class="type"><small>姿勢タイプ（横から見た立ち方）</small><b>'+(A.type?A.type.name:'側面の写真で判定します')+'</b><p class="mut">'+(A.type?A.type.desc:'')+'</p>'+(A.tags.length?'<div class="tags">'+A.tags.map(t=>'<span>'+t+'</span>').join('')+'</div>':'')+'</div></div>'+
  '<div class="shots">'+VIEWS.filter(o=>c.views[o.k]).map(o=>'<figure><canvas class="shot" data-k="'+o.k+'"></canvas><figcaption>'+o.label+(c.views[o.k].canvas?'':'（骨格のみ）')+precNote(c.views[o.k],o.k)+'</figcaption></figure>').join('')+'</div>'+
- '<div class="grid2"><div class="card"><h2>気になったポイント</h2>'+(A.findings.length?'<ol class="finds">'+A.findings.map(r=>'<li class="b-'+r.st+'"><b>'+VL[r.vk]+'｜'+r.dir+'<span class="n">'+f1(Math.abs(r.val))+'°'+(r.extra?'・'+r.extra:'')+'</span></b><p>'+tipOf(r)+'</p></li>').join('')+'</ol>':'<p>大きな偏りは見られませんでした。</p>')+
+ '<div class="grid2"><div class="card"><h2>気になったポイント</h2>'+(A.findings.length?'<ol class="finds">'+A.findings.map(r=>'<li class="b-'+r.st+'"><b>'+VL[r.vk]+'｜'+r.dir+'<span class="n">'+f1(Math.abs(r.val))+'°'+(r.extra?'・'+r.extra:'')+'</span></b><p>'+tipOf(r)+'</p>'+((x=>x?'<p class="agecmp">'+x.txt+'</p>':'')(ageCmp(r,ageInfo(c))))+'</li>').join('')+'</ol>':'<p>大きな偏りは見られませんでした。</p>')+
  '<h3><label for="comment">先生からのコメント</label></h3><textarea id="comment" rows="6">'+esc(c.comment)+'</textarea><p class="note">レポート画像にもこのコメントが入ります。自由に書き換えてください。</p></div>'+
  (hasW?'<div class="card"><h2>体のねじれ</h2><div class="three"><canvas id="c3d" aria-label="3Dの骨格モデル"></canvas></div><p class="hint">モデルは指で左右にドラッグして回せます。金＝肩のライン、緑＝骨盤のライン。</p>'+topSVG(A.F.rot)+'</div>':'<div class="card"><h2>体のねじれ</h2><p class="mut">正面の写真を撮ると、肩と骨盤のねじれを3Dで確認できます。</p></div>')+'</div>'+
- careCard(c,A)+'<div class="card"><h2>測定項目の詳細</h2>'+judgeHead(c,A)+'<ul class="mlist">'+A.rows.map((r,i)=>(i===0||A.rows[i-1].vk!==r.vk?'<li class="gh">'+VL[r.vk]+'</li>':'')+'<li><div><small>'+r.label+'</small><b>'+(r.st==='ok'?'<span class="mut">わずかに</span>':'')+r.dir+'</b>'+(r.extra?'<small>'+r.extra+'</small>':'')+judgeChips(c,r)+'</div><div class="mv"><span class="n">'+f1(Math.abs(r.val))+'°</span><span class="badge b-'+r.st+'">'+STL[r.st]+'</span></div></li>').join('')+
+ careCard(c,A)+'<div class="card"><h2>測定項目の詳細</h2>'+judgeHead(c,A)+'<ul class="mlist">'+A.rows.map((r,i)=>(i===0||A.rows[i-1].vk!==r.vk?'<li class="gh">'+VL[r.vk]+'</li>':'')+'<li><div><small>'+r.label+'</small><b>'+(r.st==='ok'?'<span class="mut">わずかに</span>':'')+r.dir+'</b>'+(r.extra?'<small>'+r.extra+'</small>':'')+((x=>x?'<small class="agecmp">'+x.txt+'</small>':'')(ageCmp(r,ageInfo(c))))+judgeChips(c,r)+'</div><div class="mv"><span class="n">'+f1(Math.abs(r.val))+'°</span><span class="badge b-'+r.st+'">'+STL[r.st]+'</span></div></li>').join('')+
  '</ul><p class="note">スコアは写真から計算した独自の指標で、医学的な診断ではありません。立ち方や撮影の角度でも数値は変わるため、毎回同じ条件で撮影すると比較しやすくなります。</p></div>'+
  '<div class="card"><h2>前回との比較</h2>'+(others.length?'<label class="hrow"><span>比較する記録</span><select id="cmpSel" style="width:auto">'+others.map(s=>'<option value="'+esc(s.id)+'"'+(pv&&pv.id===s.id?' selected':'')+'>'+fmtDT(s.date)+'（'+((s.scores&&s.scores.total)!=null?s.scores.total:'-')+'点）</option>').join('')+'</select></label>'+
   (PA?'<div class="cmpgrid">'+(c.views.front&&pv.views.front?'<figure><canvas class="cmp" data-k="front"></canvas><figcaption>正面</figcaption></figure>':'')+(sideK?'<figure><canvas class="cmp" data-k="'+sideK+'"></canvas><figcaption>'+VL[sideK]+'</figcaption></figure>':'')+'</div><p class="note">灰色の点線＝'+fmtDate(pv.date)+'、緑＝今回。足元をそろえて重ねています。</p>'+
   '<table><thead><tr><th>項目</th><th class="r">前回</th><th class="r">今回</th><th class="r">変化</th></tr></thead><tbody><tr><td><b>総合スコア</b></td><td class="r n">'+(PA.sc.total!=null?PA.sc.total:'-')+'</td><td class="r n">'+(A.sc.total!=null?A.sc.total:'-')+'</td><td class="r">'+(A.sc.total!=null&&PA.sc.total!=null?((A.sc.total-PA.sc.total>=0?'+':'')+(A.sc.total-PA.sc.total)+'点'):'')+'</td></tr>'+rowsCmp+'</tbody></table>':'')
   :(DEMO?'<p class="mut">院内版では結果を患者さんごとに保存して、前回の姿勢と並べて比べられます（お試し版では保存しません）。</p>':'<p class="mut">比較できる記録がまだありません。結果を保存すると、次回からここで前回と並べて比べられます。</p>'))+'</div>'+storeNote()+'</div>'+
  '<div class="actbar"><button class="btn" data-act="report">レポート画像を作る</button>'+(st.patient.id?'<button class="btn pri" id="saveBtn" data-act="save"'+(c.saved&&!c.dirty?' disabled':'')+'>'+(c.saved?(c.dirty?'変更を保存':'保存済み ✓'):'結果を保存')+'</button>':(DEMO?'':'<button class="btn pri" data-act="saveTrial">患者さんの記録に保存</button>'))+'</div>'}
+/* 同年代の目安：理想（中心）から、その年代では平均してどれだけずれているか（°）
+   頭の前後＝CVAの年代別平均（Zárate-Tejero 2024：10年で約1.6°、66-75歳は若年より約10°前方）
+   全身・上半身・膝＝日本人健常者で60代以降に前傾と膝の曲がりが増える報告（Hasegawa 2016、Yukawa 2018ほか）を写真の角度に換算した目安 */
+const AGE_NORM={headFwd:{'40代':3,'50代':4,'60代':6,'70代':10,'80代以上':10},trunkFwd:{'60代':1,'70代':2,'80代以上':3},bodyFwd:{'60代':1,'70代':2,'80代以上':3},kneeFwd:{'50代':1,'60代':2,'70代':4,'80代以上':4}};
+const AGE_SEX={headFwd:{m:1,f:-1}};
+const AGE_WORD={headFwd:['前に出ています','後ろ寄りです'],trunkFwd:['前に傾いています','後ろに反っています'],bodyFwd:['前寄りです','後ろ寄りです'],kneeFwd:['曲がっています','伸びています']};
+function ageInfo(c){const p=st.patient||{};return {band:(c&&c.ageBand)||p.ageBand||'',sex:(c&&c.sex)||p.sex||''}}
+function ageCmp(r,ai){if(!ai||!ai.band||!AGE_WORD[r.key])return null;const n=((AGE_NORM[r.key]||{})[ai.band]||0)+(((AGE_SEX[r.key]||{})[ai.sex])||0),d=r.val-n;
+ const who=ai.band+(ai.sex==='f'?'・女性':ai.sex==='m'?'・男性':'');
+ return {d,txt:Math.abs(d)<1.5?'同年代（'+who+'）の目安とほぼ同じです':'同年代（'+who+'）の目安より'+f1(Math.abs(d))+'°'+AGE_WORD[r.key][d>0?0:1]}}
 const JL={ok:'良好',wn:'注意',ng:'要改善'};
 const jkey=r=>r.key+'|'+r.vk;
 function judgeChips(c,r){if(isDemo())return '';const k=jkey(r),v=c.judge&&c.judge[k];return '<div class="jg" data-jk="'+k+'"><span>先生の判定</span>'+['ok','wn','ng'].map(x=>'<button type="button" class="'+x+(v===x?' on':'')+'" data-act="judge" data-k="'+k+'" data-v="'+x+'" aria-pressed="'+(v===x)+'">'+JL[x]+'</button>').join('')+'</div>'}
@@ -954,7 +965,7 @@ function upsertPatient(p){const i=st.patients.findIndex(x=>x.id===p.id);if(i>=0)
 /* ---------- report image ---------- */
 async function makeReport(withPhoto){
  const c=st.cur,A=analyze(c),pv=st.pv,PA=pv?analyze(pv):null,name=st.patient.id?st.patient.name:'',W=1080,M=48;
- const txt=(PROFILE.name||'')+(PROFILE.tagline||'')+(PROFILE.addr||'')+(PROFILE.tel||'')+'TEL姿勢分析レポート様総合スコア正面側面回旋点前回比気になったポイント先生からのコメント姿勢タイプ栃木県宇都宮市上戸祭町702-4TEL028-666-6141※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。'+name+c.comment+(A.type?A.type.name+A.type.desc:'')+A.findings.map(r=>VL[r.vk]+r.dir+r.extra+tipOf(r)).join('')+'右側面左側面骨格のみ（ねじれ）体への負担の目安首にかかる負担腰の筋肉が余分に支える重さ頭が肩の真上にあると約5kg上半身が骨盤よりcm前体重の約%※首はスマホ首の研究（Hansraj, 2014）の数値、腰は単純な力学モデルで計算した目安です。負担がかかりやすい筋肉（推定）縮こまって負担がかかりやすい働きにくくなりやすい赤＝縮こまりやすい　青＝働きにくい出やすい不調（傾向）：おすすめのセルフケア生活のポイント※筋肉の状態は姿勢の傾向からの推定です。運動中に痛みやしびれが出たら中止して、ご相談ください。左右前から後ろから'+Object.values(MUS).map(m=>m[0]).join('')+Object.values(EX).map(e=>e.join('')).join('')+Object.values(LIFE).map(e=>e.join('')).join('')+'0123456789';
+ const txt=(PROFILE.name||'')+(PROFILE.tagline||'')+(PROFILE.addr||'')+(PROFILE.tel||'')+'TEL姿勢分析レポート様同年代代以上女性男性の目安とほぼ同じです前に出ています後ろ寄りです傾いています反っています曲がっています伸びています（）・0123456789.°総合スコア正面側面回旋点前回比気になったポイント先生からのコメント姿勢タイプ栃木県宇都宮市上戸祭町702-4TEL028-666-6141※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。'+name+c.comment+(A.type?A.type.name+A.type.desc:'')+A.findings.map(r=>VL[r.vk]+r.dir+r.extra+tipOf(r)).join('')+'右側面左側面骨格のみ（ねじれ）体への負担の目安首にかかる負担腰の筋肉が余分に支える重さ頭が肩の真上にあると約5kg上半身が骨盤よりcm前体重の約%※首はスマホ首の研究（Hansraj, 2014）の数値、腰は単純な力学モデルで計算した目安です。負担がかかりやすい筋肉（推定）縮こまって負担がかかりやすい働きにくくなりやすい赤＝縮こまりやすい　青＝働きにくい出やすい不調（傾向）：おすすめのセルフケア生活のポイント※筋肉の状態は姿勢の傾向からの推定です。運動中に痛みやしびれが出たら中止して、ご相談ください。左右前から後ろから'+Object.values(MUS).map(m=>m[0]).join('')+Object.values(EX).map(e=>e.join('')).join('')+Object.values(LIFE).map(e=>e.join('')).join('')+'0123456789';
  try{await Promise.all(['400','500','700'].map(w=>document.fonts.load(w+' 24px "Zen Kaku Gothic New"',txt)).concat(document.fonts.load('700 24px "Inter Tight"','0123456789+-')))}catch(e){}
  const cv=document.createElement('canvas');cv.width=W;cv.height=8000;const x=cv.getContext('2d');
  const C=Object.assign({paper:'#f7f3ea',card:'#fffdf8',g:'#1f4436',g2:'#2f6a54',gold:'#a8843f',gl:'#d3b06c',ink:'#1b2420',mut:'#5f675f',line:'#e2dac8',ok:'#2f7a5a',wn:'#a8650f',ng:'#b23b27'},(THEME&&THEME.report)||{});
@@ -987,7 +998,7 @@ async function makeReport(withPhoto){
  F(700,32);x.fillStyle=C.ink;x.fillText('気になったポイント',M,y);y+=18;
  if(!A.findings.length){y+=40;F(400,26);x.fillText('大きな偏りは見られませんでした。',M,y);y+=10}
  A.findings.forEach(r=>{y+=34;x.fillStyle=C[r.st];x.beginPath();x.arc(M+10,y+14,9,0,7);x.fill();F(700,28);x.fillStyle=C.ink;const head=VL[r.vk]+'｜'+r.dir+'（'+f1(Math.abs(r.val))+'°'+(r.extra?'・'+r.extra:'')+'）';
-  wrapT(head,W-2*M-34).forEach((l,i)=>{y+=i?40:24;x.fillText(l,M+34,y)});F(400,24);x.fillStyle=C.mut;wrapT(tipOf(r),W-2*M-34).forEach(l=>{y+=36;x.fillText(l,M+34,y)});y+=8});
+  wrapT(head,W-2*M-34).forEach((l,i)=>{y+=i?40:24;x.fillText(l,M+34,y)});F(400,24);x.fillStyle=C.mut;wrapT(tipOf(r),W-2*M-34).forEach(l=>{y+=36;x.fillText(l,M+34,y)});const ag=ageCmp(r,ageInfo(c));if(ag){F(700,24);x.fillStyle=C.g2;wrapT(ag.txt,W-2*M-34).forEach(l=>{y+=36;x.fillText(l,M+34,y)})}y+=8});
  y+=60;
  {const CC=careFrom(A),LL=loadEst(c,A),sel=careSel(c,CC);
   const lds=[];if(LL.neck)lds.push(['首にかかる負担の目安','約'+f1(LL.neck.kg)+'kg','頭が肩の真上にあると約5kg']);
@@ -1025,7 +1036,7 @@ async function openReport(){openModal('<h2>レポート画像</h2><div class="se
 function repName(){const d=new Date(st.cur.date);return '姿勢分析_'+(st.patient.id?st.patient.name+'_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.jpg'}
 function lineText(){const c=st.cur,A=analyze(c),n=st.patient.id?st.patient.name+'様':'';
  return '【姿勢分析の結果】'+n+'（'+fmtDate(c.date)+'）\n総合スコア '+(A.sc.total!=null?A.sc.total:'-')+'点（正面 '+(A.sc.front!=null?A.sc.front:'-')+'・側面 '+(A.sc.side!=null?A.sc.side:'-')+'・回旋 '+(A.sc.rot!=null?A.sc.rot:'-')+'）\n'+(A.type?'姿勢タイプ：'+A.type.name+'\n':'')+
- (A.findings.length?'気になったポイント：\n'+A.findings.map(r=>'・'+r.dir+'（'+f1(Math.abs(r.val))+'°）').join('\n')+'\n':'')+careText(c,A)+'\n'+(c.comment||'')+'\n\n'+(PROFILE.name||'')}
+ (A.findings.length?'気になったポイント：\n'+A.findings.map(r=>{const ag=ageCmp(r,ageInfo(c));return '・'+r.dir+'（'+f1(Math.abs(r.val))+'°）'+(ag?'\n　→ '+ag.txt:'')}).join('\n')+'\n':'')+careText(c,A)+'\n'+(c.comment||'')+'\n\n'+(PROFILE.name||'')}
 function careText(c,A){const C=careFrom(A),L=loadEst(c,A),sel=careSel(c,C);let t='';if(L.neck)t+='首にかかる負担の目安：約'+f1(L.neck.kg)+'kg\n';if(L.back&&!L.back.back&&L.back.kg!=null)t+='腰の筋肉が余分に支える重さの目安：約'+f1(L.back.kg)+'kg\n';
  const ex=sel.ex.filter(id=>EX[id]);if(ex.length)t+='おすすめのセルフケア：\n'+ex.map((id,i)=>(i+1)+'. '+EX[id][0]+'（'+EX[id][3]+'）').join('\n')+'\n';const lf=sel.life.filter(id=>LIFE[id]);if(lf.length)t+='生活のポイント：\n'+lf.map(id=>'・'+LIFE[id][0]).join('\n')+'\n';return t}
 
@@ -1055,7 +1066,7 @@ const ACT={
  editPatient:()=>patientForm(st.patient),
  openPatient:async b=>{const p=st.patients.find(x=>x.id===b.dataset.id);if(!p)return;st.patient=p;st.sessions=[];try{st.sessions=await Store.listSessions(p.id)}catch(e){toast(msg(e))}go('patient')},
  toPatient:()=>go('patient'),
- startCapture:()=>{st.cur=newCur(st.patient.height,st.patient.weight);st.tab='front';st.adjust=false;st.err={};go('capture');ensureEngine().catch(()=>{})},
+ startCapture:()=>{st.cur=newCur(st.patient.height,st.patient.weight);st.cur.ageBand=st.patient.ageBand||null;st.cur.sex=st.patient.sex||null;st.tab='front';st.adjust=false;st.err={};go('capture');ensureEngine().catch(()=>{})},
  trial:()=>{st.patient={id:null,name:'お試し',height:null};st.sessions=[];ACT.startCapture()},
  tab:b=>{st.tab=b.dataset.k;st.adjust=false;st.ref=false;st.pick=false;render()},
  adjust:()=>{st.adjust=!st.adjust;st.ref=false;st.pick=false;render()},
