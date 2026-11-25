@@ -129,6 +129,8 @@ td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(-
  table{font-size:13px}th,td{padding:8px 5px}
  .actbar .btn{flex:1 1 auto}
 }
+#printArea{display:none}
+@media print{@page{size:A4;margin:8mm}body>*:not(#printArea){display:none!important}body{background:#fff!important}#printArea{display:block!important}#printArea .pg{break-after:page;page-break-after:always}#printArea .pg:last-child{break-after:auto;page-break-after:auto}#printArea img{display:block;width:100%;height:auto}}
 </style>
 </head>
 <body>
@@ -926,7 +928,10 @@ async function submitLockCloud(){const L=st.lock||{mode:'login'},v=id=>(($('#'+i
   if(L.mode==='setup'){const n1=v('np1'),n2=v('np2'),len=+v('plen')||6;st.plen=len;if(!lenOk(n1,len)){st.lockErr='パスコードは'+len+'桁の数字にしてください';return render()}if(n1!==n2){st.lockErr='2回目の入力が違います';return render()}busy();
    const code=await CL.setup(n1,v('rec')||null,!!L.discard);if(code){st.lock={mode:'recovery',rec:code};return render()}return enterApp()}
  }catch(e){st.lockErr=msg(e)==='NEED_REC'?'復旧コードを入れてください（ない場合は「復旧コードがない」を押してください）':msg(e);render()}}
-async function enterApp(){st.lock=null;st.lockErr='';applyClinic();go('home');await loadPatients()}
+async function enterApp(){st.lock=null;st.lockErr='';applyClinic();go('home');await runPendingImports();await loadPatients()}
+async function runPendingImports(){if(Store.mode!=='cloud'||!CL.dek||!CL.clinic||isDemo())return;let rows=[];try{const r=await CL.sb.from('pending_imports').select('id,payload').eq('clinic_id',CL.clinic.id).order('created_at');if(r.error)return;rows=r.data||[]}catch(e){return}if(!rows.length)return;let np=0,ns=0;
+ for(const row of rows){const P=row.payload||{};try{for(const p of (P.patients||[])){await CL.savePatient(p);np++}for(const x of (P.sessions||[])){await CL.saveSession(x.pid,x.id,x.data);ns++}if(P.cfg&&!(CL.clinic.settings||{}).cfg){CFG=P.cfg;await CL.saveSettings({cfg:P.cfg})}const d=await CL.sb.from('pending_imports').delete().eq('id',row.id);if(d.error)throw d.error}catch(e){toast('前の記録を移せませんでした：'+msg(e));return}}
+ try{await CL.saveSettings({imported:new Date().toISOString()})}catch(e){}toast('前の記録（'+np+'人・'+ns+'件）をこの院に移しました')}
 function vLock(){if(Store.mode==='cloud')return vLockCloud();const L=st.lock||{set:true};
  return '<div class="wrap lock"><h1>'+(L.set?'院のパスコードを入力':'院のパスコードを決める')+'</h1><p class="lead">'+(L.set?'この端末で初めて開くときだけ必要です。次からは自動で開きます。':'院のスマホから開くためのパスコードを決めてください（6桁以上の数字）。決めたパスコードは、ほかの端末で初めて開くときに使います。')+'</p>'+
  '<form id="lockForm" class="form card"><label>'+(L.set?'パスコード':'新しいパスコード（6桁以上の数字）')+'<input id="lp1" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="'+(L.set?'current-password':'new-password')+'" required></label>'+
@@ -1037,9 +1042,18 @@ async function makeReport(withPhoto){
  F(400,20);x.fillStyle=C.gl;wrapT('※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。',W-2*M).forEach((l,i)=>x.fillText(l,M,y+142+i*28));y+=186;
  const out=document.createElement('canvas');out.width=W;out.height=y;out.getContext('2d').drawImage(cv,0,0);return out}
 async function openReport(){openModal('<h2>レポート画像</h2><div class="seg2" role="group" aria-label="写真の有無"><button data-act="rep" data-p="1" class="'+(st.repPhoto?'on':'')+'">写真あり</button><button data-act="rep" data-p="0" class="'+(st.repPhoto?'':'on')+'">骨格のみ</button></div>'+
- '<div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
- '<p class="hint" id="repHint">iPhoneでは、画像を長押し→「写真に保存」や「共有」からLINEに送れます。</p><textarea id="lineTxt" class="vh" readonly tabindex="-1"></textarea>');
+ '<div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="printReport">印刷する</button><button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
+ '<p class="hint" id="repHint">iPhoneでは、画像を長押し→「写真に保存」や「共有」からLINEに送れます。印刷はA4で、長いときは自動で数枚に分けます。印刷の画面が出ないときは「共有」→「プリント」でも印刷できます。</p><textarea id="lineTxt" class="vh" readonly tabindex="-1"></textarea>');
  try{const out=await makeReport(st.repPhoto);st.report=out;const url=out.toDataURL('image/jpeg',0.9);const box=$('#repBox');if(box)box.innerHTML='<img src="'+url+'" alt="姿勢分析レポート">'}catch(e){const box=$('#repBox');if(box)box.innerHTML='<div class="warn">画像を作れませんでした：'+esc(msg(e))+'</div>'}}
+function repPages(cv){const W=cv.width,H=cv.height,ph=Math.round(W*281/194),D=cv.getContext('2d').getImageData(0,0,W,H).data,out=[];let y=0;
+ const same=r=>{const o=r*W*4,q=o-W*4;for(let i=0;i<W*4;i+=12){if(Math.abs(D[o+i]-D[q+i])>3||Math.abs(D[o+i+1]-D[q+i+1])>3||Math.abs(D[o+i+2]-D[q+i+2])>3)return false}return true};
+ const calm=c=>{for(let r=c-5;r<=c+5;r++)if(r<1||r>=H||!same(r))return false;return true};
+ while(y<H){let e=Math.min(H,y+ph);if(e<H){let c=e;for(;c>y+ph*0.5;c--)if(calm(c))break;if(c>y+ph*0.5)e=c}const pc=document.createElement('canvas');pc.width=W;pc.height=e-y;pc.getContext('2d').drawImage(cv,0,y,W,e-y,0,0,W,e-y);out.push(pc.toDataURL('image/jpeg',0.92));y=e}return out}
+async function printReport(){if(!st.report)return toast('レポートを作っているところです。少し待ってください');const old=$('#printArea');if(old)old.remove();
+ const box=document.createElement('div');box.id='printArea';box.innerHTML=repPages(st.report).map(u=>'<div class="pg"><img src="'+u+'" alt=""></div>').join('');document.body.appendChild(box);
+ try{await Promise.all([...box.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):null))}catch(e){}
+ const done=()=>{window.removeEventListener('afterprint',done);setTimeout(()=>{const b=$('#printArea');if(b)b.remove()},500)};window.addEventListener('afterprint',done);
+ try{window.print()}catch(e){done();toast('この画面からは印刷できません。「共有」→「プリント」を使ってください')}}
 function repName(){const d=new Date(st.cur.date);return '姿勢分析_'+(st.patient.id?st.patient.name+'_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.jpg'}
 function lineText(){const c=st.cur,A=analyze(c),n=st.patient.id?st.patient.name+'様':'';
  return '【姿勢分析の結果】'+n+'（'+fmtDate(c.date)+'）\n総合スコア '+(A.sc.total!=null?A.sc.total:'-')+'点（正面 '+(A.sc.front!=null?A.sc.front:'-')+'・側面 '+(A.sc.side!=null?A.sc.side:'-')+'・回旋 '+(A.sc.rot!=null?A.sc.rot:'-')+'）\n'+(A.type?'姿勢タイプ：'+A.type.name+'\n':'')+
@@ -1109,6 +1123,7 @@ const ACT={
  saveTrial:()=>trialSaveModal(),
  report:()=>openReport(),
  rep:b=>{st.repPhoto=b.dataset.p==='1';openReport()},
+ printReport:()=>printReport(),
  shareReport:async()=>{if(!st.report)return;const blob=await new Promise(r=>st.report.toBlob(r,'image/jpeg',0.92));const file=new File([blob],repName(),{type:'image/jpeg'});
   try{if(navigator.canShare&&!navigator.canShare({files:[file]}))throw new Error('x');await navigator.share({files:[file],title:'姿勢分析レポート'})}catch(e){if(!(e&&e.name==='AbortError'))toast('この画面からは共有できませんでした。画像を長押しして保存してください')}},
  driveReport:async b=>{if(!st.report)return;b.disabled=true;b.textContent='保存中…';const b64=st.report.toDataURL('image/jpeg',0.92).split(',')[1];
@@ -1137,12 +1152,13 @@ document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){st.q=t.val
  if(t.id==='rollR'&&st.cur){const v=st.cur.views[st.tab];if(!v)return;v.roll=parseFloat(t.value)||0;v.rollSrc='manual';if(st.cur.saved)st.cur.dirty=true;const l=$('#rollV');if(l)l.textContent=(v.roll>0?'+':'')+f1(v.roll)+'°';setupEditor()}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details.tool'))st.tool[d.dataset.t]=d.open},true);
 let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(st.view==='capture')setupEditor();if(st.view==='result')afterResult()},200)});
-window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE};
+window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports};
 (async()=>{try{if(!isDemo())applyTheme(localStorage.getItem('shisei-theme')||'',false)}catch(e){}NAV.init();render();await Store.init();
  if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.clinic||last||'').toLowerCase();PROFILE={name:'',tagline:''};if(prm.clinic&&st.lockCode){try{const br=await CL.sb.rpc('clinic_brand',{p_code:st.lockCode});if(br&&br.data){applyTheme(br.data.theme||'',false);PROFILE={name:br.data.name||'',tagline:''}}}catch(e){}}updBrand();
   const c=await CL.me();if(c&&(c.must_change||!CL.dekRaw)){PROFILE={name:(c.settings&&c.settings.profile&&c.settings.profile.name)||c.name,tagline:''};applyTheme((c.settings||{}).theme||'',false);updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
   if(c.must_change){st.lock={mode:'setup'};st.loading=false;go('lock');return}if(!CL.dek){st.lock={mode:'unlock'};st.loading=false;go('lock');return}applyClinic()}catch(e){st.loadErr=msg(e)}}
  if(Store.mode==='gas'){try{const a=await gs('apiAuthStatus',AUTH.token);if(!a||!a.ok){st.lock={set:!!(a&&a.set)};st.loading=false;go('lock');return}}catch(e){st.loadErr=msg(e)}}
+ if(Store.mode==='cloud'&&CL.dek)await runPendingImports();
  await loadPatients()})();
 }
 </script>
