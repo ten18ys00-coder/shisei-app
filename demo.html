@@ -129,8 +129,8 @@ td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(-
  table{font-size:13px}th,td{padding:8px 5px}
  .actbar .btn{flex:1 1 auto}
 }
-#printArea{display:none}
-@media print{@page{size:A4;margin:8mm}body>*:not(#printArea){display:none!important}body{background:#fff!important}#printArea{display:block!important}#printArea .pg{break-after:page;page-break-after:always}#printArea .pg:last-child{break-after:auto;page-break-after:auto}#printArea img{display:block;width:100%;height:auto}}
+#printArea{position:fixed;left:-300vw;top:0;width:194mm;pointer-events:none}
+@media print{@page{size:A4;margin:8mm}body>*:not(#printArea){display:none!important}body{background:#fff!important}#printArea{position:static!important;left:auto!important;width:auto!important;display:block!important}#printArea .pg{break-after:page;page-break-after:always}#printArea .pg:last-child{break-after:auto;page-break-after:auto}#printArea img{display:block;width:100%;height:auto}}
 </style>
 </head>
 <body>
@@ -1042,18 +1042,33 @@ async function makeReport(withPhoto){
  F(400,20);x.fillStyle=C.gl;wrapT('※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。',W-2*M).forEach((l,i)=>x.fillText(l,M,y+142+i*28));y+=186;
  const out=document.createElement('canvas');out.width=W;out.height=y;out.getContext('2d').drawImage(cv,0,0);return out}
 async function openReport(){openModal('<h2>レポート画像</h2><div class="seg2" role="group" aria-label="写真の有無"><button data-act="rep" data-p="1" class="'+(st.repPhoto?'on':'')+'">写真あり</button><button data-act="rep" data-p="0" class="'+(st.repPhoto?'':'on')+'">骨格のみ</button></div>'+
- '<div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="printReport">印刷する</button><button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
- '<p class="hint" id="repHint">iPhoneでは、画像を長押し→「写真に保存」や「共有」からLINEに送れます。印刷はA4で、長いときは自動で数枚に分けます。印刷の画面が出ないときは「共有」→「プリント」でも印刷できます。</p><textarea id="lineTxt" class="vh" readonly tabindex="-1"></textarea>');
+ '<div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="printReport">印刷する</button>'+(isTouchDev()?'':'<button class="btn" data-act="savePdf">PDFで保存</button>')+'<button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
+ '<p class="hint" id="repHint">iPhoneでは、画像を長押し→「写真に保存」や「共有」からLINEに送れます。「印刷する」を押すと、A4のPDF（長いときは数枚）ができます。スマホでは出てきた画面で「プリント」を選んでください。</p><textarea id="lineTxt" class="vh" readonly tabindex="-1"></textarea>');
  try{const out=await makeReport(st.repPhoto);st.report=out;const url=out.toDataURL('image/jpeg',0.9);const box=$('#repBox');if(box)box.innerHTML='<img src="'+url+'" alt="姿勢分析レポート">'}catch(e){const box=$('#repBox');if(box)box.innerHTML='<div class="warn">画像を作れませんでした：'+esc(msg(e))+'</div>'}}
 function repPages(cv){const W=cv.width,H=cv.height,ph=Math.round(W*281/194),D=cv.getContext('2d').getImageData(0,0,W,H).data,out=[];let y=0;
  const same=r=>{const o=r*W*4,q=o-W*4;for(let i=0;i<W*4;i+=12){if(Math.abs(D[o+i]-D[q+i])>3||Math.abs(D[o+i+1]-D[q+i+1])>3||Math.abs(D[o+i+2]-D[q+i+2])>3)return false}return true};
  const calm=c=>{for(let r=c-5;r<=c+5;r++)if(r<1||r>=H||!same(r))return false;return true};
- while(y<H){let e=Math.min(H,y+ph);if(e<H){let c=e;for(;c>y+ph*0.5;c--)if(calm(c))break;if(c>y+ph*0.5)e=c}const pc=document.createElement('canvas');pc.width=W;pc.height=e-y;pc.getContext('2d').drawImage(cv,0,y,W,e-y,0,0,W,e-y);out.push(pc.toDataURL('image/jpeg',0.92));y=e}return out}
-async function printReport(){if(!st.report)return toast('レポートを作っているところです。少し待ってください');const old=$('#printArea');if(old)old.remove();
- const box=document.createElement('div');box.id='printArea';box.innerHTML=repPages(st.report).map(u=>'<div class="pg"><img src="'+u+'" alt=""></div>').join('');document.body.appendChild(box);
+ while(y<H){let e=Math.min(H,y+ph);if(e<H){let c=e;for(;c>y+ph*0.5;c--)if(calm(c))break;if(c>y+ph*0.5)e=c}const pc=document.createElement('canvas');pc.width=W;pc.height=e-y;pc.getContext('2d').drawImage(cv,0,y,W,e-y,0,0,W,e-y);out.push({url:pc.toDataURL('image/jpeg',0.92),w:W,h:e-y});y=e}return out}
+function makePdf(pages){const te=new TextEncoder(),parts=[],offs=[];let len=0;const put=x=>{const b=typeof x==='string'?te.encode(x):x;parts.push(b);len+=b.length};
+ const obj=(n,f)=>{offs[n]=len;put(n+' 0 obj\n');f();put('\nendobj\n')};const PW=595.28,PH=841.89,MG=22.68,n=pages.length;
+ const bytes=u=>{const s=atob(u.split(',')[1]),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a};
+ put('%PDF-1.4\n');put(new Uint8Array([37,226,227,207,211,10]));
+ obj(1,()=>put('<< /Type /Catalog /Pages 2 0 R >>'));obj(2,()=>put('<< /Type /Pages /Count '+n+' /Kids ['+pages.map((_,i)=>(3+i*3)+' 0 R').join(' ')+'] >>'));
+ pages.forEach((p,i)=>{const pg=3+i*3,img=bytes(p.url),dw=PW-2*MG,dh=Math.min(PH-2*MG,p.h*dw/p.w),cs='q '+dw.toFixed(2)+' 0 0 '+dh.toFixed(2)+' '+MG.toFixed(2)+' '+(PH-MG-dh).toFixed(2)+' cm /Im Do Q';
+  obj(pg,()=>put('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW+' '+PH+'] /Resources << /XObject << /Im '+(pg+2)+' 0 R >> >> /Contents '+(pg+1)+' 0 R >>'));
+  obj(pg+1,()=>put('<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream'));
+  obj(pg+2,()=>{put('<< /Type /XObject /Subtype /Image /Width '+p.w+' /Height '+p.h+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+img.length+' >>\nstream\n');put(img);put('\nendstream')})});
+ const tot=3+n*3,xo=len;let x='xref\n0 '+tot+'\n0000000000 65535 f \n';for(let i=1;i<tot;i++)x+=String(offs[i]).padStart(10,'0')+' 00000 n \n';
+ put(x+'trailer\n<< /Size '+tot+' /Root 1 0 R >>\nstartxref\n'+xo+'\n%%EOF\n');return new Blob(parts,{type:'application/pdf'})}
+function isTouchDev(){return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent))}
+async function printReport(){if(!st.report)return toast('レポートを作っているところです。少し待ってください');const pages=repPages(st.report);
+ if(isTouchDev()&&navigator.share&&navigator.canShare){const file=new File([makePdf(pages)],repName().replace(/\.jpg$/,'.pdf'),{type:'application/pdf'});
+  if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file]})}catch(e){if(!e||e.name!=='AbortError')toast('開けませんでした：'+msg(e))}return}}
+ const old=$('#printArea');if(old)old.remove();const box=document.createElement('div');box.id='printArea';box.innerHTML=pages.map(p=>'<div class="pg"><img src="'+p.url+'" alt=""></div>').join('');document.body.appendChild(box);
  try{await Promise.all([...box.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):null))}catch(e){}
- const done=()=>{window.removeEventListener('afterprint',done);setTimeout(()=>{const b=$('#printArea');if(b)b.remove()},500)};window.addEventListener('afterprint',done);
- try{window.print()}catch(e){done();toast('この画面からは印刷できません。「共有」→「プリント」を使ってください')}}
+ await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,250))));
+ try{window.print()}catch(e){toast('この画面からは印刷できません')}}
+function savePdf(){if(!st.report)return;const a=document.createElement('a');a.href=URL.createObjectURL(makePdf(repPages(st.report)));a.download=repName().replace(/\.jpg$/,'.pdf');document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
 function repName(){const d=new Date(st.cur.date);return '姿勢分析_'+(st.patient.id?st.patient.name+'_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.jpg'}
 function lineText(){const c=st.cur,A=analyze(c),n=st.patient.id?st.patient.name+'様':'';
  return '【姿勢分析の結果】'+n+'（'+fmtDate(c.date)+'）\n総合スコア '+(A.sc.total!=null?A.sc.total:'-')+'点（正面 '+(A.sc.front!=null?A.sc.front:'-')+'・側面 '+(A.sc.side!=null?A.sc.side:'-')+'・回旋 '+(A.sc.rot!=null?A.sc.rot:'-')+'）\n'+(A.type?'姿勢タイプ：'+A.type.name+'\n':'')+
@@ -1063,7 +1078,7 @@ function careText(c,A){const C=careFrom(A),L=loadEst(c,A),sel=careSel(c,C);let t
 
 /* ---------- modal & toast ---------- */
 function openModal(html){const m=$('#modal');$('#mbody').innerHTML=html;m.hidden=false;setTimeout(()=>NAV.arm(),0);const f=$('#mbody input,#mbody select,#mbody button');if(f)f.focus()}
-function closeModal(){$('#modal').hidden=true;$('#mbody').innerHTML=''}
+function closeModal(){$('#modal').hidden=true;$('#mbody').innerHTML='';const pa=$('#printArea');if(pa)pa.remove()}
 let toastT=0;function toast(t){let el=$('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},2600)}
 function confirmBox(text,ok,fn){openModal('<h2>'+esc(text)+'</h2><div class="macts"><button class="btn pri danger" data-act="cfOk" style="background:var(--ng);border-color:var(--ng);color:#fff">'+esc(ok)+'</button><button class="btn" data-act="closeModal">やめる</button></div>');st.cf=fn}
 function patientForm(p){openModal('<h2>'+(p?'患者さん情報の編集':'新しい患者さん')+'</h2><form id="pform" class="form"><label>お名前<span class="req">必須</span><input name="name" required autocomplete="off" value="'+esc(p?p.name:'')+'"></label>'+
@@ -1124,6 +1139,7 @@ const ACT={
  report:()=>openReport(),
  rep:b=>{st.repPhoto=b.dataset.p==='1';openReport()},
  printReport:()=>printReport(),
+ savePdf:()=>savePdf(),
  shareReport:async()=>{if(!st.report)return;const blob=await new Promise(r=>st.report.toBlob(r,'image/jpeg',0.92));const file=new File([blob],repName(),{type:'image/jpeg'});
   try{if(navigator.canShare&&!navigator.canShare({files:[file]}))throw new Error('x');await navigator.share({files:[file],title:'姿勢分析レポート'})}catch(e){if(!(e&&e.name==='AbortError'))toast('この画面からは共有できませんでした。画像を長押しして保存してください')}},
  driveReport:async b=>{if(!st.report)return;b.disabled=true;b.textContent='保存中…';const b64=st.report.toDataURL('image/jpeg',0.92).split(',')[1];
@@ -1152,7 +1168,7 @@ document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){st.q=t.val
  if(t.id==='rollR'&&st.cur){const v=st.cur.views[st.tab];if(!v)return;v.roll=parseFloat(t.value)||0;v.rollSrc='manual';if(st.cur.saved)st.cur.dirty=true;const l=$('#rollV');if(l)l.textContent=(v.roll>0?'+':'')+f1(v.roll)+'°';setupEditor()}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details.tool'))st.tool[d.dataset.t]=d.open},true);
 let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(st.view==='capture')setupEditor();if(st.view==='result')afterResult()},200)});
-window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports};
+window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,repPages,makePdf};
 (async()=>{try{if(!isDemo())applyTheme(localStorage.getItem('shisei-theme')||'',false)}catch(e){}NAV.init();render();await Store.init();
  if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.clinic||last||'').toLowerCase();PROFILE={name:'',tagline:''};if(prm.clinic&&st.lockCode){try{const br=await CL.sb.rpc('clinic_brand',{p_code:st.lockCode});if(br&&br.data){applyTheme(br.data.theme||'',false);PROFILE={name:br.data.name||'',tagline:''}}}catch(e){}}updBrand();
   const c=await CL.me();if(c&&(c.must_change||!CL.dekRaw)){PROFILE={name:(c.settings&&c.settings.profile&&c.settings.profile.name)||c.name,tagline:''};applyTheme((c.settings||{}).theme||'',false);updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
