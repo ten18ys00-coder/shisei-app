@@ -531,12 +531,19 @@ const CL={sb:null,clinic:null,dek:null,dekRaw:null,
  async savePatient(p){const row={id:p.id,clinic_id:this.clinic.id,height:p.height||null,weight:p.weight||null,sex:p.sex||null,age_band:p.ageBand||null,last_at:p.lastAt||null,last_total:p.lastTotal!=null?Math.round(p.lastTotal):null,count:p.count||0};
   if(!(p.locked&&p.name===LOCKED_NAME))row.enc=await this.enc({name:p.name||'',kana:p.kana||'',memo:p.memo||''});
   const {error}=await this.sb.from('patients').upsert(row);if(error)throw error},
- async deletePatient(id){const {error}=await this.sb.from('patients').delete().eq('id',id).eq('clinic_id',this.clinic.id);if(error)throw error},
+ async deletePatient(id){let sids=[];try{const r=await this.sb.from('sessions').select('id').eq('clinic_id',this.clinic.id).eq('patient_id',id);sids=(r.data||[]).map(x=>x.id)}catch(e){}
+  const {error}=await this.sb.from('patients').delete().eq('id',id).eq('clinic_id',this.clinic.id);if(error)throw error;await this.delPhotos(sids)},
  async listSessions(pid){const rows=await this.pages(()=>this.sb.from('sessions').select('id,date,data,enc').eq('clinic_id',this.clinic.id).eq('patient_id',pid).order('date'));const out=[];
   for(const r of rows){const e=await this.dec(r.enc);out.push(Object.assign({},r.data,{id:r.id,date:r.date,comment:e._locked?'':(e.comment!=null?e.comment:'')}))}return out},
  async saveSession(pid,sid,b){const data=JSON.parse(JSON.stringify(b));const comment=data.comment||'';delete data.comment;delete data.id;
   const {error}=await this.sb.from('sessions').upsert({id:sid,clinic_id:this.clinic.id,patient_id:pid,date:b.date,data,enc:await this.enc({comment})});if(error)throw error},
- async deleteSession(pid,sid){const {error}=await this.sb.from('sessions').delete().eq('id',sid).eq('clinic_id',this.clinic.id);if(error)throw error},
+ async deleteSession(pid,sid){const {error}=await this.sb.from('sessions').delete().eq('id',sid).eq('clinic_id',this.clinic.id);if(error)throw error;await this.delPhotos([sid])},
+ photoPath(sid,k){return this.clinic.id+'/'+sid+'/'+k+'.bin'},
+ async putPhoto(sid,k,blob){const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},this.dek,await blob.arrayBuffer())),b=new Uint8Array(12+ct.length);b.set(iv);b.set(ct,12);
+  const {error}=await this.sb.storage.from('photos').upload(this.photoPath(sid,k),new Blob([b],{type:'application/octet-stream'}),{upsert:true,contentType:'application/octet-stream'});if(error)throw error},
+ async getPhoto(sid,k){const {data,error}=await this.sb.storage.from('photos').download(this.photoPath(sid,k));if(error)throw error;const b=new Uint8Array(await data.arrayBuffer());
+  return new Blob([await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},this.dek,b.slice(12))],{type:'image/jpeg'})},
+ async delPhotos(sids){const paths=[];(sids||[]).forEach(x=>VIEWS.forEach(v=>paths.push(this.photoPath(x,v.k))));if(!paths.length)return;try{await this.sb.storage.from('photos').remove(paths)}catch(e){}},
  async listAll(){const rows=await this.pages(()=>this.sb.from('sessions').select('id,date,data').eq('clinic_id',this.clinic.id).order('date'));return rows.map(r=>Object.assign({},r.data,{id:r.id,date:r.date}))},
  async listResearch(){const rows=await this.pages(()=>this.sb.from('research_sessions').select('id,clinic_code,date,height,sex,age_band,data').order('date'));return rows.map(r=>Object.assign({},r.data,{id:r.id,date:r.date,height:r.data&&r.data.height!=null?r.data.height:r.height}))},
  async saveSettings(patch){const set=Object.assign({},this.clinic.settings||{},patch);const {error}=await this.sb.from('clinics').update({settings:set}).eq('id',this.clinic.id);if(error)throw error;this.clinic.settings=set},
@@ -580,7 +587,7 @@ function pack(c,A){const views={};for(const k in c.views){const v=c.views[k];vie
  return {date:c.date,height:c.height||null,weight:c.weight||null,care:c.care||null,ageBand:c.ageBand||null,sex:c.sex||null,comment:c.comment||'',judge:c.judge&&Object.keys(c.judge).length?c.judge:null,views,scores:A.sc,type:A.type?A.type.name:'',ver:2}}
 const chunk=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o};
 function unpack(s){const views={};const sv=s.views||{};for(const k in sv){const v=sv[k];views[k]={lm:chunk(v.lm,4),w:v.w?chunk(v.w,3):null,ar:v.ar,near:v.near||null,roll:v.roll||0,rollSrc:v.rollSrc||'none',unc:v.unc||null,snap:v.snap?Object.fromEntries(v.snap.map(i=>[i,1])):null}}
- return {id:s.id,date:s.date,height:s.height||null,weight:s.weight||null,care:s.care||null,comment:s.comment==null?null:s.comment,ageBand:s.ageBand||null,sex:s.sex||null,judge:s.judge||null,views,saved:true,dirty:false,fromHistory:true}}
+ return {id:s.id,date:s.date,height:s.height||null,weight:s.weight||null,care:s.care||null,comment:s.comment==null?null:s.comment,ageBand:s.ageBand||null,sex:s.sex||null,judge:s.judge||null,photos:Array.isArray(s.photos)?s.photos:null,views,saved:true,dirty:false,fromHistory:true}}
 
 /* ---------- pose engine ---------- */
 const MP='https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/';
@@ -898,8 +905,16 @@ function afterResult(){const c=st.cur;
   frame(performance.now());let sx=null,y0=0;
   cv.onpointerdown=e=>{user=true;cancelAnimationFrame(anim3d);sx=e.clientX;y0=yaw;try{cv.setPointerCapture(e.pointerId)}catch(_){}};
   cv.onpointermove=e=>{if(sx==null)return;yaw=y0+(e.clientX-sx)/80;draw3D(cv,w,yaw)};cv.onpointerup=cv.onpointercancel=()=>{sx=null}}}
+function photoBlob(src){const L=1280,k=Math.min(1,L/Math.max(src.width,src.height)),c=document.createElement('canvas');c.width=Math.round(src.width*k);c.height=Math.round(src.height*k);c.getContext('2d').drawImage(src,0,0,c.width,c.height);
+ return new Promise((r,j)=>c.toBlob(b=>b?r(b):j(new Error('写真を作れませんでした')),'image/jpeg',0.82))}
+function blobCanvas(blob){return new Promise((res,rej)=>{const u=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);URL.revokeObjectURL(u);res(c)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('写真を読めませんでした'))};im.src=u})}
+function loadPhotos(c){if(!c||Store.mode!=='cloud'||!CL.dek||!c.photos||!c.photos.length)return Promise.resolve();if(c._ph)return c._ph;
+ c._ph=(async()=>{let n=0;for(const k of c.photos){const v=c.views[k];if(!v||v.canvas)continue;try{v.canvas=await blobCanvas(await CL.getPhoto(c.id,k));v.photoSaved=true;n++}catch(e){}}if(n&&st.cur===c&&st.view==='result')render()})();return c._ph}
 async function doSave(){const c=st.cur,p=st.patient;if(!p||!p.id)return;const A=analyze(c),body=pack(c,A),b=$('#saveBtn');if(b){b.disabled=true;b.textContent='保存中…'}
- try{await Store.saveSession(p.id,c.id,body);st.sessions=[Object.assign({id:c.id},body)].concat(st.sessions.filter(x=>x.id!==c.id)).sort((x,y)=>String(y.date).localeCompare(String(x.date)));
+ try{let photos=(c.photos||[]).filter(k=>c.views[k]),perr=false;
+  if(Store.mode==='cloud'&&CL.dek){for(const k of Object.keys(c.views)){const v=c.views[k];if(!v.canvas||v.photoSaved)continue;try{await CL.putPhoto(c.id,k,await photoBlob(v.canvas));v.photoSaved=true;if(!photos.includes(k))photos.push(k)}catch(e){perr=true}}}
+  if(photos.length)body.photos=photos;c.photos=photos;if(perr)toast('写真の保存に失敗しました。もう一度「変更を保存」を押してください');
+  await Store.saveSession(p.id,c.id,body);st.sessions=[Object.assign({id:c.id},body)].concat(st.sessions.filter(x=>x.id!==c.id)).sort((x,y)=>String(y.date).localeCompare(String(x.date)));
   const L=st.sessions[0],np=Object.assign({},p,{lastAt:L.date,lastTotal:L.scores?L.scores.total:null,count:st.sessions.length});await Store.savePatient(np);st.patient=np;upsertPatient(np);c.saved=true;c.dirty=false;toast('保存しました')}
  catch(e){toast('保存できませんでした：'+msg(e))}
  if(st.view==='result')render()}
@@ -1042,9 +1057,9 @@ async function makeReport(withPhoto){
  F(400,20);x.fillStyle=C.gl;wrapT('※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。',W-2*M).forEach((l,i)=>x.fillText(l,M,y+142+i*28));y+=186;
  const out=document.createElement('canvas');out.width=W;out.height=y;out.getContext('2d').drawImage(cv,0,0);return out}
 async function openReport(){openModal('<h2>レポート画像</h2><div class="seg2" role="group" aria-label="写真の有無"><button data-act="rep" data-p="1" class="'+(st.repPhoto?'on':'')+'">写真あり</button><button data-act="rep" data-p="0" class="'+(st.repPhoto?'':'on')+'">骨格のみ</button></div>'+
- '<div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="printReport">印刷する</button>'+(isTouchDev()?'':'<button class="btn" data-act="savePdf">PDFで保存</button>')+'<button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
+ '<p class="note" id="repNoPh" style="display:none">この記録には写真が保存されていないため、骨格だけのレポートになります。写真は2026年11月25日以降に保存した記録から残ります。</p><div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="printReport">印刷する</button>'+(isTouchDev()?'':'<button class="btn" data-act="savePdf">PDFで保存</button>')+'<button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
  '<p class="hint" id="repHint">iPhoneでは、画像を長押し→「写真に保存」や「共有」からLINEに送れます。「印刷する」を押すと、A4のPDF（長いときは数枚）ができます。スマホでは出てきた画面で「プリント」を選んでください。</p><textarea id="lineTxt" class="vh" readonly tabindex="-1"></textarea>');
- try{const out=await makeReport(st.repPhoto);st.report=out;const url=out.toDataURL('image/jpeg',0.9);const box=$('#repBox');if(box)box.innerHTML='<img src="'+url+'" alt="姿勢分析レポート">'}catch(e){const box=$('#repBox');if(box)box.innerHTML='<div class="warn">画像を作れませんでした：'+esc(msg(e))+'</div>'}}
+ try{if(st.repPhoto)await loadPhotos(st.cur);const hasPh=Object.values(st.cur.views).some(v=>v.canvas),nb=$('#repNoPh');if(nb)nb.style.display=(st.repPhoto&&!hasPh)?'':'none';const out=await makeReport(st.repPhoto);st.report=out;const url=out.toDataURL('image/jpeg',0.9);const box=$('#repBox');if(box)box.innerHTML='<img src="'+url+'" alt="姿勢分析レポート">'}catch(e){const box=$('#repBox');if(box)box.innerHTML='<div class="warn">画像を作れませんでした：'+esc(msg(e))+'</div>'}}
 function repPages(cv){const W=cv.width,H=cv.height,ph=Math.round(W*281/194),D=cv.getContext('2d').getImageData(0,0,W,H).data,out=[];let y=0;
  const same=r=>{const o=r*W*4,q=o-W*4;for(let i=0;i<W*4;i+=12){if(Math.abs(D[o+i]-D[q+i])>3||Math.abs(D[o+i+1]-D[q+i+1])>3||Math.abs(D[o+i+2]-D[q+i+2])>3)return false}return true};
  const calm=c=>{for(let r=c-5;r<=c+5;r++)if(r<1||r>=H||!same(r))return false;return true};
@@ -1113,7 +1128,7 @@ const ACT={
  snapNow:()=>{const v=st.cur.views[st.tab];if(!v||!st.marker)return;const n=snapMarkers(v,st.tab,st.marker);if(st.cur.saved)st.cur.dirty=true;toast(n?n+'点の目印をシールに合わせました':'目印の近くにシールが見つかりませんでした');render()},
  toCapture:()=>{if(st.cur&&st.cur.fromHistory)return go('patient');go('capture')},
  toResult:()=>{st.cmpId=null;go('result')},
- openSession:b=>{const s=st.sessions.find(x=>x.id===b.dataset.id);if(!s)return;st.cur=unpack(s);st.cmpId=null;go('result')},
+ openSession:b=>{const s=st.sessions.find(x=>x.id===b.dataset.id);if(!s)return;st.cur=unpack(s);st.cmpId=null;go('result');loadPhotos(st.cur)},
  delSession:b=>{const sid=b.dataset.id;confirmBox('この分析の記録を削除しますか？','削除する',async()=>{try{await Store.deleteSession(st.patient.id,sid);st.sessions=st.sessions.filter(x=>x.id!==sid);const L=st.sessions[0];const np=Object.assign({},st.patient,{lastAt:L?L.date:null,lastTotal:L&&L.scores?L.scores.total:null,count:st.sessions.length});await Store.savePatient(np);st.patient=np;upsertPatient(np);toast('削除しました')}catch(e){toast(msg(e))}render()})},
  delPatient:()=>{const p=st.patient;confirmBox(p.name+'さんと、すべての分析の記録を削除しますか？','削除する',async()=>{try{await Store.deletePatient(p.id);st.patients=st.patients.filter(x=>x.id!==p.id);st.patient=null;toast('削除しました');go('home')}catch(e){toast(msg(e))}})},
  cfOk:async()=>{const fn=st.cf;st.cf=null;closeModal();if(fn)await fn()},
@@ -1168,7 +1183,7 @@ document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){st.q=t.val
  if(t.id==='rollR'&&st.cur){const v=st.cur.views[st.tab];if(!v)return;v.roll=parseFloat(t.value)||0;v.rollSrc='manual';if(st.cur.saved)st.cur.dirty=true;const l=$('#rollV');if(l)l.textContent=(v.roll>0?'+':'')+f1(v.roll)+'°';setupEditor()}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details.tool'))st.tool[d.dataset.t]=d.open},true);
 let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(st.view==='capture')setupEditor();if(st.view==='result')afterResult()},200)});
-window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,repPages,makePdf};
+window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,repPages,makePdf,loadPhotos,photoBlob,doSave:()=>doSave()};
 (async()=>{try{if(!isDemo())applyTheme(localStorage.getItem('shisei-theme')||'',false)}catch(e){}NAV.init();render();await Store.init();
  if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.clinic||last||'').toLowerCase();PROFILE={name:'',tagline:''};if(prm.clinic&&st.lockCode){try{const br=await CL.sb.rpc('clinic_brand',{p_code:st.lockCode});if(br&&br.data){applyTheme(br.data.theme||'',false);PROFILE={name:br.data.name||'',tagline:''}}}catch(e){}}updBrand();
   const c=await CL.me();if(c&&(c.must_change||!CL.dekRaw)){PROFILE={name:(c.settings&&c.settings.profile&&c.settings.profile.name)||c.name,tagline:''};applyTheme((c.settings||{}).theme||'',false);updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
