@@ -1,0 +1,16 @@
+{
+  "name": "姿勢分析（お試し版）",
+  "short_name": "姿勢お試し",
+  "description": "写真から姿勢を分析するアプリ",
+  "display": "standalone",
+  "start_url": "./",
+  "scope": "./",
+  "background_color": "#f7f3ea",
+  "theme_color": "#1f4436",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
