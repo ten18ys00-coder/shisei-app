@@ -148,6 +148,9 @@ td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(-
 .gdia{margin:6px 0 10px}.gdia h3{margin:4px 0}.gdia svg{width:100%;height:auto;display:block}
 .ginfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:12px}.ginfo>div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.ginfo small{display:block;color:var(--mut);font-size:12px}.ginfo b{font-size:20px}
 .pacts2 .btn.gait{border-color:var(--g);color:var(--g)}
+.gref summary{cursor:pointer;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;min-height:32px}.gref .mlist li{display:block}.gref .mlist b{font-weight:700}.gref .badge{display:inline-block;margin:2px 0 4px}.gref .mlist small{font-size:13px}
+.gcmpplay{margin:4px 0 12px}.gpair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gpair b{display:block;font-size:14px;margin-bottom:4px}
+.gpctl.cmp .btn{min-height:40px;padding:6px 10px;font-size:14px}.gpctl.cmp select{min-height:40px;font-size:14px}.gpctl.cmp [data-g=prev],.gpctl.cmp [data-g=next]{display:none}
 @media (max-width:720px){.tiles.t4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
@@ -1215,7 +1218,7 @@ const GV=[{k:'front',label:'前から',sub:'こちらへ歩いてくる'},{k:'ba
 const GVL={front:'前から',back:'後ろから'};
 const GSPEC={
  gPelvis:{label:'骨盤の落ち込み',good:5,bad:8,unit:'°'},
- gTrunk:{label:'上半身の横への傾き',good:4,bad:7,unit:'°'},
+ gTrunk:{label:'上半身の横への傾き',good:3,bad:6,unit:'°'},
  gKnee:{label:'膝の向き',good:5,bad:10,unit:'°'},
  gSupport:{label:'片脚で支える時間の左右差',good:6,bad:12,unit:'%'}
 };
@@ -1295,8 +1298,9 @@ function gAnalyzeClip(cl){
  const clean=(a)=>{const b=a.slice();const minSw=Math.max(1,Math.round(0.1/dt)),minSt=Math.max(1,Math.round(0.12/dt));
   for(let pass=0;pass<2;pass++){segs(b,1).forEach(([x,y])=>{if(y-x+1<minSw&&x>i0&&y<i1)for(let i=x;i<=y;i++)b[i]=0});segs(b,0).forEach(([x,y])=>{if(y-x+1<minSt&&x>i0&&y<i1)for(let i=x;i<=y;i++)b[i]=1})}return b};
  sw={R:clean(sw.R),L:clean(sw.L)};
+ const thr={R:{},L:{}};
  for(const sd of ['R','L']){const a=sw[sd],v=V[sd];segs(a,1).forEach(([x,y])=>{let pk=0;for(let i=x;i<=y;i++)pk=Math.max(pk,v[i]||0);const th=Math.max(floor*0.6,0.15*pk);
-  let i=x;while(i-1>i0&&a[i-1]===0&&(v[i-1]||0)>th&&sw[gOp(sd)][i-1]===0)a[--i]=1;let j=y;while(j+1<i1&&a[j+1]===0&&(v[j+1]||0)>th&&sw[gOp(sd)][j+1]===0)a[++j]=1})}
+  let i=x;while(i-1>i0&&a[i-1]===0&&(v[i-1]||0)>th&&sw[gOp(sd)][i-1]===0)a[--i]=1;let j=y;while(j+1<i1&&a[j+1]===0&&(v[j+1]||0)>th&&sw[gOp(sd)][j+1]===0)a[++j]=1;thr[sd][i]=th})}
  const T=i=>cl.t[i];
  const stance={},swing={};for(const sd of ['R','L']){stance[sd]=segs(sw[sd],0).map(([a,b])=>({a,b,full:a>i0&&b<i1}));swing[sd]=segs(sw[sd],1).map(([a,b])=>({a,b,full:a>i0&&b<i1}))}
  // 接地（立脚の始まり）
@@ -1304,7 +1308,15 @@ function gAnalyzeClip(cl){
  const stepT=[];for(let j=1;j<contacts.length;j++)if(contacts[j].sd!==contacts[j-1].sd){const d=contacts[j].t-contacts[j-1].t;if(d>0.25&&d<1.5)stepT.push({sd:contacts[j].sd,d})}
  res.steps=contacts.length;res.cad=stepT.length>=2?60/gMed(stepT.map(x=>x.d)):null;
  // 片脚で支える時間＝反対の脚が浮いている時間
- res.ss={};res.ssN={};for(const sd of ['R','L']){const a=swing[gOp(sd)].filter(s=>s.full).map(s=>T(s.b+1>i1?s.b:s.b+1)-T(s.a)).filter(d=>d>0.15&&d<1.2);res.ss[sd]=a.length?gMean(a):null;res.ssN[sd]=a.length}
+ // 足が浮いた・着いた時刻を、速さがしきい値をまたいだ点としてコマの間で補間する
+ const cross=(v,i,j,th)=>{const a=v[i],b=v[j];if(a==null||b==null||a===b)return (T(i)+T(j))/2;const f=clamp((th-a)/(b-a),0,1);return T(i)+(T(j)-T(i))*f};
+ const swDur=(sd,s)=>{const v=V[sd],th=thr[sd][s.a]!=null?thr[sd][s.a]:floor;const t0=s.a>i0?cross(v,s.a-1,s.a,th):T(s.a),t1=s.b<i1?cross(v,s.b,s.b+1,th):T(s.b);return t1-t0};
+ const hwM=Math.max(...hipW.filter(Boolean)),wS=s=>{const a=[];for(let i=s.a;i<=s.b;i++)if(hipW[i])a.push(hipW[i]/hwM);const m=gMean(a)||0;return m*m};
+ res.ss={};res.ssN={};res.ssW={};for(const sd of ['R','L']){const a=swing[gOp(sd)].filter(s=>s.full).map(s=>({d:swDur(gOp(sd),s),w:wS(s)})).filter(x=>x.d>0.15&&x.d<1.2);
+  const W=a.reduce((q,x)=>q+x.w,0);res.ss[sd]=a.length?(W?a.reduce((q,x)=>q+x.d*x.w,0)/W:gMean(a.map(x=>x.d))):null;res.ssN[sd]=a.length;res.ssW[sd]=W}
+ // 左右差は、となり合う「右の片脚立ち」と「左の片脚立ち」を組にして比べる（カメラからの距離の影響を打ち消す）
+ const sws=[];for(const sd of ['R','L'])swing[gOp(sd)].filter(s=>s.full).forEach(s=>{const d=swDur(gOp(sd),s);if(d>0.15&&d<1.2)sws.push({sd,t:T(s.a),d,w:wS(s)})});sws.sort((a,b)=>a.t-b.t);
+ res.pairs=[];for(let j=1;j<sws.length;j++){const a=sws[j-1],b=sws[j];if(a.sd===b.sd||b.t-a.t>1.2)continue;const r=a.sd==='R'?a:b,l=a.sd==='R'?b:a;res.pairs.push({lr:Math.log(r.d/l.d),w:(a.w+b.w)/2})}
  // 骨盤・体幹・膝の角度
  const phi=Array.from({length:n},(_,i)=>{const r=P('R','hip',i),l=P('L','hip',i);return r&&l&&i>=i0&&i<=i1?Math.atan2(l.y-r.y,Math.abs(l.x-r.x))*D:null});
  const psi=Array.from({length:n},(_,i)=>{const r=P('R','hip',i),l=P('L','hip',i),m=midH(i),s2=midS(i);if(!r||!l||!m||!s2||i<i0||i>i1)return null;const sL=Math.sign(l.x-r.x)||1;return Math.atan2((s2.x-m.x)*sL,m.y-s2.y)*D});
@@ -1326,14 +1338,17 @@ function gAnalyzeClip(cl){
  // 区間の中盤（はじめと終わりの1割を除く）の上位2割の値＝ノイズに強いピーク
  const peakIn=(arr,s,sg,lo,hi)=>{const L=s.b-s.a,a=s.a+Math.round(L*(lo==null?0.1:lo)),b=s.a+Math.round(L*(hi==null?0.9:hi));const xs=[];let mi=null,m=null;for(let i=a;i<=b;i++){const v=arr[i];if(v==null)continue;const x=v*sg;xs.push(x);if(m==null||x>m){m=x;mi=i}}if(xs.length<2)return null;return {v:gPct(xs,0.8),i:mi,w:wOf(s)}};
  const wmean=a=>{let s=0,c=0;a.forEach(x=>{s+=x.v*x.w;c+=x.w});return c?s/c:gMean(a.map(x=>x.v))};
- res.drop={};res.lean={};res.knee={};res.key={};
+ res.drop={};res.lean={};res.knee={};res.key={};res.thrust={};
  for(const sd of ['R','L']){const sg=sd==='R'?1:-1;
   const dp=ints[sd].map(s=>peakIn(res.series.phi,s,sg)).filter(Boolean),ln=ints[sd].map(s=>peakIn(res.series.psi,s,-sg)).filter(Boolean);
   res.drop[sd]=dp.length?{v:wmean(dp),n:dp.length}:null;res.lean[sd]=ln.length?{v:wmean(ln),n:ln.length}:null;
   if(dp.length){const m=res.drop[sd].v;res.key[sd]=dp.slice().sort((a,b)=>Math.abs(a.v-m)-Math.abs(b.v-m))[0].i}
   const kv=[];stance[sd].forEach(s=>{const d=T(s.b)-T(s.a);if(!s.full&&d<0.25)return;const L=s.b-s.a,a=s.a+Math.round(L*0.05),b=s.a+Math.round(L*0.6);const w=[];for(let i=a;i<=b;i++)if(K[sd][i]!=null)w.push(K[sd][i]);if(w.length<2)return;const m=gMean(w),sg=m>=0?1:-1;
    kv.push({v:sg*gPct(w.map(x=>x*sg),0.8),w:wOf(s),i:s.a+Math.round(L*0.3)})});
-  res.knee[sd]=kv.length?{v:wmean(kv),n:kv.length}:null}
+  res.knee[sd]=kv.length?{v:wmean(kv),n:kv.length}:null;
+  const th=[];stance[sd].forEach(s=>{const d=T(s.b)-T(s.a);if(!s.full&&d<0.3)return;if(s.a<=i0)return;const L=s.b-s.a,ic=[],mid=[];for(let i=s.a;i<=s.a+Math.max(1,Math.round(L*0.08));i++)if(K[sd][i]!=null)ic.push(K[sd][i]);
+   for(let i=s.a+Math.round(L*0.3);i<=s.a+Math.round(L*0.45);i++)if(K[sd][i]!=null)mid.push(K[sd][i]);if(ic.length&&mid.length)th.push({v:gMean(mid)-gMean(ic),w:wOf(s)})});
+  res.thrust[sd]=th.length?{v:wmean(th),n:th.length}:null}
  // 参考値：足を置く幅、体の横揺れ
  const sw2=[];for(let i=i0;i<=i1;i++)if(sw.R[i]===0&&sw.L[i]===0&&hipW[i])sw2.push(Math.abs(F.R[i].x-F.L[i].x)/hipW[i]);res.width=sw2.length>=3?gMed(sw2):null;
  const hw2=Math.max(2,Math.round(0.55/dt)),rr=[];for(let i=i0+hw2;i<=i1-hw2;i++){const m=midH(i);if(!m||!hipW[i])continue;const a=[];for(let j=i-hw2;j<=i+hw2;j++){const q=midH(j);if(q)a.push(q.x)}rr.push((m.x-gMean(a))/hipW[i])}
@@ -1350,9 +1365,11 @@ function gCombine(rs){const ok=rs.filter(r=>r&&r.ok),rows=[];
  const pool=(f,sd)=>{let s=0,c=0;ok.forEach(r=>{const x=r[f]&&r[f][sd];if(x&&x.v!=null){s+=x.v*x.n;c+=x.n}});return c?{v:s/c,n:c}:null};
  const spec=k=>{const s=GSPEC[k],o=(typeof CFG!=='undefined'&&CFG[k])||{};return {good:o.good!=null?o.good:s.good,bad:o.bad!=null?o.bad:s.bad}};
  const add=(k,sd,v,n,dir,tip)=>{if(v==null)return;const q=spec(k),sc=Math.round(score(v,q));rows.push({key:k,side:sd,val:v,n,score:sc,st:stOf(v,q),label:GSPEC[k].label+(sd?'（'+jpS(sd)+'脚で立つとき）':''),dir,tip})};
- const ssA={R:[],L:[]};ok.forEach(r=>{for(const sd of ['R','L'])if(r.ss[sd]!=null)for(let j=0;j<r.ssN[sd];j++)ssA[sd].push(r.ss[sd])});
- const ssR=gMean(ssA.R),ssL=gMean(ssA.L);
- if(ssR!=null&&ssL!=null){const si=(ssR-ssL)/((ssR+ssL)/2)*100,sh=si>0?'L':'R';
+ const ssA={R:[],L:[]};ok.forEach(r=>{for(const sd of ['R','L'])if(r.ss[sd]!=null)ssA[sd].push({v:r.ss[sd],w:(r.ssW&&r.ssW[sd])||r.ssN[sd]||1,n:r.ssN[sd]})});
+ const wm=a=>{const W=a.reduce((q,x)=>q+x.w,0);return a.length?(W?a.reduce((q,x)=>q+x.v*x.w,0)/W:gMean(a.map(x=>x.v))):null};
+ const ssR=wm(ssA.R),ssL=wm(ssA.L);ssA.R.length=ssA.R.reduce((q,x)=>q+x.n,0);ssA.L.length=ssA.L.reduce((q,x)=>q+x.n,0);
+ const prs=[].concat(...ok.map(r=>r.pairs||[])),pW=prs.reduce((q,x)=>q+x.w,0);
+ if(ssR!=null&&ssL!=null){let si=(ssR-ssL)/((ssR+ssL)/2)*100;if(prs.length>=2&&pW>0){const m=prs.reduce((q,x)=>q+x.lr*x.w,0)/pW,ra=Math.exp(m);si=200*(ra-1)/(ra+1)}const sh=si>0?'L':'R';
   add('gSupport',null,si,Math.min(ssA.R.length,ssA.L.length),jpS(sh)+'脚で支える時間が短い','左右の脚に体重をのせる時間に差があり、'+jpS(sh)+'脚にしっかり体重をのせきれていません。痛みや不安をかばう歩き方や、'+jpS(sh)+'側のお尻・太ももの筋力不足で起こることがあります。')}
  for(const sd of ['R','L']){const o=gOp(sd),d=pool('drop',sd),l=pool('lean',sd),kn=pool('knee',sd);
   if(d)add('gPelvis',sd,d.v,d.n,d.v>=0?jpS(sd)+'脚で立つと、'+jpS(o)+'の骨盤が下がる':jpS(sd)+'脚で立つと、'+jpS(o)+'の骨盤が上がる',d.v>=0?jpS(sd)+'側のお尻の横の筋肉（中殿筋）が、体を支えきれていない可能性があります。腰・股関節・膝への負担や、体の横揺れにつながりやすい歩き方です。':'骨盤を引き上げて脚を振り出している可能性があります。腰の横の筋肉に負担がかかりやすい歩き方です。');
@@ -1361,7 +1378,8 @@ function gCombine(rs){const ok=rs.filter(r=>r&&r.ok),rows=[];
  rows.sort((a,b)=>GORDER.indexOf(a.key)-GORDER.indexOf(b.key)||(a.side==='R'?-1:1));
  const total=rows.length?Math.round(gMean(rows.map(r=>r.score))):null;
  const cads=ok.map(r=>r.cad).filter(v=>v!=null),wd=ok.map(r=>r.width).filter(v=>v!=null),swy=ok.map(r=>r.sway).filter(v=>v!=null);
- return {rows,total,findings:rows.filter(r=>r.st!=='ok').slice().sort((a,b)=>a.score-b.score),ss:{R:ssR,L:ssL},cad:cads.length?gMean(cads):null,width:wd.length?gMean(wd):null,sway:swy.length?gMean(swy):null,n:ok.length,steps:ok.reduce((s,r)=>s+r.steps,0)}}
+ const th={};for(const sd of ['R','L']){const x=pool('thrust',sd);th[sd]=x?x.v:null}
+ return {rows,total,thrust:th,findings:rows.filter(r=>r.st!=='ok').slice().sort((a,b)=>a.score-b.score),ss:{R:ssR,L:ssL},cad:cads.length?gMean(cads):null,width:wd.length?gMean(wd):null,sway:swy.length?gMean(swy):null,n:ok.length,steps:ok.reduce((s,r)=>s+r.steps,0)}}
 function gSum(G){return {total:G.total,cad:G.cad!=null?Math.round(G.cad):null,rows:G.rows.map(r=>({k:r.key,s:r.side,v:Math.round(r.val*10)/10,sc:r.score,st:r.st,d:r.dir})),n:G.n}}
 
 /* ---------- 歩行分析：画面・保存 ---------- */
@@ -1446,11 +1464,11 @@ function gDrawSkel(ctx,pts,M,lw,r,i,dim){const line=(a,b,col,w)=>{if(!a||!b)retu
 const gIdx=(cl,t)=>{const a=cl.t;let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m]<t)lo=m;else hi=m}return Math.abs(a[lo]-t)<=Math.abs(a[hi]-t)?lo:hi};
 const gPlayers=[];
 function gStopAll(){gPlayers.splice(0).forEach(p=>{try{p.stop()}catch(e){}})}
-function gMountPlayer(el,cl,r){if(!el||!cl)return;const has=!!cl.url,ar=cl.ar;
+function gMountPlayer(el,cl,r,opt){opt=opt||{};if(!el||!cl)return;const has=!!cl.url&&!opt.stick,ar=cl.ar;
  el.innerHTML='<div class="gpbox'+(has?'':' stick')+'">'+(has?'<video playsinline muted preload="auto"></video>':'')+'<canvas aria-label="骨格の動き"></canvas></div>'+
-  '<div class="gpctl"><button class="btn" data-g="pp" type="button">▶ 再生</button><select data-g="rate" aria-label="再生の速さ"><option value="1">等速</option><option value="0.5" selected>1/2の速さ</option><option value="0.25">1/4の速さ</option></select>'+
+  '<div class="gpctl'+(opt.compact?' cmp':'')+'"><button class="btn" data-g="pp" type="button">▶ 再生</button><select data-g="rate" aria-label="再生の速さ"><option value="1">等速</option><option value="0.5" selected>1/2の速さ</option><option value="0.25">1/4の速さ</option></select>'+
   '<button class="btn" data-g="prev" type="button" aria-label="1コマ戻す">◀</button><button class="btn" data-g="next" type="button" aria-label="1コマ進める">▶</button><input type="range" data-g="pos" min="0" max="1000" value="0" aria-label="再生位置"></div>'+
-  (has?'':'<p class="note">動画は保存していないため、骨格の動きだけを再生しています。</p>');
+  (has||opt.compact?'':'<p class="note">動画は保存していないため、骨格の動きだけを再生しています。</p>');
  const box=el.querySelector('.gpbox'),cv=box.querySelector('canvas'),vid=box.querySelector('video'),pp=el.querySelector('[data-g=pp]'),rate=el.querySelector('[data-g=rate]'),pos=el.querySelector('[data-g=pos]');
  const cs=getComputedStyle(el),maxH=Math.min(window.innerHeight*0.62,640),W0=el.getBoundingClientRect().width-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-2,bar=has?ar:0.75,w=Math.max(120,Math.min(W0,maxH*bar)),h=Math.round(w/bar);box.style.width=Math.round(w)+'px';box.style.height=h+'px';
  const ctx=fitCanvas(cv,Math.round(w),h);cv.style.position='absolute';
@@ -1570,6 +1588,22 @@ function vGait(){const g=st.gc,k=st.gtab,cl=g.clips[k],r=g.res[k],lab=GVL[k],cnt
  '<div class="actbar"><button class="btn pri big" data-act="gToResult"'+(cnt&&!GV.some(o=>st.gbusy[o.k])?'':' disabled')+'>歩行の結果を見る（'+cnt+'/2）</button></div>'}
 function setupGait(){updEngine();const g=st.gc,k=st.gtab;if(g.clips[k]&&!st.gbusy[k])gMountPlayer($('#gp_cap'),g.clips[k],g.res[k])}
 
+/* --- 同年代の目安・判定の根拠 --- */
+/* 日本人の日常生活の歩行（スマホで計測した大規模データ）の年代・性別ごとの平均ケイデンス（歩/分） */
+const GCAD={m:{'10代以下':116.9,'20代':114.9,'30代':115.2,'40代':115.9,'50代':117.3,'60代':117.8,'70代':116.5,'80代以上':116.5},
+ f:{'10代以下':118.6,'20代':117.9,'30代':117.8,'40代':119.5,'50代':121.1,'60代':120.7,'70代':120.9,'80代以上':116.9}};
+function gCadRef(){const p=st.patient||{},b=p.ageBand||'',sx=p.sex||'';if(!b||!GCAD.m[b])return null;const v=sx==='m'||sx==='f'?GCAD[sx][b]:(GCAD.m[b]+GCAD.f[b])/2;return {v,who:b+(sx==='f'?'・女性':sx==='m'?'・男性':'')}}
+function gCadCmp(cad){const r=gCadRef();if(!r||cad==null)return '';const d=cad-r.v;
+ return '同年代（'+r.who+'）の日常の歩行の平均は約'+Math.round(r.v)+'歩/分。'+(Math.abs(d)<5?'ほぼ同じリズムです':'それより約'+Math.round(Math.abs(d))+'歩/分'+(d>0?'多い（せかせか歩き）':'少ない（ゆっくり）')+'です')}
+const GREF=[
+ ['片脚で支える時間の左右差','良好 6%以下・要改善 12%超','健康な成人の95%は、左右の脚が浮いている時間の比が1.06（約6%）以内に収まります。この左右差は年齢によって大きく変わらないことも分かっています（Pattersonほか）。'],
+ ['骨盤の落ち込み','良好 5°以下・要改善 8°超','片脚立ちのときに反対側の骨盤が4°を超えて下がることを、トレンデレンブルグ歩行（お尻の横の筋肉の弱さ）の目安とする報告があります（Westhoffほか）。健康な人でも歩行中に片側4°前後までは骨盤が自然に動くため、5°までを良好としています。'],
+ ['上半身の横への傾き','良好 3°以下・要改善 6°超','健康な成人の歩行中の上半身の横の動きは、左右合わせて約3°（片側1〜2°）です（Chungほか 2010）。'],
+ ['膝の向き','良好 5°以下・要改善 10°超','健康な人の歩行では、着地から体重をのせるまでの膝の横ぶれは平均で外向きに約1°と小さいことが報告されています（1000 Norms Project）。その人の脚の形（O脚・X脚）も含めて、5°・10°をこのアプリの目安にしています。'],
+ ['歩くリズム（参考）','判定なし','日本人の日常生活の歩行の平均は、年代・性別によって約115〜121歩/分です（スマホで計測した大規模データ）。院内で数メートル歩くときは、これより少なめに出やすくなります。']];
+function gRefCard(){return '<details class="card gref"><summary><b>判定の基準と根拠</b><span class="mut">（タップで開く）</span></summary><ul class="mlist">'+GREF.map(x=>'<li><div><b>'+x[0]+'</b> <span class="badge b-ok">'+x[1]+'</span><small>'+x[2]+'</small></div></li>').join('')+
+ '</ul><p class="note">判定（良好・注意・要改善）は、健康な人の動きを基準にしています。数値は研究で使われる3Dの計測とは方法が違うため、目安としてお使いください。</p></details>'}
+
 /* --- 画面：結果 --- */
 const gUnit=k=>GSPEC[k].unit;
 const gFmt=r=>f1(Math.abs(r.val))+gUnit(r.key);
@@ -1590,7 +1624,8 @@ function vGaitRes(){const g=st.gc,rs=GV.map(o=>g.res[o.k]).filter(Boolean),G=gCo
   '<tr><td>反対側の骨盤の落ち込み</td>'+['R','L'].map(sd=>{const r=row('gPelvis',sd);return cell(r,r?(r.val>=0?'':'上がる ')+gFmt(r):'')}).join('')+'</tr>'+
   '<tr><td>上半身の横への傾き</td>'+['R','L'].map(sd=>{const r=row('gTrunk',sd);return cell(r,r?(r.val>=0?jpS(sd)+'へ ':jpS(gOp(sd))+'へ ')+gFmt(r):'')}).join('')+'</tr>'+
   '<tr><td>膝の向き</td>'+['R','L'].map(sd=>{const r=row('gKnee',sd);return cell(r,r?(r.val>=0?'内側 ':'外側 ')+gFmt(r):'')}).join('')+'</tr></tbody></table>';
- const info='<div class="ginfo">'+(G.cad!=null?'<div><small>歩くリズム</small><b class="n">約'+Math.round(G.cad)+'</b> 歩/分<small>成人のふつうの速さで、約100〜120歩/分が目安</small></div>':'')+
+ const info='<div class="ginfo">'+(G.cad!=null?'<div><small>歩くリズム</small><b class="n">約'+Math.round(G.cad)+'</b> 歩/分<small>'+(gCadCmp(G.cad)||'日本人の日常の歩行の平均は約115〜121歩/分（年代・性別で少し違います）')+'</small></div>':'')+
+  (G.thrust&&(G.thrust.R!=null||G.thrust.L!=null)?'<div><small>着地から体重をのせるまでの膝の横ぶれ</small><b class="n" style="font-size:16px">'+['R','L'].map(sd=>G.thrust[sd]==null?'':jpS(sd)+' '+(Math.abs(G.thrust[sd])<0.5?'ほぼなし':(G.thrust[sd]>0?'内へ':'外へ')+f1(Math.abs(G.thrust[sd]))+'°')).filter(Boolean).join('／')+'</b><small>健康な人の平均は外へ約1°。外へ大きくぶれる（スラスト）と、膝の内側に負担がかかりやすくなります</small></div>':'')+
   (G.width!=null?'<div><small>足を置く幅（両足の横の間隔）</small><b class="n">腰幅の'+G.width.toFixed(1)+'</b> 倍<small>広いほど、バランスをとるために足を開いて歩いています</small></div>':'')+
   (G.sway!=null?'<div><small>体（腰）の横揺れ</small><b class="n">腰幅の'+Math.round(G.sway*100)+'</b> %<small>大きいほど、左右に揺れながら歩いています</small></div>':'')+'</div>';
  const cmpRows=ps&&ps.rows?G.rows.map(r=>{const p=ps.rows.find(q=>q.k===r.key&&(q.s||null)===(r.side||null));if(!p)return '';const d=Math.abs(r.val)-Math.abs(p.v);const t=Math.abs(d)<0.5?'<span class="mut">変化なし</span>':d<0?'<span class="b-ok">改善 '+f1(-d)+gUnit(r.key)+'</span>':'<span class="b-ng">悪化 '+f1(d)+gUnit(r.key)+'</span>';return '<tr><td>'+esc(r.label)+'</td><td class="r n">'+f1(Math.abs(p.v))+gUnit(r.key)+'</td><td class="r n">'+gFmt(r)+'</td><td class="r">'+t+'</td></tr>'}).join(''):'';
@@ -1608,12 +1643,20 @@ function vGaitRes(){const g=st.gc,rs=GV.map(o=>g.res[o.k]).filter(Boolean),G=gCo
  gCareCard(g,G)+
  '<div class="card"><h2>測定項目の詳細</h2><ul class="mlist">'+G.rows.map(r=>'<li><div><small>'+esc(r.label)+'</small><b>'+(r.st==='ok'?'<span class="mut">わずかに</span>':'')+esc(r.dir)+'</b><small>'+r.n+'回分の平均</small></div><div class="mv"><span class="n">'+gFmt(r)+'</span><span class="badge b-'+r.st+'">'+STL[r.st]+'</span></div></li>').join('')+'</ul>'+
  '<p class="note">スコアは動画から計算した独自の指標で、医学的な診断ではありません。歩く速さ・靴・撮影の角度でも数値は変わるため、毎回同じ条件で撮影すると比較しやすくなります。カメラから遠いところの数値は誤差が大きくなります。</p></div>'+
+ gRefCard()+
  '<div class="card"><h2>前回との比較</h2>'+(others.length?'<label class="hrow"><span>比較する記録</span><select id="gcmpSel" style="width:auto">'+others.map(s=>'<option value="'+esc(s.id)+'"'+(pv&&pv.id===s.id?' selected':'')+'>'+fmtDT(s.date)+'（'+(s.sum.total!=null?s.sum.total:'-')+'点）</option>').join('')+'</select></label>'+
-  (ps?'<table><thead><tr><th>項目</th><th class="r">前回</th><th class="r">今回</th><th class="r">変化</th></tr></thead><tbody><tr><td><b>歩行スコア</b></td><td class="r n">'+(ps.total!=null?ps.total:'-')+'</td><td class="r n">'+(G.total!=null?G.total:'-')+'</td><td class="r">'+(G.total!=null&&ps.total!=null?((G.total-ps.total>=0?'+':'')+(G.total-ps.total)+'点'):'')+'</td></tr>'+cmpRows+'</tbody></table>':'')
+  (ps?'<div class="gcmpplay" id="gcmpPlay">'+(st.gcmpShow===pv.id?'<p class="mut">読み込み中…</p>':'<button class="btn" data-act="gCmpPlay">前回と今回の歩き方を並べて再生</button>')+'</div><table><thead><tr><th>項目</th><th class="r">前回</th><th class="r">今回</th><th class="r">変化</th></tr></thead><tbody><tr><td><b>歩行スコア</b></td><td class="r n">'+(ps.total!=null?ps.total:'-')+'</td><td class="r n">'+(G.total!=null?G.total:'-')+'</td><td class="r">'+(G.total!=null&&ps.total!=null?((G.total-ps.total>=0?'+':'')+(G.total-ps.total)+'点'):'')+'</td></tr>'+cmpRows+'</tbody></table>':'')
   :'<p class="mut">比較できる記録がまだありません。結果を保存すると、次回からここで前回と並べて比べられます。</p>')+'</div>'+
  '<p class="store">動画そのものは保存せず、骨格の動き（目印の位置）と数値だけを保存します。</p></div>'+
  '<div class="actbar"><button class="btn" data-act="gCopyLine">LINE用の文章をコピー</button><textarea id="gLineTxt" class="vh" tabindex="-1" aria-hidden="true"></textarea>'+(st.patient.id?'<button class="btn pri" id="gSaveBtn" data-act="gSave"'+(g.saved&&!g.dirty?' disabled':'')+'>'+(g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存')+'</button>':'<button class="btn pri" data-act="saveTrial">患者さんの記録に保存</button>')+'</div>'}
-function afterGaitRes(){const g=st.gc;if(st.gpk)gMountPlayer($('#gp_res'),g.clips[st.gpk],g.res[st.gpk]);
+async function gCmpLoad(id){const c=st.gcmpCache||(st.gcmpCache={});if(c[id])return c[id];const row=await Store.getGait(st.patient.id,id),o={id,date:row.date,clips:{},res:{}};
+ for(const k in (row.clips||{})){const u=gUnpackClip(row.clips[k]);o.clips[k]=u;o.res[k]=gAnalyzeClip(u)}c[id]=o;return o}
+async function gCmpMount(){const box=$('#gcmpPlay'),g=st.gc,id=st.gcmpShow;if(!box||!id)return;let pv;try{pv=await gCmpLoad(id)}catch(e){box.innerHTML='<div class="warn">前回の記録を読み込めませんでした：'+esc(msg(e))+'</div>';return}
+ if(st.gcmpShow!==id||!document.body.contains(box))return;const ks=GV.map(o=>o.k).filter(k=>pv.res[k]&&pv.res[k].ok&&g.res[k]&&g.res[k].ok),k=ks.includes(st.gpk)?st.gpk:ks[0];
+ if(!k){box.innerHTML='<p class="mut">前回と今回で、同じ向き（前から・後ろから）の動画がないため並べられません。</p>';return}
+ box.innerHTML='<p class="note" style="margin-top:0">'+GVL[k]+'の動画どうしを、同じ大きさにそろえて並べています。</p><div class="gpair"><div><b>前回（'+fmtDate(pv.date)+'）</b><div id="gpPrev"></div></div><div><b>今回（'+fmtDate(g.date)+'）</b><div id="gpNow"></div></div></div>';
+ gMountPlayer($('#gpPrev'),pv.clips[k],pv.res[k],{stick:true,compact:true});gMountPlayer($('#gpNow'),g.clips[k],g.res[k],{stick:true,compact:true})}
+function afterGaitRes(){const g=st.gc;if(st.gpk)gMountPlayer($('#gp_res'),g.clips[st.gpk],g.res[st.gpk]);if(st.gcmpShow)gCmpMount();
  $$('canvas.gkey').forEach(cv=>{gDrawKey(cv,cv.dataset.k,cv.dataset.sd).catch(()=>{})});
  const bm=$('#bmap');if(bm&&st.gC){const W=bm.parentElement.clientWidth,H=Math.round(W*336/360),ctx=fitCanvas(bm,W,H);drawBodyMap(ctx,W,H,st.gC,cssv('--bg').toLowerCase()==='#0f1613')}}
 function gMarkDirty(){const g=st.gc;if(g&&g.saved&&!g.dirty){g.dirty=true;const b=$('#gSaveBtn');if(b){b.disabled=false;b.textContent='変更を保存'}}}
@@ -1625,7 +1668,7 @@ async function gSave(){const g=st.gc,p=st.patient;if(!g||!p||!p.id)return;const 
  catch(e){toast('保存できませんでした：'+msg(e))}
  if(st.view==='gres'){const btn=$('#gSaveBtn');if(btn){btn.disabled=g.saved&&!g.dirty;btn.textContent=g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存'}else render()}}
 async function gOpenHist(id){const row=await Store.getGait(st.patient.id,id);const g={id:row.id,date:row.date,clips:{},res:{},comment:row.comment==null?null:row.comment,care:row.care||null,saved:true,dirty:false,fromHistory:true};
- for(const k in (row.clips||{})){const un=gUnpackClip(row.clips[k]);g.clips[k]=un;g.res[k]=gAnalyzeClip(un)}st.gc=g;st.gcmpId=null;st.gpk=null;go('gres')}
+ for(const k in (row.clips||{})){const un=gUnpackClip(row.clips[k]);g.clips[k]=un;g.res[k]=gAnalyzeClip(un)}st.gc=g;st.gcmpId=null;st.gcmpShow=null;st.gpk=null;go('gres')}
 function gLineText(){const g=st.gc,G=st.gG||gCombine(GV.map(o=>g.res[o.k]).filter(Boolean)),n=st.patient.id?st.patient.name+'様':'',C=gCareFrom(G),sel=gCareSel(g,C);
  const ex=sel.ex.filter(id=>EX[id]),lf=sel.life.filter(id=>LIFE[id]);
  return '【歩行分析の結果】'+n+'（'+fmtDate(g.date)+'）\n歩行スコア '+(G.total!=null?G.total:'-')+'点\n'+(G.cad!=null?'歩くリズム：約'+Math.round(G.cad)+'歩/分\n':'')+
@@ -1638,17 +1681,18 @@ Object.assign(ACT,{
  gTrial:()=>{st.patient={id:null,name:'お試し',height:null};st.sessions=[];st.gaitList=[];ACT.gStart()},
  gTab:b=>{st.gtab=b.dataset.k;render()},
  gCancel:()=>{if(gCancel)gCancel.stop=true},
- gToResult:()=>{st.gcmpId=null;st.gpk=null;go('gres')},
+ gToResult:()=>{st.gcmpId=null;st.gcmpShow=null;st.gpk=null;go('gres')},
  gToCapture:()=>{if(st.gc&&st.gc.fromHistory)return go('patient');go('gait')},
  gOpen:async b=>{try{await gOpenHist(b.dataset.id)}catch(e){toast('記録を開けませんでした：'+msg(e))}},
  gDel:b=>{const sid=b.dataset.id;confirmBox('この歩行分析の記録を削除しますか？','削除する',async()=>{try{await Store.deleteGait(st.patient.id,sid);st.gaitList=st.gaitList.filter(x=>x.id!==sid);toast('削除しました')}catch(e){toast(msg(e))}render()})},
  gSave:()=>gSave(),
  gClip:b=>{st.gpk=b.dataset.k;$$('.gclips .btn').forEach(x=>x.classList.toggle('on',x.dataset.k===st.gpk));gStopAll();gMountPlayer($('#gp_res'),st.gc.clips[st.gpk],st.gc.res[st.gpk])},
+ gCmpPlay:()=>{const pv=gCmp();if(!pv)return;st.gcmpShow=pv.id;const box=$('#gcmpPlay');if(box)box.innerHTML='<p class="mut">読み込み中…</p>';gCmpMount()},
  gCopyLine:async()=>{const t=gLineText();try{await navigator.clipboard.writeText(t);toast('LINE用の文章をコピーしました')}catch(e){const ta=$('#gLineTxt');if(ta){ta.className='';ta.value=t;ta.rows=8;ta.removeAttribute('tabindex');ta.removeAttribute('aria-hidden');ta.focus();ta.select()}toast('文章を選択しました。コピーしてお使いください')}}});
 document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='gfile'||t.id==='gfileCam'){const f=t.files&&t.files[0],k=st.gtab;t.value='';if(f&&st.gc&&!st.gbusy[k])gExtract(k,f)}
  if(t.dataset&&t.dataset.gcare&&st.gc){st.gc.care={ex:$$('input[data-gcare=ex]:checked').map(i=>i.value),life:$$('input[data-gcare=life]:checked').map(i=>i.value)};gMarkDirty()}
- if(t.id==='gcmpSel'){st.gcmpId=t.value;render()}});
+ if(t.id==='gcmpSel'){st.gcmpId=t.value;st.gcmpShow=null;render()}});
 document.addEventListener('input',e=>{const t=e.target;if(t.id==='gcomment'&&st.gc){st.gc.comment=t.value;gMarkDirty()}});
 
 window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,repPages,makePdf,loadPhotos,photoBlob,doSave:()=>doSave(),gait:{gAnalyzeClip,gCombine,gUnpackClip,gPackClip,gExtract,gaitOn,gSave,gLineText,gOpenHist,newGait}};
