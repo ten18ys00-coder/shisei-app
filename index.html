@@ -159,6 +159,16 @@ td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(-
 .grbtn{appearance:none;width:76px;height:76px;border-radius:50%;border:4px solid #fff;background:transparent;display:grid;place-items:center;cursor:pointer}.grbtn i{display:block;width:58px;height:58px;border-radius:50%;background:#e0573f;transition:all .2s}.grbtn.on i{width:30px;height:30px;border-radius:6px}
 html.grlock,html.grlock body{overflow:hidden}
 .gcmpplay{margin:4px 0 12px}
+.gparts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 10px}.gparts span{font-size:13px;color:var(--mut);margin-right:2px}.gparts .btn{min-height:40px;padding:6px 12px;font-size:14px}
+.gghostv{display:grid;gap:4px;margin:10px 0 0;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px}.gghostv div{display:grid;grid-template-columns:4.5em 1fr 1fr;gap:6px;align-items:baseline}.gghostv .now{font-weight:700;color:var(--ink)}.gghostv .pv{color:#7b5cf0;font-weight:700}.gghostv small{color:var(--mut);font-size:12px}
+.gkeys.g4{grid-template-columns:1fr 1fr}
+.pcguide{position:absolute;inset:0;pointer-events:none}.pcgrid{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(255,255,255,.18) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.18) 1px,transparent 1px);background-size:16.666% 8.333%}
+.pcsil{position:absolute;left:0;right:0;top:2.3%;height:98.6%;width:100%}.pcv{position:absolute;left:50%;top:0;bottom:0;border-left:2px dashed #f2c14e}.pct{position:absolute;left:4%;right:4%;top:7%;border-top:2px solid rgba(159,224,192,.9)}.pcb{position:absolute;left:4%;right:4%;top:93%;border-top:2px solid rgba(159,224,192,.9)}
+.pcvl{position:absolute;left:51.5%;top:38%;right:3%;font-size:12px;color:#f2c14e;text-shadow:0 1px 2px #000,0 0 4px #000}.pctl{position:absolute;left:5%;top:calc(7% + 4px);font-size:12px;color:#9fe0c0;text-shadow:0 1px 2px #000}.pcbl{position:absolute;left:5%;top:calc(93% - 20px);font-size:12px;color:#9fe0c0;text-shadow:0 1px 2px #000}
+.pch{position:absolute;left:-8%;right:-8%;top:50%;border-top:3px solid #f2a33a;box-shadow:0 0 0 1px rgba(0,0,0,.35);transform-origin:50% 50%}.pch.ok{border-top-color:#4ade80}
+.grwarn{top:54px!important}.pclv{position:absolute;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:7px 14px;border-radius:99px;background:rgba(0,0,0,.6);font-size:13px;font-weight:700;max-width:92%;text-align:center}.pclv.ok{background:rgba(47,122,90,.92)}.pclv.wn{background:rgba(168,101,15,.92)}.pclv.ng{background:rgba(178,59,39,.92)}
+.pccd{position:absolute;inset:0;display:grid;place-items:center;font-size:120px;font-weight:700;color:#fff;text-shadow:0 2px 12px #000}.grstage.flash{animation:pcf .25s}@keyframes pcf{from{filter:brightness(2.2)}to{filter:none}}
+.grbtn.pc i{background:#fff}.pctm{display:flex;gap:8px;align-items:center;font-size:14px;min-height:36px}.pctm input{width:20px;height:20px}.gtrendbox{margin:0 0 12px}.gtrend{width:100%;height:auto;display:block}
 .gmode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.gmode button{appearance:none;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 8px;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-height:56px}.gmode button.on{border-color:var(--g);box-shadow:inset 0 0 0 1.5px var(--g)}.gmode small{font-size:12px;color:var(--mut)}
 .worse{border-top:1px solid var(--line);margin-top:14px;padding-top:6px}.worse h3{font-size:16px;margin:12px 0 6px}.wlist{list-style:none;margin:0;padding:0;display:grid;gap:10px}.wlist>li{border-left:4px solid var(--ng);padding:2px 0 2px 12px}.wlist>li>b{display:block}.wlist>li>small{display:block;font-size:12px;color:var(--mut)}.wlist .n{font-size:14px;margin-left:0}.wlist ul{margin:4px 0 0;padding-left:1.2em;font-size:14px}
 .wcond,.wq{margin:0;padding-left:1.2em;font-size:14px}.wcond li.auto{font-weight:700;color:var(--wn)}.worse .btn{margin-top:12px}.gpair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gpair b{display:block;font-size:14px;margin-bottom:4px}
@@ -720,16 +730,16 @@ function go(v){st.view=v;render();window.scrollTo(0,0)}
 let rendering=false;
 function render(){if(rendering){setTimeout(render,0);return}rendering=true;try{render_()}finally{rendering=false}}
 function backTarget(){const v=st.view,c=st.cur;if(v==='patient'||v==='calib'||v==='admin')return 'home';if(v==='capture')return st.patient&&st.patient.id?'patient':'home';if(v==='result')return c&&c.fromHistory?'patient':'capture';if(v==='gait')return st.patient&&st.patient.id?'patient':'home';if(v==='gres')return st.gc&&st.gc.fromHistory?'patient':'gait';return null}
-function goBack(){const m=$('#modal');if(m&&!m.hidden){closeModal();return}if(gRecOpen()){gRecClose();return}const t=backTarget();if(!t)return;
+function goBack(){const m=$('#modal');if(m&&!m.hidden){closeModal();return}if(gRecOpen()){gRecClose();return}if(pcOpen()){pcClose();return}const t=backTarget();if(!t)return;
  const leave=()=>{if(t==='home')ACT.home();else go(t)};
  if(st.view==='capture'&&st.cur&&!st.cur.saved&&Object.keys(st.cur.views).length){confirmBox('撮影した写真は消えます。前の画面に戻りますか？','戻る',async()=>leave());return}
  if(st.view==='gait'&&st.gc&&(GV.some(o=>st.gbusy[o.k])||(!st.gc.saved&&Object.keys(st.gc.clips).length))){confirmBox(GV.some(o=>st.gbusy[o.k])?'解析を中止して、前の画面に戻りますか？':'解析した動画の結果は消えます。前の画面に戻りますか？','戻る',async()=>{if(gCancel)gCancel.stop=true;leave()});return}
  leave()}
 const NAV={armed:false,gs(){return !!(window.google&&google.script&&google.script.history)},
- arm(){const m=$('#modal'),need=(st.view!=='home'&&st.view!=='lock')||(m&&!m.hidden)||gRecOpen();if(!need||NAV.armed)return;NAV.armed=true;try{if(NAV.gs())google.script.history.push({t:Date.now()},{},'app');else history.pushState({t:Date.now()},'')}catch(e){NAV.armed=false}},
+ arm(){const m=$('#modal'),need=(st.view!=='home'&&st.view!=='lock')||(m&&!m.hidden)||gRecOpen()||pcOpen();if(!need||NAV.armed)return;NAV.armed=true;try{if(NAV.gs())google.script.history.push({t:Date.now()},{},'app');else history.pushState({t:Date.now()},'')}catch(e){NAV.armed=false}},
  init(){const on=()=>{NAV.armed=false;goBack();setTimeout(NAV.arm,50)};try{if(NAV.gs())google.script.history.setChangeHandler(on);else window.addEventListener('popstate',on)}catch(e){}}};
 function render_(){gStopAll();const hb=$('#hback');if(hb)hb.hidden=st.view==='home'||st.view==='lock';const ht=$('header.top');if(ht)ht.classList.toggle('sub',st.view!=='home');setTimeout(NAV.arm,0);const m=$('#main');m.innerHTML=({home:vHome,patient:vPatient,capture:vCapture,result:vResult,calib:vCalib,lock:vLock,admin:vAdmin,gait:vGait,gres:vGaitRes})[st.view]();
- if(st.view==='home')renderList();if(st.view==='gait')setupGait();if(st.view==='gres')afterGaitRes();if(st.view==='patient')drawTrend();if(st.view==='capture')setupEditor();if(st.view==='result')afterResult();
+ if(st.view==='home')renderList();if(st.view==='patient')drawTrend();if(st.view==='capture')setupEditor();if(st.view==='gait')setupGait();if(st.view==='gres')afterGaitRes();if(st.view==='result')afterResult();
  $('#chip').textContent={cloud:'記録：クラウド（暗号化）',gas:'記録：Googleドライブ',local:'記録：この端末のみ',memory:'記録：保存なし'}[Store.mode]||''}
 function storeNote(){return '<p class="store">'+({cloud:'記録はクラウドに保存しています。患者さんのお名前・ふりがな・メモ・コメントはこの端末で暗号化してから保存するため、この院のパスコードを知らない人には読めません。パスコードは運営側にも伝わりません。名前を含まない測定値は、姿勢分析の精度を上げるために統計として利用します。写真そのものは保存しません。',gas:'記録は院長のGoogleドライブ内のスプレッドシート「ほさか整骨院_姿勢分析データ」に保存されます（スプレッドシートは院長のアカウントでしか開けません。アプリは院のパスコードを入れた端末からだけ開けます）。写真そのものは保存せず、目印の位置と数値だけを保存します。',local:'いまは記録をこの端末のブラウザにだけ一時的に保存しています。',memory:'この環境では記録を保存できません。ページを閉じると消えます。'}[Store.mode]||'')+'</p>'}
 function calSamples(){const out={};Object.keys(SPEC).forEach(k=>out[k]=[]);(st.cal&&st.cal.sessions||[]).forEach(s=>{const c=unpack(s),A=analyze(c);A.rows.forEach(r=>{out[r.key].push({raw:r.raw,j:c.judge&&c.judge[jkey(r)]||null,vk:r.vk})})});return out}
@@ -776,7 +786,7 @@ function vPatient(){const p=st.patient,ss=st.sessions;
  '<div class="acts pacts2"><button class="btn" data-act="editPatient">編集</button>'+(gaitOn()?'<button class="btn pri big" data-act="startCapture">姿勢を分析する</button><button class="btn big gait" data-act="gStart">歩行を分析する</button>':'<button class="btn pri big" data-act="startCapture">新しく分析する</button>')+'</div></div>'+
  (ss.length>=2?'<div class="card"><h2>総合スコアの推移</h2><div class="fig" id="trend"></div></div>':'')+
  '<div class="card"><h2>'+(gaitOn()?'姿勢分析の記録':'分析の記録')+'</h2>'+(ss.length?'<ul class="slist">'+ss.map(s=>{const sc=s.scores||{};return '<li><button class="srow" data-act="openSession" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sc.total)+'">'+(sc.total!=null?sc.total:'-')+'<small>点</small></span><span class="st">'+esc(s.type||'')+'</span><span class="ss">正面 '+(sc.front!=null?sc.front:'-')+'・側面 '+(sc.side!=null?sc.side:'-')+'・回旋 '+(sc.rot!=null?sc.rot:'-')+'</span></button><button class="x" data-act="delSession" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':'<p class="empty">まだ分析の記録がありません。「'+(gaitOn()?'姿勢を分析する':'新しく分析する')+'」から始めましょう。</p>')+'</div>'+(gaitOn()?gPatientCard():'')+'</div>'}
-function gPatientCard(){const gl=st.gaitList||[];return '<div class="card"><h2>歩行分析の記録</h2>'+(st.gaitErr?'<div class="warn">'+esc(st.gaitErr)+'</div>':'')+(gl.length?'<ul class="slist">'+gl.map(s=>{const sm=s.sum||{};return '<li><button class="srow" data-act="gOpen" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sm.total)+'">'+(sm.total!=null?sm.total:'-')+'<small>点</small></span><span class="st">'+(sm.cad?'リズム 約'+sm.cad+'歩/分':'')+'</span><span class="ss">'+esc(gTopTxt(sm))+'</span></button><button class="x" data-act="gDel" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':(st.gaitErr?'':'<p class="empty">まだ歩行分析の記録がありません。「歩行を分析する」から始めましょう。</p>'))+'</div>'}
+function gPatientCard(){const gl=st.gaitList||[];return '<div class="card"><h2>歩行分析の記録</h2>'+(gl.length>=2?'<div class="gtrendbox">'+gTrendSVG(gl)+'</div>':'')+(st.gaitErr?'<div class="warn">'+esc(st.gaitErr)+'</div>':'')+(gl.length?'<ul class="slist">'+gl.map(s=>{const sm=s.sum||{};return '<li><button class="srow" data-act="gOpen" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sm.total)+'">'+(sm.total!=null?sm.total:'-')+'<small>点</small></span><span class="st">'+(sm.cad?'リズム 約'+sm.cad+'歩/分':'')+'</span><span class="ss">'+esc(gTopTxt(sm))+'</span></button><button class="x" data-act="gDel" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':(st.gaitErr?'':'<p class="empty">まだ歩行分析の記録がありません。「歩行を分析する」から始めましょう。</p>'))+'</div>'}
 function drawTrend(){const el=$('#trend');if(!el)return;const ss=st.sessions.slice().reverse().filter(s=>s.scores&&s.scores.total!=null);
  const draw=()=>{const W=el.clientWidth,H=el.clientHeight;if(!W)return;const pl=34,pr=16,pt_=14,pb=26,xs=i=>pl+(ss.length<2?0:i*(W-pl-pr)/(ss.length-1)),ys=v=>pt_+(100-clamp(v,30,100))/70*(H-pt_-pb);
   let g='';[40,60,80,100].forEach(v=>{g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ys(v)+'" y2="'+ys(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(ys(v)+4)+'" text-anchor="end" font-size="11" fill="var(--mut)">'+v+'</text>'});
@@ -797,10 +807,10 @@ function vCapture(){const c=st.cur,k=st.tab,v=c.views[k],lab=VIEWS.find(o=>o.k==
  const tabs='<div class="tabs" role="tablist">'+VIEWS.map(o=>'<button role="tab" aria-selected="'+(k===o.k)+'" class="tab'+(k===o.k?' on':'')+(c.views[o.k]?' done':'')+'" data-act="tab" data-k="'+o.k+'"><b>'+o.label+'</b><small>'+(st.busy[o.k]?'分析中…':c.views[o.k]?'✓ 撮影済み':'未撮影')+'</small></button>').join('')+'</div>';
  let stage;
  if(st.busy[k])stage='<div class="busy"><div><div class="spin"></div><span id="prog">'+(st.engine==='ready'?'AIが体の目印を探しています…':'高精度AIモデルを準備しています（初回は約30MBを読み込むため、少し時間がかかります）…')+'</span></div></div>';
- else if(!v)stage='<div class="guide">'+guideSVG(k)+'<div><h2>'+lab+'の撮り方</h2><ul>'+TIPS[k].map(t=>'<li>'+t+'</li>').join('')+'</ul><label class="btn pri big" for="file">'+lab+'を撮影・写真を選ぶ</label>'+(st.err[k]?'<div class="warn">'+esc(st.err[k])+'</div>':'')+'</div></div>';
+ else if(!v)stage='<div class="guide">'+guideSVG(k)+'<div><h2>'+lab+'の撮り方</h2><ul>'+TIPS[k].map(t=>'<li>'+t+'</li>').join('')+'</ul>'+(pcCan()?'<div class="gbtns"><button class="btn pri big" data-act="pCam">'+lab+'をガイド線つきで撮影</button><label class="btn big" for="file">写真を選ぶ</label></div>':'<label class="btn pri big" for="file">'+lab+'を撮影・写真を選ぶ</label>')+''+(st.err[k]?'<div class="warn">'+esc(st.err[k])+'</div>':'')+'</div></div>';
  else{const miss=[];const isF=k==='front',s=SIDE[v.near||'R'];if(isF?(!pt(v,27)||!pt(v,28)):!pt(v,s.an))miss.push('足首');if(isF?(!pt(v,7)||!pt(v,8)):!pt(v,s.ear))miss.push('耳');
   stage='<div class="stagebox" id="sbox"><canvas id="ed" aria-label="'+lab+'の写真と目印"></canvas></div>'+
-  '<div class="edbar"><button class="btn'+(st.adjust?' on':'')+'" data-act="adjust">'+(st.adjust?'✓ 調整を終える':'目印を指で調整')+'</button><label class="btn" for="file">撮り直す</label>'+(next?'<button class="btn pri" data-act="tab" data-k="'+next.k+'">次へ：'+next.label+' →</button>':'')+'</div>'+
+  '<div class="edbar"><button class="btn'+(st.adjust?' on':'')+'" data-act="adjust">'+(st.adjust?'✓ 調整を終える':'目印を指で調整')+'</button>'+(pcCan()?'<button class="btn" data-act="pCam">撮り直す</button>':'<label class="btn" for="file">撮り直す</label>')+''+(next?'<button class="btn pri" data-act="tab" data-k="'+next.k+'">次へ：'+next.label+' →</button>':'')+'</div>'+
   (st.adjust?'<p class="hint">ずれている目印を指でドラッグして、正しい位置に合わせてください。拡大鏡で位置を確認できます。オレンジの点線の目印は、AIの推定がぶれていたところです。</p>':'')+
   (st.ref?'<p class="hint"><b>基準線：</b>写真の中のドア枠・柱・下げ振りの糸など、本当にまっすぐ縦（または水平）な線を、指でなぞってください。</p>':'')+
   (st.pick?'<p class="hint"><b>シールの色：</b>写真の中のシールを1つタップしてください。</p>':'')+'<div class="quick" id="quick"></div>'+toolPanels(v,k)+
@@ -1089,7 +1099,7 @@ async function makeReport(withPhoto){
  x.fillStyle=C.g;x.fillRect(0,y,W,186);F(700,32);x.fillStyle='#fff';x.fillText(PROFILE.name||'',M,y+58);F(500,24);x.fillStyle='#e9e3d4';x.fillText([PROFILE.addr,PROFILE.tel?'TEL '+PROFILE.tel:''].filter(Boolean).join('　'),M,y+100);
  F(400,20);x.fillStyle=C.gl;wrapT('※本レポートは写真から計算した姿勢評価の参考値で、医学的な診断ではありません。',W-2*M).forEach((l,i)=>x.fillText(l,M,y+142+i*28));y+=186;
  const out=document.createElement('canvas');out.width=W;out.height=y;out.getContext('2d').drawImage(cv,0,0);return out}
-async function openReport(){openModal('<h2>レポート画像</h2><div class="seg2" role="group" aria-label="写真の有無"><button data-act="rep" data-p="1" class="'+(st.repPhoto?'on':'')+'">写真あり</button><button data-act="rep" data-p="0" class="'+(st.repPhoto?'':'on')+'">骨格のみ</button></div>'+
+async function openReport(){st.repKind='posture';openModal('<h2>レポート画像</h2><div class="seg2" role="group" aria-label="写真の有無"><button data-act="rep" data-p="1" class="'+(st.repPhoto?'on':'')+'">写真あり</button><button data-act="rep" data-p="0" class="'+(st.repPhoto?'':'on')+'">骨格のみ</button></div>'+
  '<p class="note" id="repNoPh" style="display:none">この記録には写真が保存されていないため、骨格だけのレポートになります。写真は2026年11月25日以降に保存した記録から残ります。</p><div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+(Store.mode==='gas'?'<button class="btn" data-act="driveReport">Googleドライブに保存</button>':'')+'<button class="btn" data-act="printReport">印刷する</button>'+(isIOS()?'':'<button class="btn" data-act="savePdf">PDFで保存</button>')+'<button class="btn" data-act="copyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
  '<p class="hint" id="repHint">'+repHint()+'</p><textarea id="lineTxt" class="vh" readonly tabindex="-1"></textarea>');
  try{if(st.repPhoto)await loadPhotos(st.cur);const hasPh=Object.values(st.cur.views).some(v=>v.canvas),nb=$('#repNoPh');if(nb)nb.style.display=(st.repPhoto&&!hasPh)?'':'none';const out=await makeReport(st.repPhoto);st.report=out;const url=out.toDataURL('image/jpeg',0.9);const box=$('#repBox');if(box)box.innerHTML='<img src="'+url+'" alt="姿勢分析レポート">'}catch(e){const box=$('#repBox');if(box)box.innerHTML='<div class="warn">画像を作れませんでした：'+esc(msg(e))+'</div>'}}
@@ -1121,7 +1131,7 @@ function savePdf(){if(!st.report)return;const a=document.createElement('a');a.hr
 function repHint(){if(isIOS())return 'iPhoneでは、画像を長押し→「写真に保存」や「共有」からLINEに送れます。「印刷する」を押すとA4のPDF（長いときは数枚）ができるので、出てきた画面で「プリント」を選んでください。';
  if(isAndroid())return 'Androidでは、画像を長押し→「画像をダウンロード」で保存、「共有」からLINEに送れます。「印刷する」で印刷の画面が開きます（A4・長いときは数枚）。プリンターを選ぶか「PDF形式で保存」を選んでください。';
  return '「印刷する」で印刷の画面が開きます（A4・長いときは数枚）。「PDFで保存」でファイルにもできます。'}
-function repName(){const d=new Date(st.cur.date);return '姿勢分析_'+(st.patient.id?st.patient.name+'_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.jpg'}
+function repName(){const gk=st.repKind==='gait'&&st.gc,d=new Date(gk?st.gc.date:st.cur.date);return (gk?'歩行分析_':'姿勢分析_')+(st.patient.id?st.patient.name+'_':'')+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.jpg'}
 function lineText(){const c=st.cur,A=analyze(c),n=st.patient.id?st.patient.name+'様':'';
  return '【姿勢分析の結果】'+n+'（'+fmtDate(c.date)+'）\n総合スコア '+(A.sc.total!=null?A.sc.total:'-')+'点（正面 '+(A.sc.front!=null?A.sc.front:'-')+'・側面 '+(A.sc.side!=null?A.sc.side:'-')+'・回旋 '+(A.sc.rot!=null?A.sc.rot:'-')+'）\n'+(A.type?'姿勢タイプ：'+A.type.name+'\n':'')+
  (A.findings.length?'気になったポイント：\n'+A.findings.map(r=>{const ag=ageCmp(r,ageInfo(c));return '・'+r.dir+'（'+f1(Math.abs(r.val))+'°）'+(ag?'\n　→ '+ag.txt:'')}).join('\n')+'\n':'')+careText(c,A)+'\n'+(c.comment||'')+'\n\n'+(PROFILE.name||'')}
@@ -1189,11 +1199,11 @@ const ACT={
  calSave:async()=>{const b=$('#cfgSave');if(b){b.disabled=true;b.textContent='保存中…'}try{await saveCfg();st.cal.dirty=false;toast('判定基準を保存しました')}catch(e){toast('保存できませんでした：'+msg(e))}render()},
  saveTrial:()=>trialSaveModal(),
  report:()=>openReport(),
- rep:b=>{st.repPhoto=b.dataset.p==='1';openReport()},
+ rep:b=>{st.repPhoto=b.dataset.p==='1';(st.repKind==='gait'?gOpenReport:openReport)()},
  printReport:()=>printReport(),
  savePdf:()=>savePdf(),
  shareReport:async()=>{if(!st.report)return;const blob=await new Promise(r=>st.report.toBlob(r,'image/jpeg',0.92));const file=new File([blob],repName(),{type:'image/jpeg'});
-  try{if(navigator.canShare&&!navigator.canShare({files:[file]}))throw new Error('x');await navigator.share({files:[file],title:'姿勢分析レポート'})}catch(e){if(!(e&&e.name==='AbortError'))toast('この画面からは共有できませんでした。画像を長押しして保存してください')}},
+  try{if(navigator.canShare&&!navigator.canShare({files:[file]}))throw new Error('x');await navigator.share({files:[file],title:st.repKind==='gait'?'歩行分析レポート':'姿勢分析レポート'})}catch(e){if(!(e&&e.name==='AbortError'))toast('この画面からは共有できませんでした。画像を長押しして保存してください')}},
  driveReport:async b=>{if(!st.report)return;b.disabled=true;b.textContent='保存中…';const b64=st.report.toDataURL('image/jpeg',0.92).split(',')[1];
   try{const url=await gs('apiSaveReport',repName(),b64);const h=$('#repHint');if(h)h.innerHTML='Googleドライブの「ほさか整骨院_姿勢分析レポート」フォルダに保存しました。<a href="'+esc(url)+'" target="_blank" rel="noopener">開く</a>';b.textContent='保存しました ✓'}catch(e){toast('保存できませんでした：'+msg(e));b.disabled=false;b.textContent='Googleドライブに保存'}},
  copyLine:async()=>{const t=lineText();try{await navigator.clipboard.writeText(t);toast('LINE用の文章をコピーしました')}catch(e){const ta=$('#lineTxt');if(ta){ta.className='';ta.value=t;ta.rows=8;ta.removeAttribute('tabindex');ta.focus();ta.select()}toast('文章を選択しました。コピーしてお使いください')}},
@@ -1423,7 +1433,7 @@ function gAnalyzeRound(cl){const n=cl.t.length,out={round:true,v:'round',n,warn:
 function gAnalyze(k,cl){return k==='round'?gAnalyzeRound(cl):gAnalyzeClip(cl)}
 
 /* ---------- 歩行分析：画面・保存 ---------- */
-const gaitOn=()=>!isDemo()&&(Store.mode!=='cloud'||!!(CL.clinic&&(CL.clinic.is_admin||(CL.clinic.settings||{}).gait)));
+const gaitOn=()=>isDemo()||Store.mode!=='cloud'||!(CL.clinic&&(CL.clinic.settings||{}).gait===false);
 const GC={R:'#e0662a',L:'#2f7fc1'};
 Object.assign(EX,{
  sls:['片脚立ち','中殿筋・体幹で体を支える練習','壁や椅子に軽く手を添えて片脚で立つ。骨盤を水平に保ち、上半身を傾けない。','左右30秒×2〜3回'],
@@ -1510,9 +1520,9 @@ function gRecInfo(){const tr=GR.stream&&GR.stream.getVideoTracks()[0],st2=tr&&tr
 async function gRecStart(k){if(GR.el)return;GR.k=k;
  const el=document.createElement('div');el.className='grec';el.setAttribute('role','dialog');el.setAttribute('aria-label',GVL[k]+'の撮影');
  el.innerHTML='<div class="grtop"><span id="grInfo">カメラを起動しています…</span><button class="grx" type="button" data-act="gRecClose">✕ 閉じる</button></div>'+
-  '<div class="grstage"><video playsinline muted autoplay></video><div class="grguide" aria-hidden="true"><i class="gv"></i><i class="gh"></i><span>足元がこの線より上に写るように</span></div><p class="grwarn" id="grWarn" hidden>スマホを縦向きにしてください</p></div>'+
+  '<div class="grstage"><video playsinline muted autoplay></video><div class="grguide" aria-hidden="true"><i class="pcgrid"></i><i class="gv"></i><i class="gh"></i><i class="pch" hidden></i><span>足元がこの線より上に写るように</span></div><p class="pclv">水平器：スマホの傾きを読み取っています…</p><p class="grwarn" id="grWarn" hidden>スマホを縦向きにしてください</p></div>'+
   '<div class="grbot"><span class="grtime" id="grTime">'+GVL[k]+'</span><button class="grbtn" type="button" data-act="gRecToggle" aria-label="録画を開始"><i></i></button><small id="grHint">'+(k==='round'?'録画を始めてから、2〜3mを2往復してもらいます':k==='front'?'録画を始めてから、カメラに向かって歩いてもらいます':'録画を始めてから、カメラに背を向けて歩いてもらいます')+'</small></div>';
- document.body.appendChild(el);GR.el=el;document.documentElement.classList.add('grlock');setTimeout(()=>NAV.arm(),0);
+ document.body.appendChild(el);GR.el=el;lvStart(el);document.documentElement.classList.add('grlock');setTimeout(()=>NAV.arm(),0);
  try{GR.stream=await gCamStream();if(!GR.el){GR.stream.getTracks().forEach(t=>t.stop());return}const v=el.querySelector('video');v.srcObject=GR.stream;await v.play().catch(()=>{});
   v.onloadedmetadata=v.onresize=()=>gRecInfo();window.addEventListener('resize',gRecInfo);gRecInfo()}
  catch(e){gRecClose();st.gerr[k]=msg(e);render()}}
@@ -1528,7 +1538,7 @@ function gRecToggle(){if(!GR.stream)return;const btn=GR.el.querySelector('.grbtn
   if(st.gc&&!st.gbusy[k])gExtract(k,new File([blob],'gait_'+k+'.'+ext,{type}))};
  GR.rec.start(1000);GR.t0=performance.now();btn.classList.add('on');btn.setAttribute('aria-label','録画を止める');const lim=GR.k==='round'?40:20;GR.el.querySelector('#grHint').textContent='歩き終わったら、もう一度押して録画を終了します（最長'+lim+'秒）';
  GR.timer=setInterval(()=>{const t=(performance.now()-GR.t0)/1000,el=GR.el&&GR.el.querySelector('#grTime');if(el)el.textContent='● '+Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');if(t>=lim&&GR.rec&&GR.rec.state==='recording')GR.rec.stop()},250)}
-function gRecClose(){clearInterval(GR.timer);try{if(GR.rec&&GR.rec.state==='recording'){GR.rec.onstop=null;GR.rec.stop()}}catch(e){}
+function gRecClose(){clearInterval(GR.timer);if(LV.el&&LV.el===GR.el)lvStop();try{if(GR.rec&&GR.rec.state==='recording'){GR.rec.onstop=null;GR.rec.stop()}}catch(e){}
  window.removeEventListener('resize',gRecInfo);if(GR.stream)GR.stream.getTracks().forEach(t=>t.stop());if(GR.el)GR.el.remove();GR.el=null;GR.stream=null;GR.rec=null;document.documentElement.classList.remove('grlock')}
 
 /* --- 骨格の描画 --- */
@@ -1559,10 +1569,18 @@ function gMountPlayer(el,cl,r,opt){opt=opt||{};if(!el||!cl)return;if(el.__gp){tr
   const cen=mh.map((m,i)=>{if(!m)return null;const a=[];for(let j=Math.max(0,i-hw);j<=Math.min(n-1,i+hw);j++)if(mh[j])a.push(mh[j]);return {x:gMean(a.map(q=>q.x)),y:gMean(a.map(q=>q.y))}});
   Mf=i=>{const c=cen[i],T=r.torso[i];if(!c||!T)return M;const s=h*0.24/T;return p=>[w/2+(p.x-c.x)*s,h*0.43+(p.y-c.y)*s]}}
  const GH=opt.ghost||null,cenC=GH?gCen(r,cl):null,phz=GH?gPhaser(r):null;
- const ghost=(i,Mi)=>{if(!GH||!cenC[i]||!r||!r.torso||!r.torso[i])return;const f=gFaceAt(r,i),ref=f&&GH[f];if(!ref)return;const ph=phz(cl.t[i]);if(ph==null)return;const j=gIdx(ref.cl,ref.a+ph*(ref.b-ref.a)),cg=ref.cen[j],tg=ref.r.torso[j];if(!cg||!tg)return;
-  const s=r.torso[i]/tg,c=cenC[i],P=gPts(ref.r,ref.cl,j),tf=p=>p?{x:c.x+(p.x-cg.x)*s,y:c.y+(p.y-cg.y)*s}:null,Q={R:{},L:{}};['R','L'].forEach(sd=>GJ.forEach(k=>{Q[sd][k]=tf(P[sd][k])}));gDrawGhost(ctx,Q,Mi,lw)};
+ const ghostAt=i=>{if(!GH||!cenC[i]||!r||!r.torso||!r.torso[i])return null;const f=gFaceAt(r,i),ref=f&&GH[f];if(!ref)return null;const ph=phz(cl.t[i]);if(ph==null)return null;const j=gIdx(ref.cl,ref.a+ph*(ref.b-ref.a)),cg=ref.cen[j],tg=ref.r.torso[j];if(!cg||!tg)return null;
+  const s=r.torso[i]/tg,c=cenC[i],P=gPts(ref.r,ref.cl,j),tf=p=>p?{x:c.x+(p.x-cg.x)*s,y:c.y+(p.y-cg.y)*s}:null,Q={R:{},L:{}};['R','L'].forEach(sd=>GJ.forEach(k=>{Q[sd][k]=tf(P[sd][k])}));return {Q,ref,j}};
+ const gvEl=opt.gv||null;let lastPart=null;
  let playing=false,raf=0,clock=tA,last=0,cur=-1,alive=true;
- const draw=t=>{const i=gIdx(cl,t);if(i===cur&&has)return;cur=i;ctx.clearRect(0,0,w,h);if(!has){ctx.fillStyle=cssv('--soft')||'#efe8da';ctx.fillRect(0,0,w,h)}gDrawSkel(ctx,gPts(r,cl,i),Mf(i),lw,r,i,false);ghost(i,Mf(i));pos.value=Math.round((t-tA)/((tB-tA)||1)*1000)};
+ const draw=t=>{const i=gIdx(cl,t),part=GH?(st.gpart||'all'):null;if(i===cur&&has&&part===lastPart)return;cur=i;lastPart=part;ctx.clearRect(0,0,w,h);if(!has){ctx.fillStyle=cssv('--soft')||'#efe8da';ctx.fillRect(0,0,w,h)}
+  const Mi=Mf(i),P0=gPts(r,cl,i),G0=GH?ghostAt(i):null;
+  if(!GH){gDrawSkel(ctx,P0,Mi,lw,r,i,false)}
+  else if(part==='all'){if(G0)gDrawGhost(ctx,G0.Q,Mi,lw);gDrawSkel(ctx,P0,Mi,lw*0.85,r,i,false)}
+  else{ctx.save();ctx.globalAlpha=0.35;gDrawSkel(ctx,P0,Mi,lw*0.8,r,i,false);ctx.restore();if(G0)gDrawPart(ctx,G0.Q,Mi,lw,part,GPVs);gDrawPart(ctx,P0,Mi,lw,part,null)}
+  if(gvEl){const S=r.series,PS=G0&&G0.ref.r.series,j=G0&&G0.j;const row=(lab,fn,a,b)=>'<div><b>'+lab+'</b><span class="now">今回 '+fn(a)+'</span><span class="pv">前回 '+(G0?fn(b):'—')+'</span></div>';
+   const ps=part==='all'?['pelvis','trunk']:[part];gvEl.innerHTML=ps.map(pp=>pp==='pelvis'?row('骨盤',gAng.pelvis,S&&S.phi[i],PS&&PS.phi[j]):pp==='trunk'?row('上半身',gAng.trunk,S&&S.psi[i],PS&&PS.psi[j]):row('右膝',gAng.knee,S&&S.K.R[i],PS&&PS.K.R[j])+row('左膝',gAng.knee,S&&S.K.L[i],PS&&PS.K.L[j])).join('')+'<small>'+(gStance(r,'R',i)&&!gStance(r,'L',i)?'右脚で立っている瞬間':gStance(r,'L',i)&&!gStance(r,'R',i)?'左脚で立っている瞬間':'両足がついている瞬間')+'</small>'}
+  pos.value=Math.round((t-tA)/((tB-tA)||1)*1000)};
  const now=()=>has?vid.currentTime:clock;
  const setT=t=>{t=clamp(t,tA,tB);if(has){vid.currentTime=t}else clock=t;cur=-1;draw(t)};
  const loop=ts=>{if(!alive)return;if(playing){if(has){if(vid.currentTime>=tB-0.01||vid.ended){vid.currentTime=tA}}else{const dt=last?(ts-last)/1000:0;clock+=dt*parseFloat(rate.value);if(clock>tB)clock=tA}}last=ts;draw(now());raf=requestAnimationFrame(loop)};
@@ -1585,10 +1603,23 @@ function gPhaser(r){const cs=(r&&r.contacts||[]).filter(c=>c.sd==='R'),ds=[];for
 function gGhostFrom(pv){const refs={};for(const k in pv.clips){const cl=pv.clips[k],r=pv.res[k];if(!r||!r.ok)continue;const cen=gCen(r,cl),cs=r.contacts.filter(c=>c.sd==='R');
   for(let j=1;j<cs.length;j++){const a=cs[j-1],b=cs[j],d=b.t-a.t;if(!(d>0.6&&d<1.8))continue;const f=gFaceAt(r,a.i);if(!f||f!==gFaceAt(r,b.i))continue;const w=r.torso[a.i]||0;if(!refs[f]||w>refs[f].w)refs[f]={cl,r,cen,a:a.t,b:b.t,w}}}
  return refs}
-function gDrawGhost(ctx,pts,M,lw){const line=(a,b)=>{if(!a||!b)return;const p=M(a),q=M(b);ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke()};
+const GPV='rgba(150,110,255,.62)',GPVs='#b69cff';
+function gDrawGhostOld(ctx,pts,M,lw){const line=(a,b)=>{if(!a||!b)return;const p=M(a),q=M(b);ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke()};
  ctx.save();ctx.lineCap='round';const R=pts.R,L=pts.L,bones=[[R.sh,L.sh],[R.hip,L.hip],[R.sh,R.hip],[L.sh,L.hip]];['R','L'].forEach(sd=>{const S=pts[sd];bones.push([S.sh,S.el],[S.el,S.wr],[S.hip,S.kn],[S.kn,S.an],[S.an,S.he],[S.an,S.ft])});
  ctx.setLineDash([lw*1.8,lw*1.2]);ctx.strokeStyle='rgba(0,0,0,.55)';ctx.lineWidth=lw*0.9+2;bones.forEach(b=>line(b[0],b[1]));ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=lw*0.9;bones.forEach(b=>line(b[0],b[1]));ctx.setLineDash([]);
  ['R','L'].forEach(sd=>{const f=[pts[sd].an,pts[sd].he].filter(Boolean);if(!f.length)return;const m=M({x:gMean(f.map(p=>p.x)),y:gMean(f.map(p=>p.y))});ctx.beginPath();ctx.arc(m[0],m[1]+lw*1.2,lw*1.6,0,7);ctx.lineWidth=lw*0.7;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.stroke()});ctx.restore()}
+
+function gDrawGhost(ctx,pts,M,lw){const line=(a,b,w)=>{if(!a||!b)return;const p=M(a),q=M(b);ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke()};
+ ctx.save();ctx.lineCap='round';ctx.strokeStyle=GPV;const R=pts.R,L=pts.L;line(R.sh,L.sh,lw*2.6);line(R.hip,L.hip,lw*2.6);line(R.sh,R.hip,lw*2);line(L.sh,L.hip,lw*2);
+ ['R','L'].forEach(sd=>{const S=pts[sd];line(S.sh,S.el,lw*1.8);line(S.el,S.wr,lw*1.8);line(S.hip,S.kn,lw*2.8);line(S.kn,S.an,lw*2.8);line(S.an,S.he,lw*2);line(S.an,S.ft,lw*2)});ctx.restore()}
+const gMid=(a,b)=>a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:null;
+function gDrawPart(ctx,pts,M,lw,part,col){const line=(a,b,w,c)=>{if(!a||!b)return;const p=M(a),q=M(b);ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=w+3;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();ctx.strokeStyle=c;ctx.lineWidth=w;ctx.stroke()};
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';const R=pts.R,L=pts.L;
+ if(part==='pelvis'){const ex=R.hip&&L.hip?{x:(L.hip.x-R.hip.x)*0.45,y:(L.hip.y-R.hip.y)*0.45}:null;if(ex)line({x:R.hip.x-ex.x,y:R.hip.y-ex.y},{x:L.hip.x+ex.x,y:L.hip.y+ex.y},lw*1.9,col||'#f2c14e')}
+ if(part==='trunk'){const mh=gMid(R.hip,L.hip),ms=gMid(R.sh,L.sh);if(mh&&ms)line(mh,{x:mh.x+(ms.x-mh.x)*1.15,y:mh.y+(ms.y-mh.y)*1.15},lw*1.9,col||'#9fe0c0');line(R.sh,L.sh,lw*1.2,col||'#9fe0c0')}
+ if(part==='knee')['R','L'].forEach(sd=>{const S=pts[sd];line(S.hip,S.kn,lw*1.9,col||GC[sd]);line(S.kn,S.an,lw*1.9,col||GC[sd])});
+ ctx.restore()}
+const gAng={pelvis:v=>v==null?'—':(Math.abs(v)<0.3?'水平':(v>=0?'左':'右')+'が'+f1(Math.abs(v))+'°下'),trunk:v=>v==null?'—':(Math.abs(v)<0.3?'まっすぐ':(v>=0?'左':'右')+'へ'+f1(Math.abs(v))+'°'),knee:v=>v==null?'—':(Math.abs(v)<0.3?'まっすぐ':(v>=0?'内':'外')+f1(Math.abs(v))+'°')};
 
 /* 決めの1コマ（片脚で立った瞬間）を切り出して、線と角度を書き込む */
 const gFrameCache={};
@@ -1596,12 +1627,12 @@ async function gFrameAt(cl,t){const key=cl.url+'|'+t;if(gFrameCache[key])return 
  const job=(async()=>{const V=await gLoadVideo(cl.url);try{await gSeek(V.v,t);const c=document.createElement('canvas'),sc=Math.min(1,1920/Math.max(cl.vw,cl.vh));c.width=Math.round(cl.vw*sc);c.height=Math.round(cl.vh*sc);c.getContext('2d').drawImage(V.v,0,0,c.width,c.height);return c}finally{try{V.v.removeAttribute('src');V.v.load()}catch(e){}}})();
  gFrameCache[key]=job;job.catch(()=>{delete gFrameCache[key]});return job}
 function gTag(ctx,txt,x,y,col,fs,W){ctx.font='700 '+fs+'px "Zen Kaku Gothic New",sans-serif';const tw=ctx.measureText(txt).width,pd=fs*0.4,bw=tw+pd*2,bh=fs+pd*1.4;x=clamp(x-bw/2,4,W-bw-4);ctx.fillStyle='rgba(15,22,19,.82)';rr(ctx,x,y-bh/2,bw,bh,bh/2.4);ctx.fill();ctx.fillStyle=col;ctx.textBaseline='middle';ctx.fillText(txt,x+pd,y+1)}
-async function gDrawKey(cv,k,sd){const g=st.gc;let cl=g.clips[k],r=g.res[k];if(!cl||!r||!r.ok)return;if(r.round){const kp=r.keyPass&&r.keyPass[sd];if(kp){cl=kp.cl;r=kp.r}}const i=r.key&&r.key[sd]!=null?r.key[sd]:null;const W=cv.parentElement.clientWidth,H=Math.round(W*4/3),ctx=fitCanvas(cv,W,H);
+async function gDrawKey(cv,k,sd,opt){opt=opt||{};const g=opt.g||st.gc;let cl=g.clips[k],r=g.res[k];if(!cl||!r||!r.ok)return;if(r.round){const kp=r.keyPass&&r.keyPass[sd];if(kp){cl=kp.cl;r=kp.r}}const i=r.key&&r.key[sd]!=null?r.key[sd]:null;const W=opt.W||cv.parentElement.clientWidth,H=Math.round(W*4/3),ctx=opt.W?(()=>{cv.width=W*2;cv.height=H*2;const c=cv.getContext('2d');c.setTransform(2,0,0,2,0,0);return c})():fitCanvas(cv,W,H);
  if(i==null){ctx.fillStyle=cssv('--mut');ctx.font='14px sans-serif';ctx.fillText('この脚の片脚立ちを検出できませんでした',10,24);return}
  const pts=gPts(r,cl,i),all=[pts.nose].concat(...['R','L'].map(s=>Object.values(pts[s]))).filter(Boolean),ar=cl.ar;
  const tor=r.torso[i]||0.2,x0=Math.min(...all.map(p=>p.x)),x1=Math.max(...all.map(p=>p.x)),y0=Math.min(...all.map(p=>p.y))-tor*0.35,y1=Math.max(...all.map(p=>p.y))+tor*0.12;
  let ch=(y1-y0)*1.06,cw=ch*W/H;if(cw<(x1-x0)*1.25){cw=(x1-x0)*1.25;ch=cw*H/W}const cx0=(x0+x1)/2-cw/2,cy0=(y0+y1)/2-ch/2,M=p=>[(p.x-cx0)/cw*W,(p.y-cy0)/ch*H];
- let photo=false;if(cl.url){try{const img=await gFrameAt(cl,cl.t[i]);if(!document.body.contains(cv))return;const s=img.height;ctx.drawImage(img,cx0/ar*img.width,cy0*s,cw/ar*img.width,ch*s,0,0,W,H);ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(0,0,W,H);photo=true}catch(e){}}
+ let photo=false;if(cl.url&&opt.photo!==false){try{const img=await gFrameAt(cl,cl.t[i]);if(!opt.W&&!document.body.contains(cv))return;const s=img.height;ctx.drawImage(img,cx0/ar*img.width,cy0*s,cw/ar*img.width,ch*s,0,0,W,H);ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(0,0,W,H);photo=true}catch(e){}}
  if(!photo){ctx.fillStyle=cssv('--soft')||'#efe8da';ctx.fillRect(0,0,W,H)}
  const lw=Math.max(2,W/120);gDrawSkel(ctx,pts,M,lw,r,i,true);
  const o=gOp(sd),R=pts.R,L=pts.L,fs=Math.max(11,Math.round(W/17)),gold='#f2c14e';
@@ -1735,7 +1766,7 @@ function vGaitRes(){const g=st.gc,rs=GALL.map(o=>g.res[o.k]).filter(Boolean),G=g
  GALL.map(o=>g.res[o.k]).filter(r=>r&&r.swapped).map(r=>'<div class="warn">'+esc(r.warn.find(w=>/として分析しました/.test(w))||'')+'</div>').join('')+
  (g.res.round&&g.res.round.ok?'<p class="note">往復の動画から、こちらへ歩く部分を'+g.res.round.nF+'回・向こうへ歩く部分を'+g.res.round.nB+'回見つけて分析しました（向きを変えるところは除いています）。</p>':'')+
  '<div class="card scores"><div class="gauge">'+gauge(G.total)+'<div class="gl"><small>歩行スコア</small><b class="n">'+(G.total!=null?G.total:'—')+'</b><span>点 / 100</span>'+delta(G.total,ps&&ps.total)+'</div></div><div class="tiles t4">'+tiles+'</div></div>'+
- (st.gpk?'<div class="card"><h2>歩き方の再生</h2>'+(okK.length>1?'<div class="gclips">'+okK.map(k=>'<button class="btn'+(st.gpk===k?' on':'')+'" data-act="gClip" data-k="'+k+'">'+GVL[k]+'</button>').join('')+'</div>':'')+(pv?'<div class="gclips"><button class="btn'+(st.gghost?' on':'')+'" data-act="gGhost" aria-pressed="'+(!!st.gghost)+'">'+(st.gghost?'✓ ':'')+'前回（'+fmtDate(pv.date)+'）の歩き方を重ねる</button></div>':'')+'<div id="gp_res"></div>'+(st.gghost&&pv?'<p class="note" id="gGhostNote">白い点線＝前回（'+fmtDate(pv.date)+'）の歩き方。着地のタイミングと体の大きさをそろえて重ねています。</p>':'')+'<p class="note">線の色：<b class="gR">オレンジ＝右</b>・<b class="gL">青＝左</b>。足元の丸が塗りつぶされているときが、その足で体重を支えている瞬間です。ゆっくり再生やコマ送りで確認できます。</p></div>':'')+
+ (st.gpk?'<div class="card"><h2>歩き方の再生</h2>'+(okK.length>1?'<div class="gclips">'+okK.map(k=>'<button class="btn'+(st.gpk===k?' on':'')+'" data-act="gClip" data-k="'+k+'">'+GVL[k]+'</button>').join('')+'</div>':'')+(pv?'<div class="gclips"><button class="btn'+(st.gghost?' on':'')+'" data-act="gGhost" aria-pressed="'+(!!st.gghost)+'">'+(st.gghost?'✓ ':'')+'前回（'+fmtDate(pv.date)+'）の歩き方を重ねる</button></div>':'')+(st.gghost&&pv?'<div class="gparts" role="radiogroup" aria-label="比べるところ"><span>比べるところ</span>'+[['all','全身'],['pelvis','骨盤'],['trunk','上半身'],['knee','膝']].map(q=>'<button type="button" role="radio" aria-checked="'+((st.gpart||'all')===q[0])+'" class="btn'+((st.gpart||'all')===q[0]?' on':'')+'" data-act="gPart" data-p="'+q[0]+'">'+q[1]+'</button>').join('')+'</div>':'')+'<div id="gp_res"></div>'+(st.gghost&&pv?'<div class="gghostv" id="gGv"></div><p class="note" id="gGhostNote"><b style="color:#8f6fff">紫＝前回（'+fmtDate(pv.date)+'）</b>、色つき＝今回。着地のタイミングと体の大きさをそろえて重ねています。「比べるところ」で骨盤・上半身・膝だけを太く表示できます。コマ送りで片脚立ちの瞬間に合わせると比べやすくなります。</p>':'')+'<p class="note">線の色：<b class="gR">オレンジ＝右</b>・<b class="gL">青＝左</b>。足元の丸が塗りつぶされているときが、その足で体重を支えている瞬間です。ゆっくり再生やコマ送りで確認できます。</p></div>':'')+
  (keys?'<div class="card"><h2>片脚で立った瞬間</h2><div class="gkeys">'+keys+'</div><p class="note">金の線＝骨盤、緑の線＝上半身。白い点線は、両足が地面についているときの位置（その人の基準）です。</p></div>':'')+
  '<div class="grid2"><div class="card"><h2>気になったポイント</h2>'+(G.findings.length?'<ol class="finds">'+G.findings.map(r=>'<li class="b-'+r.st+'"><b>'+esc(r.dir)+'<span class="n">'+gFmt(r)+'</span></b><p>'+esc(r.tip)+'</p></li>').join('')+'</ol>':'<p>大きな左右差やくずれは見られませんでした。</p>')+
  '<h3><label for="gcomment">先生からのコメント</label></h3><textarea id="gcomment" rows="6">'+esc(g.comment)+'</textarea><p class="note">LINE用の文章にもこのコメントが入ります。自由に書き換えてください。</p></div>'+
@@ -1748,19 +1779,24 @@ function vGaitRes(){const g=st.gc,rs=GALL.map(o=>g.res[o.k]).filter(Boolean),G=g
  '<div class="card"><h2>前回との比較</h2>'+(others.length?'<label class="hrow"><span>比較する記録</span><select id="gcmpSel" style="width:auto">'+others.map(s=>'<option value="'+esc(s.id)+'"'+(pv&&pv.id===s.id?' selected':'')+'>'+fmtDT(s.date)+'（'+(s.sum.total!=null?s.sum.total:'-')+'点）</option>').join('')+'</select></label>'+
   (ps?'<div class="gcmpplay" id="gcmpPlay">'+(st.gcmpShow===pv.id?'<p class="mut">読み込み中…</p>':'<button class="btn" data-act="gCmpPlay">前回と今回の歩き方を並べて再生</button>')+'</div><table><thead><tr><th>項目</th><th class="r">前回</th><th class="r">今回</th><th class="r">変化</th></tr></thead><tbody><tr><td><b>歩行スコア</b></td><td class="r n">'+(ps.total!=null?ps.total:'-')+'</td><td class="r n">'+(G.total!=null?G.total:'-')+'</td><td class="r">'+(G.total!=null&&ps.total!=null?((G.total-ps.total>=0?'+':'')+(G.total-ps.total)+'点'):'')+'</td></tr>'+cmpRows+'</tbody></table>'+gWorse(g,G,pv):'')
   :'<p class="mut">比較できる記録がまだありません。結果を保存すると、次回からここで前回と並べて比べられます。</p>')+'</div>'+
- '<p class="store">動画そのものは保存せず、骨格の動き（目印の位置）と数値だけを保存します。</p></div>'+
- '<div class="actbar"><button class="btn" data-act="gCopyLine">LINE用の文章をコピー</button><textarea id="gLineTxt" class="vh" tabindex="-1" aria-hidden="true"></textarea>'+(st.patient.id?'<button class="btn pri" id="gSaveBtn" data-act="gSave"'+(g.saved&&!g.dirty?' disabled':'')+'>'+(g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存')+'</button>':'<button class="btn pri" data-act="saveTrial">患者さんの記録に保存</button>')+'</div>'}
+ '<p class="store">'+(isDemo()?'お試し版では結果を保存しません。院内版では患者さんごとに保存して、前回の歩き方と並べたり重ねたりして比べられます。':'動画そのものは保存せず、骨格の動き（目印の位置）と数値だけを保存します。')+'</p></div>'+
+ '<div class="actbar"><button class="btn" data-act="gReport">レポート画像を作る</button><button class="btn" data-act="gCopyLine">LINE用の文章をコピー</button><textarea id="gLineTxt" class="vh" tabindex="-1" aria-hidden="true"></textarea>'+(isDemo()?'':st.patient.id?'<button class="btn pri" id="gSaveBtn" data-act="gSave"'+(g.saved&&!g.dirty?' disabled':'')+'>'+(g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存')+'</button>':'<button class="btn pri" data-act="saveTrial">患者さんの記録に保存</button>')+'</div>'}
+
 async function gCmpLoad(id){const c=st.gcmpCache||(st.gcmpCache={});if(c[id])return c[id];const row=await Store.getGait(st.patient.id,id),o={id,date:row.date,clips:{},res:{}};
  for(const k in (row.clips||{})){const u=gUnpackClip(row.clips[k]);o.clips[k]=u;o.res[k]=gAnalyze(k,u)}c[id]=o;return o}
 async function gCmpMount(){const box=$('#gcmpPlay'),g=st.gc,id=st.gcmpShow;if(!box||!id)return;let pv;try{pv=await gCmpLoad(id)}catch(e){box.innerHTML='<div class="warn">前回の記録を読み込めませんでした：'+esc(msg(e))+'</div>';return}
  if(st.gcmpShow!==id||!document.body.contains(box))return;const ks=GALL.map(o=>o.k).filter(k=>pv.res[k]&&pv.res[k].ok&&g.res[k]&&g.res[k].ok),k=ks.includes(st.gpk)?st.gpk:ks[0];
  if(!k){box.innerHTML='<p class="mut">前回と今回で、同じ向き（前から・後ろから）の動画がないため並べられません。</p>';return}
  box.innerHTML='<p class="note" style="margin-top:0">'+GVL[k]+'の動画どうしを、同じ大きさにそろえて並べています。</p><div class="gpair"><div><b>前回（'+fmtDate(pv.date)+'）</b><div id="gpPrev"></div></div><div><b>今回（'+fmtDate(g.date)+'）</b><div id="gpNow"></div></div></div>';
- gMountPlayer($('#gpPrev'),pv.clips[k],pv.res[k],{stick:true,compact:true});gMountPlayer($('#gpNow'),g.clips[k],g.res[k],{stick:true,compact:true})}
+ gMountPlayer($('#gpPrev'),pv.clips[k],pv.res[k],{stick:true,compact:true});gMountPlayer($('#gpNow'),g.clips[k],g.res[k],{stick:true,compact:true});
+ box.insertAdjacentHTML('beforeend','<h3 style="margin-top:14px">片脚で立った瞬間を前回と比べる</h3><div class="gkeys g4">'+['R','L'].map(sd=>'<figure><canvas class="gkp" data-w="p" data-sd="'+sd+'"></canvas><figcaption><b>前回</b>・'+jpS(sd)+'脚で立った瞬間</figcaption></figure><figure><canvas class="gkp" data-w="n" data-sd="'+sd+'"></canvas><figcaption><b>今回</b>・'+jpS(sd)+'脚で立った瞬間</figcaption></figure>').join('')+'</div><p class="note">どちらも骨格だけで、同じ大きさにそろえています。金の線＝骨盤、緑の線＝上半身、白い点線＝その人の基準。</p>');
+ $$('canvas.gkp',box).forEach(cv=>{gDrawKey(cv,k,cv.dataset.sd,{g:cv.dataset.w==='p'?pv:g,photo:false}).catch(()=>{})})}
+function gDemoSend(){const g=st.gc;if(!isDemo()||!CL.sb||st.demoShare===false||!g||g.sent)return;const G=st.gG;if(!G||!G.n)return;g.sent=true;
+ try{const clips={};GALL.forEach(o=>{const c=g.clips[o.k];if(c&&g.res[o.k]&&g.res[o.k].ok)clips[o.k]=gPackClip(c)});let data={kind:'gait',ver:1,sum:gSum(G),clips};if(JSON.stringify(data).length>190000)data={kind:'gait',ver:1,sum:gSum(G)};CL.sb.from('demo_measurements').insert({data}).then(()=>{},()=>{})}catch(e){}}
 async function gMountRes(){const g=st.gc,el=$('#gp_res');if(!st.gpk||!el)return;let gh=null;const pv=st.gghost?gCmp():null;
  if(pv){try{const o=await gCmpLoad(pv.id);gh=gGhostFrom(o);if(!Object.keys(gh).length){gh=null;const n=$('#gGhostNote');if(n)n.textContent='前回の記録から、重ねられる歩き方を見つけられませんでした。'}}catch(e){toast('前回の記録を読み込めませんでした')}}
- if(!document.body.contains(el))return;gMountPlayer(el,g.clips[st.gpk],g.res[st.gpk],gh?{ghost:gh}:{})}
-function afterGaitRes(){const g=st.gc;if(st.gpk){gMountPlayer($('#gp_res'),g.clips[st.gpk],g.res[st.gpk]);if(st.gghost)gMountRes()}if(st.gcmpShow)gCmpMount();
+ if(!document.body.contains(el))return;gMountPlayer(el,g.clips[st.gpk],g.res[st.gpk],gh?{ghost:gh,gv:$('#gGv')}:{})}
+function afterGaitRes(){const g=st.gc;gDemoSend();if(st.gpk){gMountPlayer($('#gp_res'),g.clips[st.gpk],g.res[st.gpk]);if(st.gghost)gMountRes()}if(st.gcmpShow)gCmpMount();
  $$('canvas.gkey').forEach(cv=>{gDrawKey(cv,cv.dataset.k,cv.dataset.sd).catch(()=>{})});
  const bm=$('#bmap');if(bm&&st.gC){const W=bm.parentElement.clientWidth,H=Math.round(W*336/360),ctx=fitCanvas(bm,W,H);drawBodyMap(ctx,W,H,st.gC,cssv('--bg').toLowerCase()==='#0f1613')}}
 function gMarkDirty(){const g=st.gc;if(g&&g.saved&&!g.dirty){g.dirty=true;const b=$('#gSaveBtn');if(b){b.disabled=false;b.textContent='変更を保存'}}}
@@ -1796,6 +1832,7 @@ Object.assign(ACT,{
  gSave:()=>gSave(),
  gClip:b=>{st.gpk=b.dataset.k;$$('.gclips [data-act=gClip]').forEach(x=>x.classList.toggle('on',x.dataset.k===st.gpk));gMountPlayer($('#gp_res'),st.gc.clips[st.gpk],st.gc.res[st.gpk]);if(st.gghost)gMountRes()},
  gGhost:()=>{st.gghost=!st.gghost;render()},
+ gPart:b=>{st.gpart=b.dataset.p;$$('.gparts [data-act=gPart]').forEach(x=>{const on=x.dataset.p===st.gpart;x.classList.toggle('on',on);x.setAttribute('aria-checked',on)})},
  gCmpPlay:()=>{const pv=gCmp();if(!pv)return;st.gcmpShow=pv.id;const box=$('#gcmpPlay');if(box)box.innerHTML='<p class="mut">読み込み中…</p>';gCmpMount()},
  gCopyLine:async()=>{const t=gLineText();try{await navigator.clipboard.writeText(t);toast('LINE用の文章をコピーしました')}catch(e){const ta=$('#gLineTxt');if(ta){ta.className='';ta.value=t;ta.rows=8;ta.removeAttribute('tabindex');ta.removeAttribute('aria-hidden');ta.focus();ta.select()}toast('文章を選択しました。コピーしてお使いください')}}});
 document.addEventListener('change',e=>{const t=e.target;
@@ -1803,6 +1840,84 @@ document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset&&t.dataset.gcare&&st.gc){st.gc.care={ex:$$('input[data-gcare=ex]:checked').map(i=>i.value),life:$$('input[data-gcare=life]:checked').map(i=>i.value)};gMarkDirty()}
  if(t.id==='gcmpSel'){st.gcmpId=t.value;st.gcmpShow=null;render()}});
 document.addEventListener('input',e=>{const t=e.target;if(t.id==='gcomment'&&st.gc){st.gc.comment=t.value;gMarkDirty()}});
+
+/* --- 歩行分析レポート（画像・PDF・印刷・共有） --- */
+async function gMakeReport(withPhoto){const g=st.gc,G=st.gG||gCombine(GALL.map(o=>g.res[o.k]).filter(Boolean)),pv=gCmp(),ps=pv&&pv.sum,name=st.patient&&st.patient.id?st.patient.name:'',W=1080,M=48;
+ const C=Object.assign({paper:'#f7f3ea',card:'#fffdf8',g:'#1f4436',g2:'#2f6a54',gold:'#a8843f',gl:'#d3b06c',ink:'#1b2420',mut:'#5f675f',line:'#e2dac8',ok:'#2f7a5a',wn:'#a8650f',ng:'#b23b27'},(THEME&&THEME.report)||{});
+ const CC=gCareFrom(G),sel=gCareSel(g,CC);
+ const txt=(PROFILE.name||'')+(PROFILE.tagline||'')+(PROFILE.addr||'')+(PROFILE.tel||'')+'TEL歩行分析レポート様歩行スコア片脚の支え骨盤上半身膝点前回比片脚で立った瞬間右左脚前から後ろから往復気になったポイント左右の比べ立つとき支える時間反対側の落ち込み横への傾き向き内側外側秒歩くリズム歩/分同年代日常の平均先生からのコメント負担がかかりやすい筋肉推定縮こまって働きにくくなりやすい出やすい不調傾向おすすめのセルフケア生活のポイント との比較※本レポートは動画から計算した歩行評価の参考値で、医学的な診断ではありません。0123456789.°%（）・→'+name+(g.comment||'')+G.rows.map(r=>r.dir+r.tip+r.label).join('')+Object.values(MUS).map(m=>m[0]).join('')+Object.values(EX).map(e=>e.join('')).join('')+Object.values(LIFE).map(e=>e.join('')).join('');
+ try{await Promise.all(['400','500','700'].map(w=>document.fonts.load(w+' 24px "Zen Kaku Gothic New"',txt)).concat(document.fonts.load('700 24px "Inter Tight"','0123456789+-')))}catch(e){}
+ const cv=document.createElement('canvas');cv.width=W;cv.height=9000;const x=cv.getContext('2d');
+ const F=(w,sz,fam)=>x.font=w+' '+sz+'px '+(fam==='n'?'"Inter Tight",':'')+'"Zen Kaku Gothic New",sans-serif';
+ const wrapT=(t,mw)=>{const out=[];String(t).split('\n').forEach(par=>{let line='';for(const ch of par){const tt=line+ch;if(x.measureText(tt).width>mw&&line){if('、。」）・'.includes(ch)){line=tt;continue}out.push(line);line=ch}else line=tt}out.push(line)});return out};
+ const col=v=>v==null?C.line:C[band(v)];
+ x.fillStyle=C.paper;x.fillRect(0,0,W,9000);x.fillStyle=C.g;x.fillRect(0,0,W,236);x.fillStyle=C.gl;x.fillRect(0,236,W,5);
+ x.textBaseline='alphabetic';x.textAlign='left';F(500,24);x.fillStyle=C.gl;x.fillText(PROFILE.tagline||'',M,64);F(700,52);x.fillStyle='#fff';x.fillText((PROFILE.name||'')+'　歩行分析レポート',M,134);
+ F(500,30);x.fillStyle='#e9e3d4';x.fillText((name?name+' 様　':'')+fmtDate(g.date),M,192);let y=280;
+ const card=h=>{x.fillStyle=C.card;rr(x,M,y,W-2*M,h,24);x.fill();x.strokeStyle=C.line;x.lineWidth=2;x.stroke()};
+ card(300);const gc=[M+150,y+150],R=104;x.lineWidth=22;x.strokeStyle='#ece5d4';x.beginPath();x.arc(gc[0],gc[1],R,0,7);x.stroke();
+ if(G.total!=null){x.strokeStyle=col(G.total);x.lineCap='round';x.beginPath();x.arc(gc[0],gc[1],R,-Math.PI/2,-Math.PI/2+Math.PI*2*G.total/100);x.stroke();x.lineCap='butt'}
+ x.textAlign='center';F(500,22);x.fillStyle=C.mut;x.fillText('歩行スコア',gc[0],gc[1]-42);F(700,84,'n');x.fillStyle=C.ink;x.fillText(G.total!=null?G.total:'—',gc[0],gc[1]+34);F(500,22);x.fillStyle=C.mut;x.fillText('点 / 100',gc[0],gc[1]+70);
+ const grp=[['gSupport','片脚の支え'],['gPelvis','骨盤'],['gTrunk','上半身'],['gKnee','膝']],tsc=k=>{const a=G.rows.filter(r=>r.key===k).map(r=>r.score);return a.length?Math.round(gMean(a)):null},ptsc=k=>{if(!ps||!ps.rows)return null;const a=ps.rows.filter(r=>r.k===k).map(r=>r.sc);return a.length?Math.round(gMean(a)):null};
+ const tx0=M+330,tw=(W-M-24-tx0-16)/2,th=118;
+ grp.forEach((gr,i)=>{const tx=tx0+(i%2)*(tw+16),ty=y+24+Math.floor(i/2)*(th+16),v=tsc(gr[0]),pvv=ptsc(gr[0]);x.fillStyle=C.paper;rr(x,tx,ty,tw,th,16);x.fill();x.textAlign='left';F(500,22);x.fillStyle=C.mut;x.fillText(gr[1],tx+18,ty+36);
+  F(700,52,'n');x.fillStyle=col(v);x.fillText(v!=null?v:'—',tx+18,ty+96);if(v!=null&&pvv!=null){const d=v-pvv;F(500,20);x.fillStyle=d>0?C.ok:d<0?C.ng:C.mut;x.fillText('前回比 '+(d>0?'+':'')+d,tx+110,ty+94)}});
+ y+=300+40;x.textAlign='left';
+ // 片脚で立った瞬間
+ const okK=GALL.filter(o=>g.res[o.k]&&g.res[o.k].ok).map(o=>o.k),kk=['front','back','round'].find(k=>okK.includes(k));
+ if(kk){F(700,32);x.fillStyle=C.ink;x.fillText('片脚で立った瞬間（'+GVL[kk]+'）',M,y);y+=24;const gw=24,iw=(W-2*M-gw)/2,ih=Math.round(iw*4/3);
+  for(const [i,sd] of ['R','L'].entries()){const oc=document.createElement('canvas');try{await gDrawKey(oc,kk,sd,{W:Math.round(iw),photo:withPhoto})}catch(e){}const ix=M+i*(iw+gw);x.save();rr(x,ix,y,iw,ih,18);x.clip();x.fillStyle='#ece5d4';x.fillRect(ix,y,iw,ih);if(oc.width)x.drawImage(oc,ix,y,iw,ih);x.restore();
+   x.textAlign='center';F(500,24);x.fillStyle=C.mut;x.fillText(jpS(sd)+'脚で立った瞬間',ix+iw/2,y+ih+36);x.textAlign='left'}
+  y+=ih+64;F(400,19);x.fillStyle=C.mut;x.fillText('金の線＝骨盤、緑の線＝上半身、白い点線＝両足がついているときの位置（その人の基準）',M,y);y+=56}
+ // 気になったポイント
+ F(700,32);x.fillStyle=C.ink;x.fillText('気になったポイント',M,y);y+=18;
+ if(!G.findings.length){y+=40;F(400,26);x.fillText('大きな左右差やくずれは見られませんでした。',M,y);y+=10}
+ G.findings.forEach(r=>{y+=34;x.fillStyle=C[r.st];x.beginPath();x.arc(M+10,y+14,9,0,7);x.fill();F(700,28);x.fillStyle=C.ink;wrapT(r.dir+'（'+gFmt(r)+'）',W-2*M-34).forEach((l,i)=>{y+=i?40:24;x.fillText(l,M+34,y)});
+  F(400,24);x.fillStyle=C.mut;wrapT(r.tip,W-2*M-34).forEach(l=>{y+=36;x.fillText(l,M+34,y)});y+=8});y+=56;
+ // 左右の比べ
+ F(700,32);x.fillStyle=C.ink;x.fillText('左右の比べ',M,y);y+=24;const row=(k,sd)=>G.rows.find(r=>r.key===k&&r.side===sd);
+ const lines=[['片脚で支える時間',sd=>G.ss[sd]!=null?G.ss[sd].toFixed(2)+'秒':'—',sd=>{const r=row('gSupport',null);return r&&r.st!=='ok'&&((r.val>0?'L':'R')===sd)?r.st:null}],
+  ['反対側の骨盤の落ち込み',sd=>{const r=row('gPelvis',sd);return r?(r.val>=0?'':'上がる ')+gFmt(r):'—'},sd=>{const r=row('gPelvis',sd);return r&&r.st}],
+  ['上半身の横への傾き',sd=>{const r=row('gTrunk',sd);return r?(r.val>=0?jpS(sd):jpS(gOp(sd)))+'へ '+gFmt(r):'—'},sd=>{const r=row('gTrunk',sd);return r&&r.st}],
+  ['膝の向き',sd=>{const r=row('gKnee',sd);return r?(r.val>=0?'内側 ':'外側 ')+gFmt(r):'—'},sd=>{const r=row('gKnee',sd);return r&&r.st}]];
+ const rh=64,tbh=56+lines.length*rh;card(tbh);F(500,22);x.fillStyle=C.mut;x.fillText('項目',M+24,y+38);x.textAlign='right';x.fillText('右脚で立つとき',W-M-250,y+38);x.fillText('左脚で立つとき',W-M-24,y+38);x.textAlign='left';
+ lines.forEach((ln,i)=>{const yy=y+56+i*rh;x.strokeStyle=C.line;x.lineWidth=1.5;x.beginPath();x.moveTo(M+20,yy);x.lineTo(W-M-20,yy);x.stroke();F(500,24);x.fillStyle=C.ink;x.fillText(ln[0],M+24,yy+42);
+  x.textAlign='right';['R','L'].forEach((sd,j)=>{const stt=ln[2](sd);F(700,26,'n');x.fillStyle=stt&&stt!=='ok'?C[stt]:C.ink;x.fillText(ln[1](sd),j?W-M-24:W-M-250,yy+42)});x.textAlign='left'});y+=tbh+30;
+ const ref=gCadRef();if(G.cad!=null){F(500,24);x.fillStyle=C.ink;wrapT('歩くリズム：約'+Math.round(G.cad)+'歩/分'+(ref?'（'+gCadCmp(G.cad)+'）':''),W-2*M).forEach(l=>{y+=36;x.fillText(l,M,y)});y+=20}
+ y+=40;
+ // 筋肉・セルフケア
+ if(CC.tight.length||CC.weak.length){F(700,32);x.fillStyle=C.ink;x.fillText('負担がかかりやすい筋肉（推定）',M,y);y+=20;
+  const mw=420,mh=Math.round(mw*336/360),bm=document.createElement('canvas');bm.width=mw*2;bm.height=mh*2;const bx=bm.getContext('2d');bx.scale(2,2);drawBodyMap(bx,mw,mh,CC,false);x.drawImage(bm,M,y,mw,mh);
+  let ty=y+10;const tx=M+mw+30,twd=W-M-tx;const sec=(title,arr,cl)=>{if(!arr.length)return;F(700,24);x.fillStyle=cl;x.fillText(title,tx,ty+24);ty+=34;F(500,22);x.fillStyle=C.ink;arr.slice(0,7).forEach(e=>{wrapT((e.side!=='B'?jpS(e.side)+'：':'')+MUS[e.m][0],twd-20).forEach((l,i)=>{ty+=i?30:32;if(!i){x.fillStyle=cl;x.beginPath();x.arc(tx+7,ty-8,6,0,7);x.fill();x.fillStyle=C.ink}x.fillText(l,tx+20,ty)})});ty+=18};
+  sec('縮こまって負担がかかりやすい',CC.tight,'#d24a35');sec('働きにくくなりやすい',CC.weak,'#2f7fc8');F(400,18);x.fillStyle=C.mut;x.fillText('赤＝縮こまりやすい　青＝働きにくい',M,y+mh+22);y=Math.max(y+mh+40,ty)+20;
+  if(CC.troubles.length){F(500,24);x.fillStyle=C.ink;wrapT('出やすい不調（傾向）：'+CC.troubles.join('、'),W-2*M).forEach(l=>{y+=36;x.fillText(l,M,y)});y+=56}}
+ const exs=sel.ex.filter(id=>EX[id]),lfs=sel.life.filter(id=>LIFE[id]);
+ if(exs.length){y+=10;F(700,32);x.fillStyle=C.ink;x.fillText('おすすめのセルフケア',M,y);y+=16;
+  exs.forEach((id,i)=>{const X=EX[id],en=CC.ex.find(e=>e.id===id);F(400,23);const ls=wrapT(X[2],W-2*M-90),h=96+ls.length*34;x.fillStyle=C.card;rr(x,M,y+14,W-2*M,h,18);x.fill();x.strokeStyle=C.line;x.lineWidth=2;x.stroke();
+   x.fillStyle=C.g;x.beginPath();x.arc(M+40,y+58,22,0,7);x.fill();F(700,26,'n');x.fillStyle='#fff';x.textAlign='center';x.fillText(String(i+1),M+40,y+67);x.textAlign='left';
+   F(700,27);x.fillStyle=C.ink;x.fillText(X[0],M+80,y+56);F(500,21);x.fillStyle=C.gold;x.fillText(X[3]+((en&&en.notes.length)?'・'+en.notes.join('、'):''),M+80,y+88);F(400,23);x.fillStyle=C.ink;ls.forEach((l,j)=>x.fillText(l,M+80,y+124+j*34));y+=h+14});y+=56}
+ if(lfs.length){F(700,32);x.fillStyle=C.ink;x.fillText('生活のポイント',M,y);y+=10;lfs.forEach(id=>{const X=LIFE[id];y+=36;x.fillStyle=C.gold;x.fillRect(M,y-22,6,28);F(700,25);x.fillStyle=C.ink;x.fillText(X[0],M+22,y);F(400,22);x.fillStyle=C.mut;wrapT(X[1],W-2*M-22).forEach(l=>{y+=33;x.fillText(l,M+22,y)});y+=8});y+=30}
+ if(exs.length||CC.tight.length){F(400,19);x.fillStyle=C.mut;wrapT('※筋肉の状態は歩き方の傾向からの推定です。運動中に痛みやしびれが出たら中止して、ご相談ください。',W-2*M).forEach(l=>{x.fillText(l,M,y);y+=28});y+=24}
+ // 前回との比較
+ if(ps&&ps.rows){F(700,32);x.fillStyle=C.ink;x.fillText('前回（'+fmtDate(pv.date)+'）との比較',M,y);y+=24;const its=[['歩行スコア',G.total,ps.total]].concat(grp.map(gr=>[gr[1],tsc(gr[0]),ptsc(gr[0])])).slice(0,4),bw=(W-2*M-3*14)/4;
+  its.forEach((it,i)=>{const bx=M+i*(bw+14);x.fillStyle=C.card;rr(x,bx,y,bw,120,16);x.fill();x.strokeStyle=C.line;x.lineWidth=2;x.stroke();F(500,22);x.fillStyle=C.mut;x.fillText(it[0],bx+18,y+36);F(700,40,'n');x.fillStyle=C.ink;x.fillText((it[2]!=null?it[2]:'-')+' → '+(it[1]!=null?it[1]:'-'),bx+18,y+84);
+   if(it[1]!=null&&it[2]!=null){const d=it[1]-it[2];F(700,22);x.fillStyle=d>0?C.ok:d<0?C.ng:C.mut;x.fillText((d>0?'+':'')+d+'点',bx+18,y+110)}});y+=120+48}
+ if(g.comment){F(400,26);const ls=wrapT(g.comment,W-2*M-56),h=70+ls.length*42+24;card(h);F(700,28);x.fillStyle=C.g;x.fillText('先生からのコメント',M+28,y+50);F(400,26);x.fillStyle=C.ink;ls.forEach((l,i)=>x.fillText(l,M+28,y+100+i*42));y+=h+40}
+ x.fillStyle=C.g;x.fillRect(0,y,W,186);F(700,32);x.fillStyle='#fff';x.fillText(PROFILE.name||'',M,y+58);F(500,24);x.fillStyle='#e9e3d4';x.fillText([PROFILE.addr,PROFILE.tel?'TEL '+PROFILE.tel:''].filter(Boolean).join('　'),M,y+100);
+ F(400,20);x.fillStyle=C.gl;wrapT('※本レポートは動画から計算した歩行評価の参考値で、医学的な診断ではありません。',W-2*M).forEach((l,i)=>x.fillText(l,M,y+142+i*28));y+=186;
+ const out=document.createElement('canvas');out.width=W;out.height=y;out.getContext('2d').drawImage(cv,0,0);return out}
+async function gOpenReport(){st.repKind='gait';const hasV=GALL.some(o=>st.gc.clips[o.k]&&st.gc.clips[o.k].url);
+ openModal('<h2>歩行分析のレポート画像</h2>'+(hasV?'<div class="seg2" role="group" aria-label="写真の有無"><button data-act="rep" data-p="1" class="'+(st.repPhoto?'on':'')+'">写真あり</button><button data-act="rep" data-p="0" class="'+(st.repPhoto?'':'on')+'">骨格のみ</button></div>':'<p class="note">動画は保存していないため、骨格だけのレポートになります。</p>')+
+ '<div class="repimg" id="repBox"><div class="spin"></div></div><div class="macts">'+(navigator.share?'<button class="btn pri" data-act="shareReport">共有（LINEなど）</button>':'')+'<button class="btn" data-act="printReport">印刷する</button>'+(isIOS()?'':'<button class="btn" data-act="savePdf">PDFで保存</button>')+'<button class="btn" data-act="gCopyLine">LINE用の文章をコピー</button><button class="btn" data-act="closeModal">閉じる</button></div>'+
+ '<p class="hint" id="repHint">'+repHint()+'</p><textarea id="gLineTxt" class="vh" readonly tabindex="-1"></textarea>');
+ try{const out=await gMakeReport(st.repPhoto&&hasV);st.report=out;const box=$('#repBox');if(box)box.innerHTML='<img src="'+out.toDataURL('image/jpeg',0.9)+'" alt="歩行分析レポート">'}catch(e){const box=$('#repBox');if(box)box.innerHTML='<div class="warn">画像を作れませんでした：'+esc(msg(e))+'</div>'}}
+Object.assign(ACT,{gReport:()=>gOpenReport()});
+/* --- 患者さんの画面：歩行スコアの推移 --- */
+function gTrendSVG(list){const a=list.filter(s=>s.sum&&s.sum.total!=null).slice().reverse();if(a.length<2)return '';const W=600,H=170,L=34,R=14,T=16,B=30,n=a.length,X=i=>L+(n===1?0:i*(W-L-R)/(n-1)),Y=v=>T+(100-v)/70*(H-T-B);
+ let s='<svg viewBox="0 0 '+W+' '+H+'" class="gtrend" role="img" aria-label="歩行スコアの推移">';[30,50,70,90].forEach(v=>{s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="'+(L-6)+'" y="'+(Y(v)+4)+'" font-size="11" text-anchor="end" fill="var(--mut)">'+v+'</text>'});
+ s+='<polyline fill="none" stroke="var(--g2)" stroke-width="2.5" points="'+a.map((x,i)=>X(i).toFixed(1)+','+Y(Math.max(30,x.sum.total)).toFixed(1)).join(' ')+'"/>';
+ a.forEach((x,i)=>{s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(Math.max(30,x.sum.total)).toFixed(1)+'" r="5" fill="var(--'+band(x.sum.total)+')"/><text x="'+X(i).toFixed(1)+'" y="'+(Y(Math.max(30,x.sum.total))-10).toFixed(1)+'" font-size="12" text-anchor="middle" fill="var(--ink)">'+x.sum.total+'</text><text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" font-size="11" text-anchor="middle" fill="var(--mut)">'+(new Date(x.date).getMonth()+1)+'/'+new Date(x.date).getDate()+'</text>'});
+ return s+'</svg>'}
 
 /* ---------- 悪くなったときの理由（姿勢・歩行の前回比較） ---------- */
 const WR={
@@ -1867,6 +1982,60 @@ Object.assign(ACT,{wAddCmt:b=>{const k=b.dataset.kind,t=st.wtxt&&st.wtxt[k];if(!
  if(k==='g'){const g=st.gc;if(!g)return;if((g.comment||'').includes(t))return toast('すでにコメントに入っています');g.comment=(g.comment?g.comment.replace(/\s+$/,'')+'\n\n':'')+t;const ta=$('#gcomment');if(ta)ta.value=g.comment;gMarkDirty()}
  else{const c=st.cur;if(!c)return;if((c.comment||'').includes(t))return toast('すでにコメントに入っています');c.comment=(c.comment?c.comment.replace(/\s+$/,'')+'\n\n':'')+t;const ta=$('#comment');if(ta)ta.value=c.comment;markDirty()}
  toast('コメントに説明を追加しました');const ta=$(k==='g'?'#gcomment':'#comment');if(ta)ta.scrollIntoView({behavior:'smooth',block:'center'})}});
+
+/* ---------- 撮影画面の水平器（スマホの傾きセンサー） ---------- */
+/* 画面の中央に「本当の水平線」を表示し、方眼の横線と重なれば水平。仕様どおりの重力の向き（x:画面の右、y:画面の上）から傾きを出す。
+   iOSは符号が全部逆になるが、atan2(x,y)を±90°に折り返すので同じ結果になる */
+const LV={el:null,deg:null,flat:false};
+function lvMotion(e){const a=e.accelerationIncludingGravity;if(!a||a.x==null||a.y==null)return;const g=Math.hypot(a.x,a.y,a.z||0)||9.8;
+ if(Math.hypot(a.x,a.y)<g*0.5){LV.flat=true;lvPaint();return}LV.flat=false;let d=Math.atan2(a.x,a.y)*D;if(d>90)d-=180;if(d<-90)d+=180;LV.deg=LV.deg!=null?LV.deg*0.7+d*0.3:d;lvPaint()}
+function lvPaint(){const el=LV.el;if(!el)return;const p=el.querySelector('.pclv'),ln=el.querySelector('.pch');
+ if(LV.deg==null&&!LV.flat){if(p){p.className='pclv';p.textContent='水平器：使えません（三脚の水準器で合わせてください）'}if(ln)ln.hidden=true;return}
+ if(LV.flat){if(p){p.className='pclv wn';p.textContent='スマホを立ててください'}if(ln)ln.hidden=true;return}
+ const a=Math.abs(LV.deg),ok=a<1;if(p){p.className='pclv '+(ok?'ok':a<2.5?'wn':'ng');p.textContent=ok?'✓ 水平です（傾き '+f1(a)+'°）':'傾き '+f1(a)+'°：オレンジの線を方眼の横線に合わせる'}
+ if(ln){ln.hidden=false;ln.style.transform='rotate('+LV.deg.toFixed(2)+'deg)';ln.classList.toggle('ok',ok)}}
+function lvStart(el){LV.el=el;LV.deg=null;LV.flat=false;try{if(window.DeviceMotionEvent){window.addEventListener('devicemotion',lvMotion);if(typeof DeviceMotionEvent.requestPermission==='function')DeviceMotionEvent.requestPermission().catch(()=>{})}}catch(e){}
+ setTimeout(()=>{if(LV.el===el&&LV.deg==null)lvPaint()},2500)}
+function lvStop(){try{window.removeEventListener('devicemotion',lvMotion)}catch(e){}LV.el=null}
+
+/* ---------- 姿勢の撮影：ガイド線と水平器つきのカメラ ---------- */
+const PC={el:null,stream:null,k:null,tilt:null,timer:false,cd:0,cdT:0};
+const pcCan=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.isSecureContext!==false);
+const pcOpen=()=>!!PC.el;
+const PCTXT={front:{line:'体の中心（鼻・おへそ・両足の間）をこの線に',sil:'f'},right:{line:'くるぶしの少し前をこの線に（耳・肩・腰・膝がこの線に並ぶのが理想）',sil:'s'},left:{line:'くるぶしの少し前をこの線に（耳・肩・腰・膝がこの線に並ぶのが理想）',sil:'s'}};
+function pcSil(k){const f=k==='left'?' transform="translate(100 0) scale(-1 1)"':'';
+ const body=k==='front'?'<circle cx="50" cy="14" r="6.2"/><path d="M40 24 Q50 21 60 24 L62 52 Q50 55 38 52Z"/><path d="M39 25 L33 52 L36 53 L42 33Z"/><path d="M61 25 L67 52 L64 53 L58 33Z"/><path d="M39 53 L42 92 L47 92 L49 58 L51 58 L53 92 L58 92 L61 53Z"/>'
+  :'<circle cx="50" cy="14" r="6.2"/><path d="M45 23 Q51 21 55 24 L56 52 Q50 54 44 52Z"/><path d="M47 25 L48 50 L52 50 L52 28Z"/><path d="M45 53 L46 92 L52 92 L55 53Z"/><path d="M46 92 L55 92 L54 89 L46 89Z"/>';
+ return '<svg class="pcsil" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.75)" stroke-width=".5" stroke-dasharray="1.5 1"'+f+'>'+body+'</g></svg>'}
+async function pcStream(){const md=navigator.mediaDevices,tries=[
+  {facingMode:{ideal:'environment'},width:{ideal:3840},height:{ideal:2160}},
+  {facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},
+  {facingMode:{ideal:'environment'}}];let last=null;
+ for(const v of tries){try{return await md.getUserMedia({audio:false,video:v})}catch(e){last=e;if(e&&(e.name==='NotAllowedError'||e.name==='SecurityError'))break}}
+ throw new Error(last&&last.name==='NotAllowedError'?'カメラの使用が許可されていません。ブラウザの設定でカメラを許可してから、もう一度お試しください':'カメラを起動できませんでした（'+msg(last)+'）')}
+function pcFit(){const v=PC.el&&PC.el.querySelector('video'),sg=PC.el&&PC.el.querySelector('.grstage'),gd=PC.el&&PC.el.querySelector('.pcguide');if(!v||!sg||!gd)return;const w=v.videoWidth,h=v.videoHeight;if(!w||!h)return;
+ const W=sg.clientWidth,H=sg.clientHeight,k=Math.min(W/w,H/h),dw=w*k,dh=h*k;Object.assign(gd.style,{left:(W-dw)/2+'px',top:(H-dh)/2+'px',width:dw+'px',height:dh+'px'});
+ const tr=PC.stream&&PC.stream.getVideoTracks()[0],s2=tr&&tr.getSettings?tr.getSettings():{},inf=PC.el.querySelector('#pcInfo');if(inf)inf.textContent=Math.max(w,h)+'×'+Math.min(w,h)+(w>h?'　（スマホを縦向きに）':'')}
+async function pcStart(k){if(PC.el)return;PC.k=k;PC.tilt=null;
+ const lab=VIEWS.find(o=>o.k===k).label,T=PCTXT[k];
+ const el=document.createElement('div');el.className='grec pcam';el.setAttribute('role','dialog');el.setAttribute('aria-label',lab+'の撮影');
+ el.innerHTML='<div class="grtop"><span id="pcInfo">カメラを起動しています…</span><button class="grx" type="button" data-act="pCamClose">✕ 閉じる</button></div>'+
+  '<div class="grstage"><video playsinline muted autoplay></video><div class="pcguide" aria-hidden="true"><i class="pcgrid"></i>'+pcSil(k)+'<i class="pcv"></i><i class="pct"></i><i class="pcb"></i><i class="pch" hidden></i><span class="pcvl">'+T.line+'</span><span class="pctl">頭の上をこの線より下に</span><span class="pcbl">かかとをこの線に</span></div>'+
+  '<p class="pclv">水平器：スマホの傾きを読み取っています…</p><div class="pccd" id="pcCd" hidden></div></div>'+
+  '<div class="grbot"><span class="grtime">'+lab+'</span><button class="grbtn pc" type="button" data-act="pCamShot" aria-label="撮影"><i></i></button>'+
+  '<label class="pctm"><input type="checkbox" id="pcTimer"'+(PC.timer?' checked':'')+'> 3秒タイマー</label></div>';
+ document.body.appendChild(el);PC.el=el;lvStart(el);document.documentElement.classList.add('grlock');setTimeout(()=>NAV.arm(),0);
+ try{PC.stream=await pcStream();if(!PC.el){PC.stream.getTracks().forEach(t=>t.stop());return}const v=el.querySelector('video');v.srcObject=PC.stream;await v.play().catch(()=>{});
+  v.onloadedmetadata=v.onresize=()=>pcFit();window.addEventListener('resize',pcFit);pcFit()}
+ catch(e){pcClose();st.err[k]=msg(e);render()}}
+function pcShot(){if(!PC.el||!PC.stream||PC.cd)return;const go=()=>{const v=PC.el&&PC.el.querySelector('video');if(!v||!v.videoWidth)return;const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+  const k=PC.k,flash=PC.el.querySelector('.grstage');if(flash){flash.classList.add('flash')}
+  c.toBlob(b=>{pcClose();if(!b){toast('撮影できませんでした');return}if(st.view==='capture'&&st.cur)handlePhoto(k,new File([b],'posture_'+k+'.jpg',{type:'image/jpeg'}))},'image/jpeg',0.93)};
+ const tm=PC.el.querySelector('#pcTimer');PC.timer=!!(tm&&tm.checked);if(!PC.timer)return go();
+ PC.cd=3;const cd=PC.el.querySelector('#pcCd');const tick=()=>{if(!PC.el){PC.cd=0;return}if(PC.cd<=0){if(cd)cd.hidden=true;PC.cd=0;go();return}if(cd){cd.hidden=false;cd.textContent=PC.cd}PC.cd--;PC.cdT=setTimeout(tick,1000)};tick()}
+function pcClose(){clearTimeout(PC.cdT);PC.cd=0;if(LV.el===PC.el)lvStop();try{window.removeEventListener('resize',pcFit)}catch(e){}
+ if(PC.stream)PC.stream.getTracks().forEach(t=>t.stop());if(PC.el)PC.el.remove();PC.el=null;PC.stream=null;if(!GR.el)document.documentElement.classList.remove('grlock')}
+Object.assign(ACT,{pCam:()=>{const k=st.tab;if(st.busy[k])return;st.err[k]='';pcStart(k)},pCamShot:()=>pcShot(),pCamClose:()=>pcClose()});
 
 window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,repPages,makePdf,loadPhotos,photoBlob,doSave:()=>doSave(),gait:{gAnalyzeClip,gAnalyze,gCombine,gUnpackClip,gPackClip,gExtract,gaitOn,gSave,gLineText,gOpenHist,newGait,pWorse,gWorse}};
 (async()=>{try{if(!isDemo())applyTheme(localStorage.getItem('shisei-theme')||'',false)}catch(e){}NAV.init();render();await Store.init();
