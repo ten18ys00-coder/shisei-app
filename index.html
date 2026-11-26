@@ -135,6 +135,20 @@ td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(-
 }
 #printArea{position:fixed;left:-300vw;top:0;width:194mm;pointer-events:none}
 @media print{@page{size:A4;margin:8mm}body>*:not(#printArea){display:none!important}body{background:#fff!important}#printArea{position:static!important;left:auto!important;width:auto!important;display:block!important}#printArea .pg{break-after:page;page-break-after:always}#printArea .pg:last-child{break-after:auto;page-break-after:auto}#printArea img{display:block;width:100%;height:auto}}
+.gtabs{grid-template-columns:repeat(2,minmax(0,1fr))}.gbtns{display:flex;gap:8px;flex-wrap:wrap}
+.gbar{height:6px;background:var(--soft);border-radius:99px;overflow:hidden;margin:12px auto 8px;width:240px;max-width:100%}.gbar i{display:block;height:100%;background:var(--g);transition:width .3s}
+.gplayer{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px}
+.gpbox{position:relative;margin:0 auto;background:#111;border-radius:12px;overflow:hidden;max-width:100%}.gpbox.stick{background:var(--soft)}
+.gpbox video,.gpbox canvas{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill}
+.gpctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}.gpctl select{width:auto;min-height:44px}.gpctl input[type=range]{flex:1 1 140px;min-height:44px}
+.gsum{margin:10px 0 4px;font-size:15px}.gR{color:#c8521b}.gL{color:#2f7fc1}
+.gkeys{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.gkeys figure{margin:0}.gkeys canvas{display:block;border-radius:12px;background:var(--soft)}.gkeys figcaption{font-size:13px;color:var(--mut);margin-top:4px}.gkeys figcaption b{color:var(--ink)}
+.gclips{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tiles.t4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.gdia{margin:6px 0 10px}.gdia h3{margin:4px 0}.gdia svg{width:100%;height:auto;display:block}
+.ginfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:12px}.ginfo>div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.ginfo small{display:block;color:var(--mut);font-size:12px}.ginfo b{font-size:20px}
+.pacts2 .btn.gait{border-color:var(--g);color:var(--g)}
+@media (max-width:720px){.tiles.t4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -581,7 +595,7 @@ const Store={mode:'memory',
  async init(){if(CL.init()&&!isDemo()){this.mode='cloud';return}if(hasGS()){this.mode='gas';return}this.mode=lsOK()?'local':'memory';if(this.mode==='local')loadLocal()},
  async listPatients(){if(this.mode==='cloud')return CL.listPatients();if(this.mode==='gas')return (await gs('apiListPatients'))||[];return MEM.patients.map(p=>Object.assign({},p))},
  async savePatient(p){if(this.mode==='cloud')return CL.savePatient(p);if(this.mode==='gas')return gs('apiSavePatient',JSON.parse(JSON.stringify(p)));const i=MEM.patients.findIndex(x=>x.id===p.id);if(i>=0)MEM.patients[i]=Object.assign({},p);else MEM.patients.push(Object.assign({},p));persist()},
- async deletePatient(id){if(this.mode==='cloud')return CL.deletePatient(id);if(this.mode==='gas')return gs('apiDeletePatient',id);MEM.patients=MEM.patients.filter(x=>x.id!==id);delete MEM.sessions[id];persist()},
+ async deletePatient(id){if(this.mode==='cloud')return CL.deletePatient(id);if(this.mode==='gas')return gs('apiDeletePatient',id);MEM.patients=MEM.patients.filter(x=>x.id!==id);delete MEM.sessions[id];if(MEM.gait)delete MEM.gait[id];persist()},
  async listSessions(pid){let a;if(this.mode==='cloud')a=await CL.listSessions(pid);else if(this.mode==='gas')a=(await gs('apiListSessions',pid))||[];else a=(MEM.sessions[pid]||[]).map(x=>Object.assign({},x));return a.sort((x,y)=>String(y.date).localeCompare(String(x.date)))},
  async saveSession(pid,sid,b){if(this.mode==='cloud')return CL.saveSession(pid,sid,b);if(this.mode==='gas')return gs('apiSaveSession',pid,sid,JSON.parse(JSON.stringify(b)));const a=MEM.sessions[pid]||(MEM.sessions[pid]=[]);const r=Object.assign({id:sid},JSON.parse(JSON.stringify(b)));const i=a.findIndex(x=>x.id===sid);if(i>=0)a[i]=r;else a.push(r);persist()},
  async deleteSession(pid,sid){if(this.mode==='cloud')return CL.deleteSession(pid,sid);if(this.mode==='gas')return gs('apiDeleteSession',pid,sid);MEM.sessions[pid]=(MEM.sessions[pid]||[]).filter(x=>x.id!==sid);persist()}
@@ -690,16 +704,17 @@ const newCur=(h,wt)=>({id:uid('s'),date:new Date().toISOString(),height:h||null,
 function go(v){st.view=v;render();window.scrollTo(0,0)}
 let rendering=false;
 function render(){if(rendering){setTimeout(render,0);return}rendering=true;try{render_()}finally{rendering=false}}
-function backTarget(){const v=st.view,c=st.cur;if(v==='patient'||v==='calib'||v==='admin')return 'home';if(v==='capture')return st.patient&&st.patient.id?'patient':'home';if(v==='result')return c&&c.fromHistory?'patient':'capture';return null}
+function backTarget(){const v=st.view,c=st.cur;if(v==='patient'||v==='calib'||v==='admin')return 'home';if(v==='capture')return st.patient&&st.patient.id?'patient':'home';if(v==='result')return c&&c.fromHistory?'patient':'capture';if(v==='gait')return st.patient&&st.patient.id?'patient':'home';if(v==='gres')return st.gc&&st.gc.fromHistory?'patient':'gait';return null}
 function goBack(){const m=$('#modal');if(m&&!m.hidden){closeModal();return}const t=backTarget();if(!t)return;
  const leave=()=>{if(t==='home')ACT.home();else go(t)};
  if(st.view==='capture'&&st.cur&&!st.cur.saved&&Object.keys(st.cur.views).length){confirmBox('撮影した写真は消えます。前の画面に戻りますか？','戻る',async()=>leave());return}
+ if(st.view==='gait'&&st.gc&&(GV.some(o=>st.gbusy[o.k])||(!st.gc.saved&&Object.keys(st.gc.clips).length))){confirmBox(GV.some(o=>st.gbusy[o.k])?'解析を中止して、前の画面に戻りますか？':'解析した動画の結果は消えます。前の画面に戻りますか？','戻る',async()=>{if(gCancel)gCancel.stop=true;leave()});return}
  leave()}
 const NAV={armed:false,gs(){return !!(window.google&&google.script&&google.script.history)},
  arm(){const m=$('#modal'),need=(st.view!=='home'&&st.view!=='lock')||(m&&!m.hidden);if(!need||NAV.armed)return;NAV.armed=true;try{if(NAV.gs())google.script.history.push({t:Date.now()},{},'app');else history.pushState({t:Date.now()},'')}catch(e){NAV.armed=false}},
  init(){const on=()=>{NAV.armed=false;goBack();setTimeout(NAV.arm,50)};try{if(NAV.gs())google.script.history.setChangeHandler(on);else window.addEventListener('popstate',on)}catch(e){}}};
-function render_(){const hb=$('#hback');if(hb)hb.hidden=st.view==='home'||st.view==='lock';const ht=$('header.top');if(ht)ht.classList.toggle('sub',st.view!=='home');setTimeout(NAV.arm,0);const m=$('#main');m.innerHTML=({home:vHome,patient:vPatient,capture:vCapture,result:vResult,calib:vCalib,lock:vLock,admin:vAdmin})[st.view]();
- if(st.view==='home')renderList();if(st.view==='patient')drawTrend();if(st.view==='capture')setupEditor();if(st.view==='result')afterResult();
+function render_(){gStopAll();const hb=$('#hback');if(hb)hb.hidden=st.view==='home'||st.view==='lock';const ht=$('header.top');if(ht)ht.classList.toggle('sub',st.view!=='home');setTimeout(NAV.arm,0);const m=$('#main');m.innerHTML=({home:vHome,patient:vPatient,capture:vCapture,result:vResult,calib:vCalib,lock:vLock,admin:vAdmin,gait:vGait,gres:vGaitRes})[st.view]();
+ if(st.view==='home')renderList();if(st.view==='gait')setupGait();if(st.view==='gres')afterGaitRes();if(st.view==='patient')drawTrend();if(st.view==='capture')setupEditor();if(st.view==='result')afterResult();
  $('#chip').textContent={cloud:'記録：クラウド（暗号化）',gas:'記録：Googleドライブ',local:'記録：この端末のみ',memory:'記録：保存なし'}[Store.mode]||''}
 function storeNote(){return '<p class="store">'+({cloud:'記録はクラウドに保存しています。患者さんのお名前・ふりがな・メモ・コメントはこの端末で暗号化してから保存するため、この院のパスコードを知らない人には読めません。パスコードは運営側にも伝わりません。名前を含まない測定値は、姿勢分析の精度を上げるために統計として利用します。写真そのものは保存しません。',gas:'記録は院長のGoogleドライブ内のスプレッドシート「ほさか整骨院_姿勢分析データ」に保存されます（スプレッドシートは院長のアカウントでしか開けません。アプリは院のパスコードを入れた端末からだけ開けます）。写真そのものは保存せず、目印の位置と数値だけを保存します。',local:'いまは記録をこの端末のブラウザにだけ一時的に保存しています。',memory:'この環境では記録を保存できません。ページを閉じると消えます。'}[Store.mode]||'')+'</p>'}
 function calSamples(){const out={};Object.keys(SPEC).forEach(k=>out[k]=[]);(st.cal&&st.cal.sessions||[]).forEach(s=>{const c=unpack(s),A=analyze(c);A.rows.forEach(r=>{out[r.key].push({raw:r.raw,j:c.judge&&c.judge[jkey(r)]||null,vk:r.vk})})});return out}
@@ -735,7 +750,7 @@ async function loadCalib(){const ps=st.patients.filter(p=>p.id&&p.id!==CFG_ID);s
  if(st.view==='calib')render()}
 function vHome(){return '<div class="wrap"><h1>姿勢分析</h1><p class="lead">患者さんを選んで、正面・右側面・左側面の3枚を撮影します。写真は端末の中だけで分析します。</p>'+
  '<div class="toolbar"><input id="q" type="search" placeholder="名前・ふりがなで検索" value="'+esc(st.q)+'" aria-label="患者さんを検索"><button class="btn pri" data-act="newPatient">＋ 新しい患者さん</button></div>'+
- '<div id="plist"></div><p><button class="link" data-act="trial">登録せずにお試しで分析する</button>'+(isDemo()?'':'　<button class="link" data-act="calib">判定基準の調整</button>')+(Store.mode==='gas'&&!isDemo()?'　<button class="link" data-act="authMenu">パスコードと端末</button>':'')+(Store.mode==='cloud'?'　<button class="link" data-act="authMenu">院の設定</button>'+(CL.clinic&&CL.clinic.is_admin?'　<button class="link" data-act="admin">院の管理</button>':'')+(hasGS()&&AUTH.token&&CL.clinic&&!(CL.clinic.settings||{}).imported?'</p><div class="card"><p style="margin:0 0 8px">Googleドライブに前の記録があります。この院に取り込みますか？</p><button class="btn pri" id="impBtn" data-act="importGas">Googleドライブの記録を取り込む</button></div><p>':''):'')+'</p>'+(st.loadErr?'<div class="warn">'+esc(st.loadErr)+'</div>':'')+storeNote()+'</div>'}
+ '<div id="plist"></div><p><button class="link" data-act="trial">登録せずにお試しで分析する</button>'+(gaitOn()?'　<button class="link" data-act="gTrial">歩行をお試しで分析する</button>':'')+(isDemo()?'':'　<button class="link" data-act="calib">判定基準の調整</button>')+(Store.mode==='gas'&&!isDemo()?'　<button class="link" data-act="authMenu">パスコードと端末</button>':'')+(Store.mode==='cloud'?'　<button class="link" data-act="authMenu">院の設定</button>'+(CL.clinic&&CL.clinic.is_admin?'　<button class="link" data-act="admin">院の管理</button>':'')+(hasGS()&&AUTH.token&&CL.clinic&&!(CL.clinic.settings||{}).imported?'</p><div class="card"><p style="margin:0 0 8px">Googleドライブに前の記録があります。この院に取り込みますか？</p><button class="btn pri" id="impBtn" data-act="importGas">Googleドライブの記録を取り込む</button></div><p>':''):'')+'</p>'+(st.loadErr?'<div class="warn">'+esc(st.loadErr)+'</div>':'')+storeNote()+'</div>'}
 function renderList(){const el=$('#plist');if(!el)return;if(st.loading){el.innerHTML='<p class="empty">記録を読み込み中…</p>';return}
  const q=st.q.trim(),list=st.patients.filter(p=>p.id!==CFG_ID).filter(p=>!q||(p.name+(p.kana||'')).includes(q)).sort((a,b)=>String(b.lastAt||b.createdAt||'').localeCompare(String(a.lastAt||a.createdAt||'')));
  el.innerHTML=list.length?'<ul class="plist">'+list.map(p=>'<li><button data-act="openPatient" data-id="'+esc(p.id)+'"><span class="pn">'+esc(p.name)+'<small>'+esc(p.kana||'')+'</small></span><span class="pm">'+(p.lastAt?'前回 '+fmtDate(p.lastAt)+'・'+(p.count||0)+'回分析':'まだ分析なし')+'</span>'+(p.lastTotal!=null?'<span class="ps n s-'+band(p.lastTotal)+'">'+p.lastTotal+'<small>点</small></span>':'')+'</button></li>').join('')+'</ul>'
@@ -743,9 +758,10 @@ function renderList(){const el=$('#plist');if(!el)return;if(st.loading){el.inner
 function vPatient(){const p=st.patient,ss=st.sessions;
  return '<div class="wrap"><div class="crumb"><button class="back" data-act="home">← 患者さん一覧</button></div>'+
  '<div class="phead"><div><h1>'+esc(p.name)+' <span>さん</span></h1><p class="mut">'+(p.kana?esc(p.kana)+'・':'')+(p.height?'身長 '+p.height+'cm':'身長は未入力')+(p.weight?'・体重 '+p.weight+'kg':'')+(p.sex?'・'+(p.sex==='f'?'女性':'男性'):'')+(p.ageBand?'・'+esc(p.ageBand):'')+(p.memo?'・'+esc(p.memo):'')+'</p></div>'+
- '<div class="acts"><button class="btn" data-act="editPatient">編集</button><button class="btn pri big" data-act="startCapture">新しく分析する</button></div></div>'+
+ '<div class="acts pacts2"><button class="btn" data-act="editPatient">編集</button>'+(gaitOn()?'<button class="btn pri big" data-act="startCapture">姿勢を分析する</button><button class="btn big gait" data-act="gStart">歩行を分析する</button>':'<button class="btn pri big" data-act="startCapture">新しく分析する</button>')+'</div></div>'+
  (ss.length>=2?'<div class="card"><h2>総合スコアの推移</h2><div class="fig" id="trend"></div></div>':'')+
- '<div class="card"><h2>分析の記録</h2>'+(ss.length?'<ul class="slist">'+ss.map(s=>{const sc=s.scores||{};return '<li><button class="srow" data-act="openSession" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sc.total)+'">'+(sc.total!=null?sc.total:'-')+'<small>点</small></span><span class="st">'+esc(s.type||'')+'</span><span class="ss">正面 '+(sc.front!=null?sc.front:'-')+'・側面 '+(sc.side!=null?sc.side:'-')+'・回旋 '+(sc.rot!=null?sc.rot:'-')+'</span></button><button class="x" data-act="delSession" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':'<p class="empty">まだ分析の記録がありません。「新しく分析する」から始めましょう。</p>')+'</div></div>'}
+ '<div class="card"><h2>'+(gaitOn()?'姿勢分析の記録':'分析の記録')+'</h2>'+(ss.length?'<ul class="slist">'+ss.map(s=>{const sc=s.scores||{};return '<li><button class="srow" data-act="openSession" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sc.total)+'">'+(sc.total!=null?sc.total:'-')+'<small>点</small></span><span class="st">'+esc(s.type||'')+'</span><span class="ss">正面 '+(sc.front!=null?sc.front:'-')+'・側面 '+(sc.side!=null?sc.side:'-')+'・回旋 '+(sc.rot!=null?sc.rot:'-')+'</span></button><button class="x" data-act="delSession" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':'<p class="empty">まだ分析の記録がありません。「'+(gaitOn()?'姿勢を分析する':'新しく分析する')+'」から始めましょう。</p>')+'</div>'+(gaitOn()?gPatientCard():'')+'</div>'}
+function gPatientCard(){const gl=st.gaitList||[];return '<div class="card"><h2>歩行分析の記録</h2>'+(st.gaitErr?'<div class="warn">'+esc(st.gaitErr)+'</div>':'')+(gl.length?'<ul class="slist">'+gl.map(s=>{const sm=s.sum||{};return '<li><button class="srow" data-act="gOpen" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sm.total)+'">'+(sm.total!=null?sm.total:'-')+'<small>点</small></span><span class="st">'+(sm.cad?'リズム 約'+sm.cad+'歩/分':'')+'</span><span class="ss">'+esc(gTopTxt(sm))+'</span></button><button class="x" data-act="gDel" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':(st.gaitErr?'':'<p class="empty">まだ歩行分析の記録がありません。「歩行を分析する」から始めましょう。</p>'))+'</div>'}
 function drawTrend(){const el=$('#trend');if(!el)return;const ss=st.sessions.slice().reverse().filter(s=>s.scores&&s.scores.total!=null);
  const draw=()=>{const W=el.clientWidth,H=el.clientHeight;if(!W)return;const pl=34,pr=16,pt_=14,pb=26,xs=i=>pl+(ss.length<2?0:i*(W-pl-pr)/(ss.length-1)),ys=v=>pt_+(100-clamp(v,30,100))/70*(H-pt_-pb);
   let g='';[40,60,80,100].forEach(v=>{g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ys(v)+'" y2="'+ys(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(ys(v)+4)+'" text-anchor="end" font-size="11" fill="var(--mut)">'+v+'</text>'});
@@ -1112,16 +1128,16 @@ function patientForm(p){openModal('<h2>'+(p?'患者さん情報の編集':'新�
 function trialSaveModal(){openModal('<h2>どの患者さんの記録として保存しますか？</h2><form id="tform" class="form">'+(st.patients.length?'<label>登録済みの患者さん<select name="pid"><option value="">選んでください</option>'+st.patients.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select></label><p class="or">または</p>':'')+
  '<label>新しい患者さんのお名前<input name="name" autocomplete="off"></label><div class="macts"><button class="btn pri" type="submit">保存</button><button class="btn" type="button" data-act="closeModal">キャンセル</button></div></form>');
  $('#tform').onsubmit=async e=>{e.preventDefault();const sb=e.target.querySelector('[type=submit]');if(sb.disabled)return;const fd=new FormData(e.target),pid=fd.get('pid'),name=String(fd.get('name')||'').trim();let p=null;sb.disabled=true;
-  try{if(pid){p=st.patients.find(x=>x.id===pid);st.sessions=await Store.listSessions(pid)}else if(name){p={id:uid('p'),kind:'patient',name,kana:'',height:st.cur.height||null,memo:'',createdAt:new Date().toISOString(),count:0};await Store.savePatient(p);upsertPatient(p);st.sessions=[]}else{sb.disabled=false;return}}
+  try{if(pid){p=st.patients.find(x=>x.id===pid);if(st.view!=='gres')st.sessions=await Store.listSessions(pid)}else if(name){p={id:uid('p'),kind:'patient',name,kana:'',height:(st.view!=='gres'&&st.cur&&st.cur.height)||null,memo:'',createdAt:new Date().toISOString(),count:0};await Store.savePatient(p);upsertPatient(p);st.sessions=[]}else{sb.disabled=false;return}}
   catch(err){toast('保存できませんでした：'+msg(err));sb.disabled=false;return}
-  st.patient=p;closeModal();await doSave()}}
+  st.patient=p;closeModal();if(st.view==='gres'){try{st.gaitList=await Store.listGait(p.id)}catch(e){st.gaitList=[]}await gSave()}else await doSave()}}
 
 /* ---------- events ---------- */
 const ACT={
  home:async()=>{st.patient=null;go('home')},
  newPatient:()=>patientForm(null),
  editPatient:()=>patientForm(st.patient),
- openPatient:async b=>{const p=st.patients.find(x=>x.id===b.dataset.id);if(!p)return;st.patient=p;st.sessions=[];try{st.sessions=await Store.listSessions(p.id)}catch(e){toast(msg(e))}go('patient')},
+ openPatient:async b=>{const p=st.patients.find(x=>x.id===b.dataset.id);if(!p)return;st.patient=p;st.sessions=[];st.gaitList=[];st.gaitErr='';loadGaitList(p);try{st.sessions=await Store.listSessions(p.id)}catch(e){toast(msg(e))}go('patient')},
  toPatient:()=>go('patient'),
  startCapture:()=>{st.cur=newCur(st.patient.height,st.patient.weight);st.cur.ageBand=st.patient.ageBand||null;st.cur.sex=st.patient.sex||null;st.tab='front';st.adjust=false;st.err={};go('capture');ensureEngine().catch(()=>{})},
  trial:()=>{st.patient={id:null,name:'お試し',height:null};st.sessions=[];ACT.startCapture()},
@@ -1188,8 +1204,454 @@ document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){st.q=t.val
  if(t.id==='weight'&&st.cur){const w=parseFloat(t.value);st.cur.weight=w>15&&w<250?w:null}
  if(t.id==='rollR'&&st.cur){const v=st.cur.views[st.tab];if(!v)return;v.roll=parseFloat(t.value)||0;v.rollSrc='manual';if(st.cur.saved)st.cur.dirty=true;const l=$('#rollV');if(l)l.textContent=(v.roll>0?'+':'')+f1(v.roll)+'°';setupEditor()}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details.tool'))st.tool[d.dataset.t]=d.open},true);
-let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(st.view==='capture')setupEditor();if(st.view==='result')afterResult()},200)});
-window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,repPages,makePdf,loadPhotos,photoBlob,doSave:()=>doSave()};
+let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(st.view==='capture')setupEditor();if(st.view==='result')afterResult();if(st.view==='gres'){gStopAll();afterGaitRes()}if(st.view==='gait'){gStopAll();setupGait()}},200)});
+/* ---------- 歩行分析（前後から撮った動画）：計算 ---------- */
+const GK=[0,11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32];
+const GI=(()=>{const o={};GK.forEach((k,i)=>o[k]=i);return o})();
+const GJ=['sh','el','wr','hip','kn','an','he','ft'];
+const GMP={sh:[11,12],el:[13,14],wr:[15,16],hip:[23,24],kn:[25,26],an:[27,28],he:[29,30],ft:[31,32]};
+const GPAR={el:'sh',wr:'el',kn:'hip',an:'kn',he:'an',ft:'an'};
+const GV=[{k:'front',label:'前から',sub:'こちらへ歩いてくる'},{k:'back',label:'後ろから',sub:'向こうへ歩いていく'}];
+const GVL={front:'前から',back:'後ろから'};
+const GSPEC={
+ gPelvis:{label:'骨盤の落ち込み',good:5,bad:8,unit:'°'},
+ gTrunk:{label:'上半身の横への傾き',good:4,bad:7,unit:'°'},
+ gKnee:{label:'膝の向き',good:5,bad:10,unit:'°'},
+ gSupport:{label:'片脚で支える時間の左右差',good:6,bad:12,unit:'%'}
+};
+const GORDER=['gSupport','gPelvis','gTrunk','gKnee'];
+const gOp=s=>s==='R'?'L':'R';
+const gMed=a=>{const b=a.filter(v=>v!=null&&isFinite(v)).sort((x,y)=>x-y);if(!b.length)return null;const m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2};
+const gPct=(a,q)=>{const b=a.filter(v=>v!=null&&isFinite(v)).sort((x,y)=>x-y);if(!b.length)return null;const i=clamp((b.length-1)*q,0,b.length-1),lo=Math.floor(i),hi=Math.ceil(i);return b[lo]+(b[hi]-b[lo])*(i-lo)};
+const gMean=a=>{const b=a.filter(v=>v!=null&&isFinite(v));return b.length?b.reduce((x,y)=>x+y,0)/b.length:null};
+
+/* 保存形式 → 計算用：{v,ar,t:[秒],P:[フレーム][17]=[x,y]|null}（x,yは画像の幅・高さに対する割合） */
+function gUnpackClip(c){const n=c.t.length,P=[];for(let i=0;i<n;i++){const fr=[];for(let j=0;j<GK.length;j++){const o=(i*GK.length+j)*2,x=c.p[o],y=c.p[o+1];fr.push(x<0||y<0?null:[x/1000,y/1000])}P.push(fr)}
+ return {v:c.v,ar:c.ar,t:c.t.map(x=>x/1000),P,face:c.face||null}}
+function gPackClip(cl){const p=[];cl.P.forEach(fr=>fr.forEach(q=>{if(q&&q[0]>=0&&q[1]>=0){p.push(Math.round(q[0]*1000),Math.round(q[1]*1000))}else p.push(-1,-1)}));
+ return {v:cl.v,ar:Math.round(cl.ar*1e4)/1e4,t:cl.t.map(x=>Math.round(x*1000)),p,face:cl.face||null}}
+
+function gSmooth(a,w){const k=w>=5?[1,4,6,4,1]:[1,2,1],h=k.length>>1;return a.map((v,i)=>{if(v==null)return null;let s=0,ws=0;for(let j=-h;j<=h;j++){const u=a[i+j];if(u==null)continue;s+=u*k[j+h];ws+=k[j+h]}return s/ws})}
+function gFill(a,maxGap){const out=a.slice(),n=a.length;let i=0;while(i<n){if(out[i]!=null){i++;continue}let j=i;while(j<n&&out[j]==null)j++;if(i>0&&j<n&&j-i<=maxGap){const x0=out[i-1],x1=out[j];for(let k=i;k<j;k++)out[k]=x0+(x1-x0)*(k-i+1)/(j-i+1)}i=j}return out}
+function gMedFilt(a,w){const h=w>>1;return a.map((v,i)=>{if(v==null)return null;const s=[];for(let j=i-h;j<=i+h;j++)if(a[j]!=null)s.push(a[j]);return gMed(s)})}
+
+/* 左右の割り当て：AIの左右ラベルは後ろ姿で入れ替わりやすいため、画像上の位置と歩く向きから解剖学的な左右を決める */
+function gAssign(cl,face){const n=cl.t.length,ar=cl.ar,O=[];let prev=null;
+ const pt=(fr,k)=>{const q=fr[GI[k]];return q?{x:q[0]*ar,y:q[1]}:null};
+ for(let i=0;i<n;i++){const fr=cl.P[i],o={R:{},L:{},nose:pt(fr,0)};
+  for(const j of ['hip','sh']){const a=pt(fr,GMP[j][0]),b=pt(fr,GMP[j][1]);if(a&&b){const lft=a.x<b.x?a:b,rgt=a.x<b.x?b:a;o.R[j]=face==='front'?lft:rgt;o.L[j]=face==='front'?rgt:lft}
+   else if(a||b){const p=a||b,q=prev&&prev.R[j]&&prev.L[j]?prev:null;if(q){const dr=Math.hypot(p.x-q.R[j].x,p.y-q.R[j].y),dl=Math.hypot(p.x-q.L[j].x,p.y-q.L[j].y);if(dr<dl)o.R[j]=p;else o.L[j]=p}}}
+  for(const j of ['kn','an','he','ft','el','wr']){const a=pt(fr,GMP[j][0]),b=pt(fr,GMP[j][1]),pa=GPAR[j],pR=o.R[pa],pL=o.L[pa],qR=prev&&prev.R[j],qL=prev&&prev.L[j];
+   const d=(p,q)=>p&&q?Math.hypot(p.x-q.x,p.y-q.y):0;
+   const cost=(r,l)=>(r&&pR?Math.abs(r.x-pR.x):0)+(l&&pL?Math.abs(l.x-pL.x):0)+1.5*(d(r,qR)+d(l,qL));
+   if(a&&b){if(cost(a,b)<=cost(b,a)){o.R[j]=a;o.L[j]=b}else{o.R[j]=b;o.L[j]=a}}
+   else if(a||b){const p=a||b;if(cost(p,null)<=cost(null,p))o.R[j]=p;else o.L[j]=p}}
+  O.push(o);prev=o}
+ return O}
+
+/* 歩く向き：近づく（体が大きくなる）＝前から、離れる＝後ろから */
+function gFacing(cl){const ar=cl.ar,xs=[],ys=[];
+ cl.P.forEach((fr,i)=>{const g=k=>fr[GI[k]];const s1=g(11),s2=g(12),h1=g(23),h2=g(24);if(!s1||!s2||!h1||!h2)return;
+  const sx=(s1[0]+s2[0])/2*ar,sy=(s1[1]+s2[1])/2,hx=(h1[0]+h2[0])/2*ar,hy=(h1[1]+h2[1])/2,L=Math.hypot(sx-hx,sy-hy);if(L>0.01){xs.push(cl.t[i]);ys.push(Math.log(L))}});
+ if(xs.length<8)return {face:null,ratio:null};
+ const mx=gMean(xs),my=gMean(ys);let sxy=0,sxx=0;xs.forEach((x,i)=>{sxy+=(x-mx)*(ys[i]-my);sxx+=(x-mx)*(x-mx)});const b=sxx?sxy/sxx:0,ratio=Math.exp(b*(xs[xs.length-1]-xs[0]));
+ return {face:ratio>1.15?'front':ratio<1/1.15?'back':null,ratio}}
+
+/* 1本の動画の解析 */
+function gAnalyzeClip(cl){
+ const n=cl.t.length,res={v:cl.v,n,warn:[],ok:false};if(n<10){res.warn.push('動画が短すぎます。5〜6m歩くところを撮ってください。');return res}
+ const fc=gFacing(cl);let face=cl.v==='back'?'back':'front';res.faceAuto=fc;
+ if(fc.face&&fc.face!==face){face=fc.face;res.swapped=true}
+ res.face=face;
+ const dt=gMed(cl.t.slice(1).map((t,i)=>t-cl.t[i]))||1/30,W=dt<=0.045?5:3,gap=Math.max(2,Math.round(0.13/dt));
+ const A=gAssign(cl,face);
+ const S={R:{},L:{}};
+ for(const sd of ['R','L'])for(const j of GJ){const xs=gSmooth(gFill(A.map(o=>o[sd][j]?o[sd][j].x:null),gap),W),ys=gSmooth(gFill(A.map(o=>o[sd][j]?o[sd][j].y:null),gap),W);S[sd][j]=xs.map((x,i)=>x!=null&&ys[i]!=null?{x,y:ys[i]}:null)}
+ const P=(sd,j,i)=>S[sd][j][i];
+ const midS=i=>P('R','sh',i)&&P('L','sh',i)?{x:(P('R','sh',i).x+P('L','sh',i).x)/2,y:(P('R','sh',i).y+P('L','sh',i).y)/2}:null;
+ const midH=i=>P('R','hip',i)&&P('L','hip',i)?{x:(P('R','hip',i).x+P('L','hip',i).x)/2,y:(P('R','hip',i).y+P('L','hip',i).y)/2}:null;
+ const torso=gMedFilt(Array.from({length:n},(_,i)=>{const a=midS(i),b=midH(i);return a&&b?Math.hypot(a.x-b.x,a.y-b.y):null}),9);
+ const hipW=gMedFilt(Array.from({length:n},(_,i)=>P('R','hip',i)&&P('L','hip',i)?Math.hypot(P('R','hip',i).x-P('L','hip',i).x,P('R','hip',i).y-P('L','hip',i).y):null),9);
+ const feet=sd=>Array.from({length:n},(_,i)=>{const ps=[P(sd,'an',i),P(sd,'he',i)].concat(face==='front'?[P(sd,'ft',i)]:[]).filter(Boolean);if(!ps.length)return null;return {x:gMean(ps.map(p=>p.x)),y:gMean(ps.map(p=>p.y))}});
+ const F={R:feet('R'),L:feet('L')};
+ // 写っている範囲（体幹・両脚がそろっているフレーム）のうち、最も長い連続区間を使う
+ const okF=i=>torso[i]&&hipW[i]&&F.R[i]&&F.L[i]&&P('R','kn',i)&&P('L','kn',i)&&hipW[i]/torso[i]>0.22;
+ let best=[0,-1],s=-1,miss=0;for(let i=0;i<=n;i++){if(i<n&&okF(i)){if(s<0)s=i;miss=0}else if(s>=0){miss++;if(miss>3||i===n){const e=i-miss;if(e-s>best[1]-best[0])best=[s,e];s=-1;miss=0}}}
+ const i0=best[0],i1=best[1];
+ const frontal=gMed(Array.from({length:n},(_,i)=>torso[i]&&hipW[i]?hipW[i]/torso[i]:null));res.frontal=frontal;
+ if(i1-i0+1<Math.max(12,Math.round(1.2/dt))){res.warn.push(frontal!=null&&frontal<0.3?'正面（または真後ろ）から撮った動画ではないようです。歩く道のまっすぐ正面にカメラを置いて撮り直してください。':'全身（特に両足）がはっきり写っている時間が短すぎます。頭からつま先まで入るように撮り直してください。');return res}
+ res.i0=i0;res.i1=i1;res.dur=cl.t[i1]-cl.t[i0];
+ // 足の速さ（体幹の長さ／秒）
+ const k=Math.max(1,Math.round(0.05/dt));
+ const spd=sd=>Array.from({length:n},(_,i)=>{if(i<i0||i>i1)return null;const a=F[sd][Math.max(i0,i-k)],b=F[sd][Math.min(i1,i+k)],tt=cl.t[Math.min(i1,i+k)]-cl.t[Math.max(i0,i-k)];if(!a||!b||!tt||!torso[i])return null;return Math.hypot(b.x-a.x,b.y-a.y)/tt/torso[i]});
+ const V={R:spd('R'),L:spd('L')};
+ const win=Math.max(2,Math.round(0.6/dt));
+ const env=Array.from({length:n},(_,i)=>{if(i<i0||i>i1)return null;let m=0;for(let j=Math.max(i0,i-win);j<=Math.min(i1,i+win);j++)m=Math.max(m,V.R[j]||0,V.L[j]||0);return m});
+ const floor=Math.max(0.25,(gPct([].concat(V.R,V.L),0.2)||0)*1.5);
+ let sw={R:[],L:[]};
+ for(let i=0;i<n;i++)for(const sd of ['R','L'])sw[sd][i]=i>=i0&&i<=i1&&V[sd][i]!=null?(V[sd][i]>Math.max(floor,0.3*env[i])?1:0):null;
+ for(let i=i0;i<=i1;i++)if(sw.R[i]===1&&sw.L[i]===1){if(V.R[i]<V.L[i])sw.R[i]=0;else sw.L[i]=0}
+ const segs=(a,val)=>{const out=[];let st0=-1;for(let i=i0;i<=i1+1;i++){const on=i<=i1&&a[i]===val;if(on&&st0<0)st0=i;if(!on&&st0>=0){out.push([st0,i-1]);st0=-1}}return out};
+ const clean=(a)=>{const b=a.slice();const minSw=Math.max(1,Math.round(0.1/dt)),minSt=Math.max(1,Math.round(0.12/dt));
+  for(let pass=0;pass<2;pass++){segs(b,1).forEach(([x,y])=>{if(y-x+1<minSw&&x>i0&&y<i1)for(let i=x;i<=y;i++)b[i]=0});segs(b,0).forEach(([x,y])=>{if(y-x+1<minSt&&x>i0&&y<i1)for(let i=x;i<=y;i++)b[i]=1})}return b};
+ sw={R:clean(sw.R),L:clean(sw.L)};
+ for(const sd of ['R','L']){const a=sw[sd],v=V[sd];segs(a,1).forEach(([x,y])=>{let pk=0;for(let i=x;i<=y;i++)pk=Math.max(pk,v[i]||0);const th=Math.max(floor*0.6,0.15*pk);
+  let i=x;while(i-1>i0&&a[i-1]===0&&(v[i-1]||0)>th&&sw[gOp(sd)][i-1]===0)a[--i]=1;let j=y;while(j+1<i1&&a[j+1]===0&&(v[j+1]||0)>th&&sw[gOp(sd)][j+1]===0)a[++j]=1})}
+ const T=i=>cl.t[i];
+ const stance={},swing={};for(const sd of ['R','L']){stance[sd]=segs(sw[sd],0).map(([a,b])=>({a,b,full:a>i0&&b<i1}));swing[sd]=segs(sw[sd],1).map(([a,b])=>({a,b,full:a>i0&&b<i1}))}
+ // 接地（立脚の始まり）
+ const contacts=[];for(const sd of ['R','L'])stance[sd].forEach(s=>{if(s.a>i0)contacts.push({sd,i:s.a,t:T(s.a)})});contacts.sort((a,b)=>a.t-b.t);
+ const stepT=[];for(let j=1;j<contacts.length;j++)if(contacts[j].sd!==contacts[j-1].sd){const d=contacts[j].t-contacts[j-1].t;if(d>0.25&&d<1.5)stepT.push({sd:contacts[j].sd,d})}
+ res.steps=contacts.length;res.cad=stepT.length>=2?60/gMed(stepT.map(x=>x.d)):null;
+ // 片脚で支える時間＝反対の脚が浮いている時間
+ res.ss={};res.ssN={};for(const sd of ['R','L']){const a=swing[gOp(sd)].filter(s=>s.full).map(s=>T(s.b+1>i1?s.b:s.b+1)-T(s.a)).filter(d=>d>0.15&&d<1.2);res.ss[sd]=a.length?gMean(a):null;res.ssN[sd]=a.length}
+ // 骨盤・体幹・膝の角度
+ const phi=Array.from({length:n},(_,i)=>{const r=P('R','hip',i),l=P('L','hip',i);return r&&l&&i>=i0&&i<=i1?Math.atan2(l.y-r.y,Math.abs(l.x-r.x))*D:null});
+ const psi=Array.from({length:n},(_,i)=>{const r=P('R','hip',i),l=P('L','hip',i),m=midH(i),s2=midS(i);if(!r||!l||!m||!s2||i<i0||i>i1)return null;const sL=Math.sign(l.x-r.x)||1;return Math.atan2((s2.x-m.x)*sL,m.y-s2.y)*D});
+ const dsF=[];for(let i=i0;i<=i1;i++)if(sw.R[i]===0&&sw.L[i]===0)dsF.push(i);
+ const base=a=>dsF.length>=5?gMed(dsF.map(i=>a[i])):gMed(a);// 両脚がついている瞬間を基準（カメラの傾き・立ったときの左右差を除く）
+ const phi0=base(phi),psi0=base(psi);
+ const sm=a=>gSmooth(gSmooth(a,W),W);
+ const fppa=sd=>Array.from({length:n},(_,i)=>{const h=P(sd,'hip',i),kn=P(sd,'kn',i),an=P(sd,'an',i),o=P(gOp(sd),'hip',i);if(!h||!kn||!an||!o||i<i0||i>i1)return null;
+  const a1=Math.atan2(kn.x-h.x,kn.y-h.y),a2=Math.atan2(an.x-kn.x,an.y-kn.y);let d=(a2-a1)*D;while(d>180)d-=360;while(d<-180)d+=360;
+  const mdir=Math.sign(o.x-h.x)||1;// 体の中心側
+  const t=(kn.y-h.y)/((an.y-h.y)||1e-6),lx=h.x+(an.x-h.x)*t,med=(kn.x-lx)*mdir;return Math.sign(med||0)*Math.abs(d)});
+ const K={R:fppa('R'),L:fppa('L')};
+ K.R=sm(K.R);K.L=sm(K.L);
+ res.series={phi:sm(phi.map(v=>v==null||phi0==null?null:v-phi0)),psi:sm(psi.map(v=>v==null||psi0==null?null:v-psi0)),K,sw,i0,i1};
+ const hwMax=Math.max(...hipW.filter(Boolean));
+ const wOf=s=>{const a=[];for(let i=s.a;i<=s.b;i++)if(hipW[i])a.push(hipW[i]/hwMax);const m=gMean(a)||0;return m*m};// 近い（大きく写る）ほど信頼できる
+ const ints={R:[],L:[]};// 片脚立ちの区間
+ for(const sd of ['R','L'])swing[gOp(sd)].forEach(s=>{const d=T(s.b)-T(s.a);if(s.full||d>=0.2)ints[sd].push(s)});
+ // 区間の中盤（はじめと終わりの1割を除く）の上位2割の値＝ノイズに強いピーク
+ const peakIn=(arr,s,sg,lo,hi)=>{const L=s.b-s.a,a=s.a+Math.round(L*(lo==null?0.1:lo)),b=s.a+Math.round(L*(hi==null?0.9:hi));const xs=[];let mi=null,m=null;for(let i=a;i<=b;i++){const v=arr[i];if(v==null)continue;const x=v*sg;xs.push(x);if(m==null||x>m){m=x;mi=i}}if(xs.length<2)return null;return {v:gPct(xs,0.8),i:mi,w:wOf(s)}};
+ const wmean=a=>{let s=0,c=0;a.forEach(x=>{s+=x.v*x.w;c+=x.w});return c?s/c:gMean(a.map(x=>x.v))};
+ res.drop={};res.lean={};res.knee={};res.key={};
+ for(const sd of ['R','L']){const sg=sd==='R'?1:-1;
+  const dp=ints[sd].map(s=>peakIn(res.series.phi,s,sg)).filter(Boolean),ln=ints[sd].map(s=>peakIn(res.series.psi,s,-sg)).filter(Boolean);
+  res.drop[sd]=dp.length?{v:wmean(dp),n:dp.length}:null;res.lean[sd]=ln.length?{v:wmean(ln),n:ln.length}:null;
+  if(dp.length){const m=res.drop[sd].v;res.key[sd]=dp.slice().sort((a,b)=>Math.abs(a.v-m)-Math.abs(b.v-m))[0].i}
+  const kv=[];stance[sd].forEach(s=>{const d=T(s.b)-T(s.a);if(!s.full&&d<0.25)return;const L=s.b-s.a,a=s.a+Math.round(L*0.05),b=s.a+Math.round(L*0.6);const w=[];for(let i=a;i<=b;i++)if(K[sd][i]!=null)w.push(K[sd][i]);if(w.length<2)return;const m=gMean(w),sg=m>=0?1:-1;
+   kv.push({v:sg*gPct(w.map(x=>x*sg),0.8),w:wOf(s),i:s.a+Math.round(L*0.3)})});
+  res.knee[sd]=kv.length?{v:wmean(kv),n:kv.length}:null}
+ // 参考値：足を置く幅、体の横揺れ
+ const sw2=[];for(let i=i0;i<=i1;i++)if(sw.R[i]===0&&sw.L[i]===0&&hipW[i])sw2.push(Math.abs(F.R[i].x-F.L[i].x)/hipW[i]);res.width=sw2.length>=3?gMed(sw2):null;
+ const hw2=Math.max(2,Math.round(0.55/dt)),rr=[];for(let i=i0+hw2;i<=i1-hw2;i++){const m=midH(i);if(!m||!hipW[i])continue;const a=[];for(let j=i-hw2;j<=i+hw2;j++){const q=midH(j);if(q)a.push(q.x)}rr.push((m.x-gMean(a))/hipW[i])}
+ if(rr.length>8)res.sway=gPct(rr,0.95)-gPct(rr,0.05);
+ res.phi0=phi0;res.psi0=psi0;res.stance=stance;res.swing=swing;res.contacts=contacts;res.S=S;res.F=F;res.torso=torso;res.hipW=hipW;
+ const nR=stance.R.filter(s=>s.a>i0).length,nL=stance.L.filter(s=>s.a>i0).length;
+ if(contacts.length<3)res.warn.push('検出できた歩数が少なすぎます（'+contacts.length+'歩）。もう少し長い距離（5〜6m）を歩いてもらうと精度が上がります。');
+ if(res.swapped)res.warn.push('動画の内容から「'+GVL[face]+'」（'+(face==='front'?'こちらへ歩いてくる':'向こうへ歩いていく')+'）の動画として分析しました。');
+ res.ok=contacts.length>=2&&(nR+nL)>=2;
+ return res}
+
+/* 前後の結果をまとめて採点 */
+function gCombine(rs){const ok=rs.filter(r=>r&&r.ok),rows=[];
+ const pool=(f,sd)=>{let s=0,c=0;ok.forEach(r=>{const x=r[f]&&r[f][sd];if(x&&x.v!=null){s+=x.v*x.n;c+=x.n}});return c?{v:s/c,n:c}:null};
+ const spec=k=>{const s=GSPEC[k],o=(typeof CFG!=='undefined'&&CFG[k])||{};return {good:o.good!=null?o.good:s.good,bad:o.bad!=null?o.bad:s.bad}};
+ const add=(k,sd,v,n,dir,tip)=>{if(v==null)return;const q=spec(k),sc=Math.round(score(v,q));rows.push({key:k,side:sd,val:v,n,score:sc,st:stOf(v,q),label:GSPEC[k].label+(sd?'（'+jpS(sd)+'脚で立つとき）':''),dir,tip})};
+ const ssA={R:[],L:[]};ok.forEach(r=>{for(const sd of ['R','L'])if(r.ss[sd]!=null)for(let j=0;j<r.ssN[sd];j++)ssA[sd].push(r.ss[sd])});
+ const ssR=gMean(ssA.R),ssL=gMean(ssA.L);
+ if(ssR!=null&&ssL!=null){const si=(ssR-ssL)/((ssR+ssL)/2)*100,sh=si>0?'L':'R';
+  add('gSupport',null,si,Math.min(ssA.R.length,ssA.L.length),jpS(sh)+'脚で支える時間が短い','左右の脚に体重をのせる時間に差があり、'+jpS(sh)+'脚にしっかり体重をのせきれていません。痛みや不安をかばう歩き方や、'+jpS(sh)+'側のお尻・太ももの筋力不足で起こることがあります。')}
+ for(const sd of ['R','L']){const o=gOp(sd),d=pool('drop',sd),l=pool('lean',sd),kn=pool('knee',sd);
+  if(d)add('gPelvis',sd,d.v,d.n,d.v>=0?jpS(sd)+'脚で立つと、'+jpS(o)+'の骨盤が下がる':jpS(sd)+'脚で立つと、'+jpS(o)+'の骨盤が上がる',d.v>=0?jpS(sd)+'側のお尻の横の筋肉（中殿筋）が、体を支えきれていない可能性があります。腰・股関節・膝への負担や、体の横揺れにつながりやすい歩き方です。':'骨盤を引き上げて脚を振り出している可能性があります。腰の横の筋肉に負担がかかりやすい歩き方です。');
+  if(l)add('gTrunk',sd,l.v,l.n,l.v>=0?jpS(sd)+'脚で立つと、上半身が'+jpS(sd)+'に傾く':jpS(sd)+'脚で立つと、上半身が'+jpS(o)+'に傾く',l.v>=0?'お尻の横の筋肉の代わりに、上半身を'+jpS(sd)+'に倒してバランスをとっている可能性があります。'+jpS(sd)+'脚の痛みをかばうときにも見られる歩き方です。':'片脚立ちのときに上半身が反対側へ流れ、腰の片側に負担がかかりやすい状態です。');
+  if(kn)add('gKnee',sd,kn.v,kn.n,kn.v>=0?jpS(sd)+'膝が内側に入る':jpS(sd)+'膝が外に開く（O脚傾向）',kn.v>=0?'着地のたびに膝の内側にねじれの負担がかかりやすい状態です。お尻の筋肉の弱さや、足のアーチ（土踏まず）のつぶれが関わることがあります。':'膝の内側に体重が集まりやすい歩き方です。膝の内側の痛みや変形につながりやすいポイントです。')}
+ rows.sort((a,b)=>GORDER.indexOf(a.key)-GORDER.indexOf(b.key)||(a.side==='R'?-1:1));
+ const total=rows.length?Math.round(gMean(rows.map(r=>r.score))):null;
+ const cads=ok.map(r=>r.cad).filter(v=>v!=null),wd=ok.map(r=>r.width).filter(v=>v!=null),swy=ok.map(r=>r.sway).filter(v=>v!=null);
+ return {rows,total,findings:rows.filter(r=>r.st!=='ok').slice().sort((a,b)=>a.score-b.score),ss:{R:ssR,L:ssL},cad:cads.length?gMean(cads):null,width:wd.length?gMean(wd):null,sway:swy.length?gMean(swy):null,n:ok.length,steps:ok.reduce((s,r)=>s+r.steps,0)}}
+function gSum(G){return {total:G.total,cad:G.cad!=null?Math.round(G.cad):null,rows:G.rows.map(r=>({k:r.key,s:r.side,v:Math.round(r.val*10)/10,sc:r.score,st:r.st,d:r.dir})),n:G.n}}
+
+/* ---------- 歩行分析：画面・保存 ---------- */
+const gaitOn=()=>!isDemo()&&(Store.mode!=='cloud'||!!(CL.clinic&&(CL.clinic.is_admin||(CL.clinic.settings||{}).gait)));
+const GC={R:'#e0662a',L:'#2f7fc1'};
+Object.assign(EX,{
+ sls:['片脚立ち','中殿筋・体幹で体を支える練習','壁や椅子に軽く手を添えて片脚で立つ。骨盤を水平に保ち、上半身を傾けない。','左右30秒×2〜3回'],
+ sidewalk:['横歩き（サイドステップ）','お尻の横の筋肉を働かせる','膝を軽く曲げ、つま先を正面に向けたまま横に10歩進んで戻る。体は上下させない。','往復×3回'],
+ squatK:['膝とつま先をそろえたスクワット','膝が内側に入るクセを直す','足を腰幅に開き、膝がつま先と同じ向きを保ったまま、椅子に座るようにお尻を引いて浅くしゃがむ。','10回×2セット'],
+ towelG:['タオルギャザー','足のアーチ（土踏まず）を支える筋肉を働かせる','椅子に座って床にタオルを敷き、足の指でたぐり寄せる。','左右10回×2セット'],
+ shift:['左右の体重移動の練習','両脚に均等に体重をのせる感覚を取り戻す','足を腰幅に開いて立ち、ゆっくり右・左へ体重を移す。上半身は傾けず、骨盤ごと動かす。','左右交互に10往復']});
+Object.assign(LIFE,{
+ walkG:['歩くときは膝とつま先を同じ向きに','かかとから着地し、膝とつま先がまっすぐ前を向くように。歩幅は少し大きめを意識しましょう。'],
+ shoesG:['靴のすり減り方と靴選びを見直す','かかとの外側・内側の片減りは、歩き方のクセのサインです。かかとがしっかりした靴を選びましょう。']});
+const gErr=e=>{const m=(e&&(e.message||e.code))||String(e);return /gait_sessions|PGRST205|42P01|does not exist|schema cache/i.test(m)?new Error('歩行分析の保存先がまだ準備されていません（院の管理者による設定が必要です）'):e};
+Object.assign(CL,{
+ async listGait(pid){let rows;try{rows=await this.pages(()=>this.sb.from('gait_sessions').select('id,date,sum:data->sum').eq('clinic_id',this.clinic.id).eq('patient_id',pid).order('date'))}catch(e){throw gErr(e)}return rows.map(r=>({id:r.id,date:r.date,sum:r.sum||null}))},
+ async getGait(sid){const {data,error}=await this.sb.from('gait_sessions').select('id,date,data,enc').eq('id',sid).eq('clinic_id',this.clinic.id).maybeSingle();if(error)throw gErr(error);if(!data)throw new Error('記録が見つかりませんでした');
+  const e=await this.dec(data.enc);return Object.assign({},data.data,{id:data.id,date:data.date,comment:e._locked?'':(e.comment!=null?e.comment:'')})},
+ async saveGait(pid,sid,b){const data=JSON.parse(JSON.stringify(b)),comment=data.comment||'';delete data.comment;delete data.id;
+  const {error}=await this.sb.from('gait_sessions').upsert({id:sid,clinic_id:this.clinic.id,patient_id:pid,date:b.date,data,enc:await this.enc({comment})});if(error)throw gErr(error)},
+ async deleteGait(pid,sid){const {error}=await this.sb.from('gait_sessions').delete().eq('id',sid).eq('clinic_id',this.clinic.id);if(error)throw gErr(error)}});
+const gByDate=a=>a.sort((x,y)=>String(y.date).localeCompare(String(x.date)));
+Object.assign(Store,{
+ async listGait(pid){if(this.mode==='cloud')return gByDate(await CL.listGait(pid));if(this.mode==='gas')return [];return gByDate(((MEM.gait||{})[pid]||[]).map(x=>({id:x.id,date:x.date,sum:x.sum||null})))},
+ async getGait(pid,sid){if(this.mode==='cloud')return CL.getGait(sid);const x=((MEM.gait||{})[pid]||[]).find(s=>s.id===sid);if(!x)throw new Error('記録が見つかりませんでした');return JSON.parse(JSON.stringify(x))},
+ async saveGait(pid,sid,b){if(this.mode==='cloud')return CL.saveGait(pid,sid,b);if(this.mode==='gas')throw new Error('この環境では歩行分析の記録を保存できません');
+  const G=MEM.gait||(MEM.gait={}),a=G[pid]||(G[pid]=[]),r=Object.assign({id:sid},JSON.parse(JSON.stringify(b))),i=a.findIndex(x=>x.id===sid);if(i>=0)a[i]=r;else a.push(r);persist()},
+ async deleteGait(pid,sid){if(this.mode==='cloud')return CL.deleteGait(pid,sid);const G=MEM.gait||{};G[pid]=(G[pid]||[]).filter(x=>x.id!==sid);persist()}});
+st.gbusy={};st.gerr={};st.gtab='front';st.gaitList=[];st.gpk=null;
+const newGait=()=>({id:uid('g'),date:new Date().toISOString(),clips:{},res:{},comment:null,care:null,saved:false,dirty:false,fromHistory:false});
+async function loadGaitList(p){st.gaitList=[];st.gaitErr='';if(!gaitOn()||!p||!p.id)return;try{const a=await Store.listGait(p.id);if(st.patient&&st.patient.id===p.id){st.gaitList=a;if(st.view==='patient')render()}}catch(e){if(st.patient&&st.patient.id===p.id){st.gaitErr=msg(e);if(st.view==='patient')render()}}}
+
+/* --- 動画からフレームを取り出してAIで解析 --- */
+let gCancel=null;
+const gSleep=ms=>new Promise(r=>setTimeout(r,ms));
+function gWait(el,ev,ms){return new Promise(res=>{let t=0;const on=()=>{clearTimeout(t);el.removeEventListener(ev,on);res(true)};el.addEventListener(ev,on);t=setTimeout(()=>{el.removeEventListener(ev,on);res(false)},ms||5000)})}
+async function gLoadVideo(url){const v=document.createElement('video');v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.preload='auto';v.src=url;
+ const ok=await Promise.race([new Promise(r=>{v.onloadeddata=()=>r(true);v.onerror=()=>r(false)}),gSleep(20000).then(()=>false)]);
+ if(!ok)throw new Error('この動画を読み込めませんでした。端末のカメラで撮り直すか、別の動画を選んでください');
+ try{await v.play();v.pause()}catch(e){}
+ let dur=v.duration;if(!isFinite(dur)||!dur){v.currentTime=1e7;await gWait(v,'seeked',5000);dur=v.currentTime}
+ return {v,dur}}
+async function gSeek(v,t){const fr='requestVideoFrameCallback' in v?new Promise(r=>v.requestVideoFrameCallback(()=>r())):null;v.currentTime=t;await gWait(v,'seeked',5000);if(fr)await Promise.race([fr,gSleep(60)])}
+function gRunVideo(p,fn){const run=async()=>{try{p.setOptions({staticImageMode:false,smoothLandmarks:true})}catch(e){}try{p.reset()}catch(e){}
+  const send=cv=>new Promise((res,rej)=>{let done=false;p.onResults(r=>{done=true;res(r)});p.send({image:cv}).catch(rej);setTimeout(()=>{if(!done)rej(new Error('解析に時間がかかりすぎました'))},40000)});
+  try{return await fn(send)}finally{try{p.setOptions({staticImageMode:true,smoothLandmarks:false})}catch(e){}try{p.reset()}catch(e){}}};
+ const r=queue.then(run,run);queue=r.catch(()=>{});return r}
+function gProg(k){const b=st.gbusy[k];if(!b||st.gtab!==k)return;const el=$('#gprog');if(el)el.textContent=b.txt;const bar=$('#gbar');if(bar)bar.style.width=Math.round((b.p||0)*100)+'%'}
+async function gExtract(k,file){const g=st.gc;if(!g)return;st.gbusy[k]={p:0,txt:'動画を読み込んでいます…'};st.gerr[k]='';render();
+ const url=URL.createObjectURL(file),token={stop:false};gCancel=token;let V=null,keep=false;
+ try{const eng=ensureEngine();V=await gLoadVideo(url);const v=V.v,dur=V.dur;
+  if(!(dur>1))throw new Error('動画が短すぎます。歩き始めから止まるまで（5〜6m）を撮ってください');
+  const vw=v.videoWidth,vh=v.videoHeight;if(!vw||!vh)throw new Error('動画の大きさを読み取れませんでした');
+  const win=Math.min(dur,15),step=Math.max(1/30,win/300),sc=Math.min(1,720/Math.max(vw,vh)),cv=document.createElement('canvas');cv.width=Math.round(vw*sc);cv.height=Math.round(vh*sc);const cx=cv.getContext('2d');
+  if(st.engine!=='ready'){st.gbusy[k]={p:0,txt:'高精度AIモデルを準備しています（初回は約30MBを読み込みます）…'};gProg(k)}
+  const p=await eng;const times=[];for(let t=Math.min(0.03,step/2);t<win-0.02;t+=step)times.push(t);
+  const P=[],T=[],t0=performance.now();
+  await gRunVideo(p,async send=>{for(let i=0;i<times.length;i++){if(token.stop)throw new Error('__cancel');await gSeek(v,times[i]);cx.drawImage(v,0,0,cv.width,cv.height);const r=await send(cv);
+   const lm=r&&r.poseLandmarks;P.push(GK.map(j=>{const q=lm&&lm[j];return q&&(q.visibility==null||q.visibility>=0.3)?[q.x,q.y]:null}));T.push(times[i]);
+   const el=(performance.now()-t0)/1000,rem=el/(i+1)*(times.length-i-1);st.gbusy[k]={p:(i+1)/times.length,txt:'AIが歩き方を解析しています… '+Math.round((i+1)/times.length*100)+'%'+(i>4?'（あと約'+Math.max(1,Math.round(rem))+'秒）':'')};gProg(k)}});
+  if(!P.some(fr=>fr[GI[23]]&&fr[GI[24]]))throw new Error('人の体を見つけられませんでした。明るい場所で、全身が写るように撮ってください');
+  const un=gUnpackClip(gPackClip({v:k,ar:vw/vh,t:T,P}));un.url=url;un.vw=vw;un.vh=vh;un.cut=dur>15.5;
+  const r=gAnalyzeClip(un);un.face=r.face;if(un.cut)r.warn.push('動画が長いため、はじめの15秒だけを分析しました。');
+  const old=g.clips[k];if(old&&old.url)URL.revokeObjectURL(old.url);g.clips[k]=un;g.res[k]=r;keep=true;if(g.saved)g.dirty=true;
+  if(!r.ok)st.gerr[k]=r.warn[0]||'歩き方をうまく解析できませんでした。撮り方を確認して撮り直してください'}
+ catch(e){if(msg(e)!=='__cancel')st.gerr[k]=msg(e)}
+ finally{if(!keep)URL.revokeObjectURL(url);if(V&&V.v){try{V.v.removeAttribute('src');V.v.load()}catch(_){}}st.gbusy[k]=null;if(gCancel===token)gCancel=null}
+ if(st.view==='gait')render()}
+
+/* --- 骨格の描画 --- */
+function gPts(r,cl,i){const out={R:{},L:{},nose:null};const q=cl.P[i]&&cl.P[i][GI[0]];if(q)out.nose={x:q[0]*cl.ar,y:q[1]};
+ if(r&&r.S){for(const sd of ['R','L'])for(const j of GJ){const p=r.S[sd][j][i];if(p)out[sd][j]=p}return out}
+ const fr=cl.P[i]||[];for(const j of GJ){const a=fr[GI[GMP[j][1]]],b=fr[GI[GMP[j][0]]];if(a)out.R[j]={x:a[0]*cl.ar,y:a[1]};if(b)out.L[j]={x:b[0]*cl.ar,y:b[1]}}return out}
+function gStance(r,sd,i){return !!(r&&r.series&&i>=r.i0&&i<=r.i1&&r.series.sw[sd][i]===0)}
+function gDrawSkel(ctx,pts,M,lw,r,i,dim){const line=(a,b,col,w)=>{if(!a||!b)return;const p=M(a),q=M(b);ctx.lineCap='round';ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=w+2.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();ctx.strokeStyle=col;ctx.lineWidth=w;ctx.stroke()};
+ const R=pts.R,L=pts.L,tr=dim?'rgba(255,255,255,.75)':'#f4efe3';
+ line(R.sh,L.sh,tr,lw);line(R.hip,L.hip,tr,lw);line(R.sh,R.hip,tr,lw*0.8);line(L.sh,L.hip,tr,lw*0.8);
+ for(const sd of ['R','L']){const S=pts[sd],c=GC[sd];line(S.sh,S.el,c,lw*0.8);line(S.el,S.wr,c,lw*0.8);line(S.hip,S.kn,c,lw*1.2);line(S.kn,S.an,c,lw*1.2);line(S.an,S.he,c,lw*0.9);line(S.an,S.ft,c,lw*0.9);line(S.he,S.ft,c,lw*0.9)
+  const f=[S.an,S.he].filter(Boolean);if(f.length){const m=M({x:gMean(f.map(p=>p.x)),y:gMean(f.map(p=>p.y))}),on=gStance(r,sd,i);ctx.beginPath();ctx.arc(m[0],m[1]+lw*1.2,lw*2.1,0,7);ctx.lineWidth=lw*0.8;ctx.strokeStyle=c;ctx.fillStyle=on?c:'rgba(255,255,255,.85)';ctx.fill();ctx.stroke()}}
+ if(pts.nose&&R.sh&&L.sh){const n=M(pts.nose);ctx.beginPath();ctx.arc(n[0],n[1],lw*1.6,0,7);ctx.fillStyle=tr;ctx.fill()}}
+const gIdx=(cl,t)=>{const a=cl.t;let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m]<t)lo=m;else hi=m}return Math.abs(a[lo]-t)<=Math.abs(a[hi]-t)?lo:hi};
+const gPlayers=[];
+function gStopAll(){gPlayers.splice(0).forEach(p=>{try{p.stop()}catch(e){}})}
+function gMountPlayer(el,cl,r){if(!el||!cl)return;const has=!!cl.url,ar=cl.ar;
+ el.innerHTML='<div class="gpbox'+(has?'':' stick')+'">'+(has?'<video playsinline muted preload="auto"></video>':'')+'<canvas aria-label="骨格の動き"></canvas></div>'+
+  '<div class="gpctl"><button class="btn" data-g="pp" type="button">▶ 再生</button><select data-g="rate" aria-label="再生の速さ"><option value="1">等速</option><option value="0.5" selected>1/2の速さ</option><option value="0.25">1/4の速さ</option></select>'+
+  '<button class="btn" data-g="prev" type="button" aria-label="1コマ戻す">◀</button><button class="btn" data-g="next" type="button" aria-label="1コマ進める">▶</button><input type="range" data-g="pos" min="0" max="1000" value="0" aria-label="再生位置"></div>'+
+  (has?'':'<p class="note">動画は保存していないため、骨格の動きだけを再生しています。</p>');
+ const box=el.querySelector('.gpbox'),cv=box.querySelector('canvas'),vid=box.querySelector('video'),pp=el.querySelector('[data-g=pp]'),rate=el.querySelector('[data-g=rate]'),pos=el.querySelector('[data-g=pos]');
+ const cs=getComputedStyle(el),maxH=Math.min(window.innerHeight*0.62,640),W0=el.getBoundingClientRect().width-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-2,bar=has?ar:0.75,w=Math.max(120,Math.min(W0,maxH*bar)),h=Math.round(w/bar);box.style.width=Math.round(w)+'px';box.style.height=h+'px';
+ const ctx=fitCanvas(cv,Math.round(w),h);cv.style.position='absolute';
+ const ok=r&&r.ok,tA=ok?cl.t[r.i0]:cl.t[0],tB=ok?cl.t[r.i1]:cl.t[cl.t.length-1],M=p=>[p.x/ar*w,p.y*h],lw=Math.max(has?2:2.5,w/(has?160:110));
+ // 動画がないときは、人を画面の中心に大きく表示（左右の揺れは残すため、中心は1歩分の平均）
+ let Mf=()=>M;if(!has&&r&&r.S&&r.torso){const n=cl.t.length,mh=Array.from({length:n},(_,i)=>{const a=r.S.R.hip[i],b=r.S.L.hip[i];return a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:null}),hw=Math.max(2,Math.round(0.55/((cl.t[1]-cl.t[0])||0.033)));
+  const cen=mh.map((m,i)=>{if(!m)return null;const a=[];for(let j=Math.max(0,i-hw);j<=Math.min(n-1,i+hw);j++)if(mh[j])a.push(mh[j]);return {x:gMean(a.map(q=>q.x)),y:gMean(a.map(q=>q.y))}});
+  Mf=i=>{const c=cen[i],T=r.torso[i];if(!c||!T)return M;const s=h*0.24/T;return p=>[w/2+(p.x-c.x)*s,h*0.43+(p.y-c.y)*s]}}
+ let playing=false,raf=0,clock=tA,last=0,cur=-1,alive=true;
+ const draw=t=>{const i=gIdx(cl,t);if(i===cur&&has)return;cur=i;ctx.clearRect(0,0,w,h);if(!has){ctx.fillStyle=cssv('--soft')||'#efe8da';ctx.fillRect(0,0,w,h)}gDrawSkel(ctx,gPts(r,cl,i),Mf(i),lw,r,i,false);pos.value=Math.round((t-tA)/((tB-tA)||1)*1000)};
+ const now=()=>has?vid.currentTime:clock;
+ const setT=t=>{t=clamp(t,tA,tB);if(has){vid.currentTime=t}else clock=t;cur=-1;draw(t)};
+ const loop=ts=>{if(!alive)return;if(playing){if(has){if(vid.currentTime>=tB-0.01||vid.ended){vid.currentTime=tA}}else{const dt=last?(ts-last)/1000:0;clock+=dt*parseFloat(rate.value);if(clock>tB)clock=tA}}last=ts;draw(now());raf=requestAnimationFrame(loop)};
+ const play=()=>{playing=true;last=0;pp.textContent='❚❚ 一時停止';if(has){vid.playbackRate=parseFloat(rate.value);const p=vid.play();if(p&&p.catch)p.catch(()=>{})}};
+ const pause=()=>{playing=false;pp.textContent='▶ 再生';if(has)vid.pause()};
+ pp.onclick=()=>playing?pause():play();rate.onchange=()=>{if(has)vid.playbackRate=parseFloat(rate.value)};
+ el.querySelector('[data-g=prev]').onclick=()=>{pause();const i=gIdx(cl,now());setT(cl.t[Math.max(0,i-1)])};
+ el.querySelector('[data-g=next]').onclick=()=>{pause();const i=gIdx(cl,now());setT(cl.t[Math.min(cl.t.length-1,i+1)])};
+ pos.oninput=()=>{pause();setT(tA+(tB-tA)*pos.value/1000)};
+ if(has){vid.src=cl.url;vid.muted=true;vid.onloadeddata=()=>{setT(tA)};vid.onseeked=()=>{cur=-1}}else draw(tA);
+ raf=requestAnimationFrame(loop);
+ gPlayers.push({stop(){alive=false;cancelAnimationFrame(raf);if(has){try{vid.pause();vid.removeAttribute('src');vid.load()}catch(e){}}}})}
+
+/* 決めの1コマ（片脚で立った瞬間）を切り出して、線と角度を書き込む */
+const gFrameCache={};
+async function gFrameAt(cl,t){const key=cl.url+'|'+t;if(gFrameCache[key])return gFrameCache[key];
+ const job=(async()=>{const V=await gLoadVideo(cl.url);try{await gSeek(V.v,t);const c=document.createElement('canvas'),sc=Math.min(1,900/Math.max(cl.vw,cl.vh));c.width=Math.round(cl.vw*sc);c.height=Math.round(cl.vh*sc);c.getContext('2d').drawImage(V.v,0,0,c.width,c.height);return c}finally{try{V.v.removeAttribute('src');V.v.load()}catch(e){}}})();
+ gFrameCache[key]=job;job.catch(()=>{delete gFrameCache[key]});return job}
+function gTag(ctx,txt,x,y,col,fs,W){ctx.font='700 '+fs+'px "Zen Kaku Gothic New",sans-serif';const tw=ctx.measureText(txt).width,pd=fs*0.4,bw=tw+pd*2,bh=fs+pd*1.4;x=clamp(x-bw/2,4,W-bw-4);ctx.fillStyle='rgba(15,22,19,.82)';rr(ctx,x,y-bh/2,bw,bh,bh/2.4);ctx.fill();ctx.fillStyle=col;ctx.textBaseline='middle';ctx.fillText(txt,x+pd,y+1)}
+async function gDrawKey(cv,k,sd){const g=st.gc,cl=g.clips[k],r=g.res[k];if(!cl||!r||!r.ok)return;const i=r.key&&r.key[sd]!=null?r.key[sd]:null;const W=cv.parentElement.clientWidth,H=Math.round(W*4/3),ctx=fitCanvas(cv,W,H);
+ if(i==null){ctx.fillStyle=cssv('--mut');ctx.font='14px sans-serif';ctx.fillText('この脚の片脚立ちを検出できませんでした',10,24);return}
+ const pts=gPts(r,cl,i),all=[pts.nose].concat(...['R','L'].map(s=>Object.values(pts[s]))).filter(Boolean),ar=cl.ar;
+ const tor=r.torso[i]||0.2,x0=Math.min(...all.map(p=>p.x)),x1=Math.max(...all.map(p=>p.x)),y0=Math.min(...all.map(p=>p.y))-tor*0.35,y1=Math.max(...all.map(p=>p.y))+tor*0.12;
+ let ch=(y1-y0)*1.06,cw=ch*W/H;if(cw<(x1-x0)*1.25){cw=(x1-x0)*1.25;ch=cw*H/W}const cx0=(x0+x1)/2-cw/2,cy0=(y0+y1)/2-ch/2,M=p=>[(p.x-cx0)/cw*W,(p.y-cy0)/ch*H];
+ let photo=false;if(cl.url){try{const img=await gFrameAt(cl,cl.t[i]);if(!document.body.contains(cv))return;const s=img.height;ctx.drawImage(img,cx0/ar*img.width,cy0*s,cw/ar*img.width,ch*s,0,0,W,H);ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(0,0,W,H);photo=true}catch(e){}}
+ if(!photo){ctx.fillStyle=cssv('--soft')||'#efe8da';ctx.fillRect(0,0,W,H)}
+ const lw=Math.max(2,W/120);gDrawSkel(ctx,pts,M,lw,r,i,true);
+ const o=gOp(sd),R=pts.R,L=pts.L,fs=Math.max(11,Math.round(W/17)),gold='#f2c14e';
+ const seg=(p,q,col,w,dash)=>{const a=M(p),b=M(q);ctx.save();ctx.setLineDash(dash||[]);ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.restore()};
+ if(R.hip&&L.hip){const sL=Math.sign(L.hip.x-R.hip.x)||1,hw=Math.hypot(L.hip.x-R.hip.x,L.hip.y-R.hip.y),S=pts[sd].hip,u={x:sL*Math.cos((r.phi0||0)/D),y:Math.sin((r.phi0||0)/D)},e=hw*0.9;
+  const ds=sd==='R'?1:-1;seg({x:S.x-ds*u.x*e*0.4,y:S.y-ds*u.y*e*0.4},{x:S.x+ds*u.x*e*1.6,y:S.y+ds*u.y*e*1.6},'rgba(255,255,255,.9)',lw*0.7,[lw*2,lw*1.5]);
+  const ex={x:(L.hip.x-R.hip.x)*0.35,y:(L.hip.y-R.hip.y)*0.35};seg({x:R.hip.x-ex.x,y:R.hip.y-ex.y},{x:L.hip.x+ex.x,y:L.hip.y+ex.y},gold,lw*1.1);
+  const v=r.series.phi[i],dv=v==null?null:(sd==='R'?v:-v),oh=M(pts[o].hip);if(dv!=null)gTag(ctx,jpS(o)+'の骨盤 '+f1(Math.abs(dv))+'° '+(dv>=0?'下がる':'上がる'),oh[0],oh[1]+fs*1.6,gold,fs,W)}
+ const mH=R.hip&&L.hip?{x:(R.hip.x+L.hip.x)/2,y:(R.hip.y+L.hip.y)/2}:null,mS=R.sh&&L.sh?{x:(R.sh.x+L.sh.x)/2,y:(R.sh.y+L.sh.y)/2}:null;
+ if(mH&&mS){const sL=Math.sign(L.hip.x-R.hip.x)||1,len=Math.hypot(mS.x-mH.x,mS.y-mH.y)*1.15,a0=(r.psi0||0)/D;seg(mH,{x:mH.x+sL*Math.sin(a0)*len,y:mH.y-Math.cos(a0)*len},'rgba(255,255,255,.9)',lw*0.7,[lw*2,lw*1.5]);seg(mH,{x:mH.x+(mS.x-mH.x)*1.15,y:mH.y+(mS.y-mH.y)*1.15},'#9fe0c0',lw*1.1);
+  const v=r.series.psi[i];if(v!=null){const dir=v>=0?'L':'R',p=M(mS);gTag(ctx,'上半身 '+f1(Math.abs(v))+'° '+jpS(dir)+'へ',p[0],p[1]-fs*1.5,'#9fe0c0',fs,W)}}
+ const kn=pts[sd].kn,kv=r.series.K[sd][i];if(kn&&kv!=null){const p=M(kn);gTag(ctx,jpS(sd)+'膝 '+f1(Math.abs(kv))+'° '+(kv>=0?'内側':'外側'),p[0]+(sd==='R'===(k==='front')?-1:1)*fs*2.2,p[1],GC[sd]==='#e0662a'?'#ffb08a':'#9cc8f0',fs,W)}}
+
+/* 着地のリズムと骨盤・上半身の動き（グラフ） */
+function gDiagram(k){const cl=st.gc.clips[k],r=st.gc.res[k];if(!cl||!r||!r.ok)return '';const t0=cl.t[r.i0],t1=cl.t[r.i1],Wd=640,L=96,Rm=12,pw=Wd-L-Rm,X=t=>L+(t-t0)/((t1-t0)||1)*pw;
+ const lab=(y,t,anchor)=>'<text x="'+(anchor==='end'?L-8:6)+'" y="'+y+'" font-size="12" fill="var(--mut)"'+(anchor==='end'?' text-anchor="end"':'')+'>'+t+'</text>';
+ let s='<svg viewBox="0 0 '+Wd+' 300" role="img" aria-label="着地のタイミングと骨盤・上半身の動き">';
+ for(const [sd,y] of [['R',10],['L',34]]){s+=lab(y+13,jpS(sd)+'足の着地','end');r.stance[sd].forEach(q=>{s+='<rect x="'+X(cl.t[q.a]).toFixed(1)+'" y="'+y+'" width="'+Math.max(2,X(cl.t[q.b])-X(cl.t[q.a])).toFixed(1)+'" height="18" rx="5" fill="'+GC[sd]+'" opacity=".85"/>'})}
+ const chart=(arr,top,hgt,col,name,up,dn)=>{const vs=[];for(let i=r.i0;i<=r.i1;i++)if(arr[i]!=null)vs.push(Math.abs(arr[i]));const m=Math.max(6,Math.ceil((gPct(vs,0.98)||0)+1)),Y=v=>top+hgt/2-v/m*hgt/2;
+  let o='<rect x="'+L+'" y="'+top+'" width="'+pw+'" height="'+hgt+'" fill="var(--bg)" stroke="var(--line)"/>';
+  for(const sd of ['R','L'])r.swing[gOp(sd)].forEach(q=>{o+='<rect x="'+X(cl.t[q.a]).toFixed(1)+'" y="'+top+'" width="'+Math.max(1,X(cl.t[q.b])-X(cl.t[q.a])).toFixed(1)+'" height="'+hgt+'" fill="'+GC[sd]+'" opacity=".08"/>'});
+  o+='<line x1="'+L+'" x2="'+(L+pw)+'" y1="'+Y(0)+'" y2="'+Y(0)+'" stroke="var(--mut)" stroke-dasharray="3 3"/>';
+  let d='';for(let i=r.i0;i<=r.i1;i++){const v=arr[i];if(v==null){continue}d+=(d?'L':'M')+X(cl.t[i]).toFixed(1)+' '+Y(v).toFixed(1)}o+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.4" stroke-linejoin="round"/>';
+  o+='<text x="6" y="'+(top+hgt/2+4)+'" font-size="12" font-weight="700" fill="var(--ink)">'+name+'</text><text x="'+(L+4)+'" y="'+(top+13)+'" font-size="11" fill="var(--mut)">↑'+up+'（'+m+'°）</text><text x="'+(L+4)+'" y="'+(top+hgt-5)+'" font-size="11" fill="var(--mut)">↓'+dn+'</text>';return o};
+ s+=chart(r.series.phi,64,108,'var(--gd)','骨盤','左が下がる','右が下がる')+chart(r.series.psi,182,108,'var(--g2)','上半身','左へ傾く','右へ傾く');
+ return s+'</svg>'}
+
+/* --- 運動・生活のポイント --- */
+function gCareFrom(G){const T=[],Wk=[],trb=[],ex={},lf={};
+ const add=(arr,m,side,why)=>{const k=m+'|'+side,e=arr.find(x=>x.k===k);if(e){if(!e.why.includes(why))e.why.push(why)}else arr.push({k,m,side,why:[why]})};
+ const E=(id,w,note)=>{const e=ex[id]||(ex[id]={id,w:0,notes:[]});e.w+=w;if(note&&!e.notes.includes(note))e.notes.push(note)};const Lf=(id,w)=>{lf[id]=(lf[id]||0)+w};const tr=t=>{if(!trb.includes(t))trb.push(t)};
+ for(const r of G.findings){const w=100-r.score,sd=r.side,o=sd?gOp(sd):null,why=r.dir;
+  switch(r.key){
+   case 'gSupport':{const sh=r.val>0?'L':'R';add(Wk,'gmed',sh,why);add(Wk,'gmax',sh,why);tr(jpS(sh)+'脚の痛みや不安をかばう歩き方');E('shift',w);E('sls',w*0.8,jpS(sh)+'脚を重点的に');Lf('walkG',w);break}
+   case 'gPelvis':if(r.val>=0){add(Wk,'gmed',sd,why);add(T,'ql',o,why);tr('腰の片側・股関節の外側の痛み');E('clam',w,jpS(sd)+'側を重点的に');E('sls',w*0.9,jpS(sd)+'脚を重点的に');E('sidewalk',w*0.7);Lf('walkG',w*0.6);Lf('stand1',w*0.5)}
+    else{add(T,'ql',o,why);E('sideS',w,jpS(o)+'側を伸ばす');Lf('walkG',w*0.5)}break;
+   case 'gTrunk':if(r.val>=0){add(Wk,'gmed',sd,why);add(Wk,'obl',sd,why);add(T,'ql',sd,why);tr('腰の片側の張り・痛み');E('sls',w,jpS(sd)+'脚を重点的に');E('clam',w*0.8,jpS(sd)+'側を重点的に');E('deadbug',w*0.6)}
+    else{add(T,'ql',o,why);E('sideS',w*0.8,jpS(o)+'側を伸ばす');E('deadbug',w*0.6)}Lf('bag',w*0.4);break;
+   case 'gKnee':if(r.val>=0){add(Wk,'gmed',sd,why);add(Wk,'gmax',sd,why);add(T,'adductor',sd,why);tr(jpS(sd)+'膝の内側・お皿まわりの痛み');E('squatK',w,jpS(sd)+'膝の向きに注意');E('clam',w*0.8,jpS(sd)+'側を重点的に');E('towelG',w*0.6);Lf('shoesG',w);Lf('walkG',w*0.7)}
+    else{add(T,'tfl',sd,why);add(Wk,'adductor',sd,why);tr(jpS(sd)+'膝の内側の負担');E('adduct',w);E('clam',w*0.6);Lf('shoesG',w*0.8);Lf('walkG',w*0.6)}break}}
+ const merge=arr=>{const out=[];const mw=(a,b)=>b.why.forEach(x=>{if(!a.why.includes(x))a.why.push(x)});
+  for(const e of arr){const b=out.find(x=>x.m===e.m&&x.side==='B');if(e.side==='B'){if(b){mw(b,e);continue}out.filter(x=>x.m===e.m).forEach(x=>{mw(e,x);out.splice(out.indexOf(x),1)});out.push(e)}
+   else{const same=out.find(x=>x.m===e.m&&x.side===e.side);if(same)mw(same,e);else if(b)mw(b,e);else out.push(e)}}return out};
+ const TT=merge(T),weak=merge(Wk).filter(x=>!TT.some(t=>t.m===x.m&&(t.side===x.side||t.side==='B'||x.side==='B')));
+ return {tight:TT,weak,troubles:trb,ex:Object.values(ex).sort((a,b)=>b.w-a.w),life:Object.entries(lf).sort((a,b)=>b[1]-a[1]).map(e=>e[0])}}
+function gCareSel(g,C){return g.care||{ex:C.ex.slice(0,4).map(e=>e.id),life:C.life.slice(0,3)}}
+function gCareCard(g,G){const C=gCareFrom(G),sel=gCareSel(g,C);st.gC=C;
+ if(!C.tight.length&&!C.weak.length&&!C.ex.length)return '<div class="card"><h2>体への負担と、おすすめのセルフケア</h2><p class="mut">大きな左右差やくずれがないため、特に負担が集中している筋肉は見つかりませんでした。今の歩き方を保つために、毎日歩く習慣を続けましょう。</p></div>';
+ const mus=(arr,cls)=>arr.length?'<ul class="mus '+cls+'">'+arr.map(e=>'<li><b>'+(e.side!=='B'?'<span class="sd">'+jpS(e.side)+'</span>':'')+MUS[e.m][0]+'</b><small>'+e.why.map(esc).join('・')+'</small></li>').join('')+'</ul>':'<p class="mut">特になし</p>';
+ return '<div class="card"><h2>体への負担と、おすすめのセルフケア</h2><div class="cgrid"><div class="bmapbox"><canvas id="bmap" aria-label="負担がかかりやすい筋肉の図"></canvas><p class="leg"><i style="background:#e0573f"></i>縮こまって負担がかかりやすい　<i style="background:#3f8fd8"></i>働きにくくなりやすい</p></div>'+
+ '<div><h3>縮こまって負担がかかりやすい筋肉</h3>'+mus(C.tight,'t')+'<h3>働きにくくなりやすい筋肉</h3>'+mus(C.weak,'w')+(C.troubles.length?'<h3>出やすい不調（傾向）</h3><p>'+C.troubles.map(esc).join('、')+'</p>':'')+'</div></div>'+
+ (C.ex.length?'<h3>おすすめの運動 <small class="mut">チェックしたものがLINE用の文章に入ります</small></h3><div class="exlist">'+C.ex.slice(0,8).map(e=>{const X=EX[e.id];return '<label class="exi"><input type="checkbox" data-gcare="ex" value="'+e.id+'"'+(sel.ex.includes(e.id)?' checked':'')+'><span><b>'+X[0]+'</b><small>'+X[1]+'・'+X[3]+(e.notes.length?'・'+e.notes.join('、'):'')+'</small><span class="how">'+X[2]+'</span></span></label>'}).join('')+'</div>':'')+
+ (C.life.length?'<h3>生活のポイント</h3><div class="exlist">'+C.life.slice(0,6).map(id=>{const X=LIFE[id];return '<label class="exi"><input type="checkbox" data-gcare="life" value="'+id+'"'+(sel.life.includes(id)?' checked':'')+'><span><b>'+X[0]+'</b><span class="how">'+X[1]+'</span></span></label>'}).join('')+'</div>':'')+
+ '<p class="note">筋肉の状態は、歩き方の傾向から推定したものです。実際の状態は検査で確かめます。運動中に痛みやしびれが出たら中止して、ご相談ください。</p></div>'}
+function gDefaultComment(G){const top=G.findings.slice(0,2).map(r=>'「'+r.dir+'」').join('');
+ return (top?'今回の歩行分析では、'+top+'という点が特に目立ちました。':'今回の歩行分析では、大きな左右差やくずれは見られませんでした。')+'\n歩き方のクセは、立ち方（姿勢）と同じように毎日くり返されるため、痛みの原因になりやすいポイントです。一度ですべてが変わるわけではありませんが、施術と日常のセルフケアを組み合わせて、一緒に整えていきましょう。'}
+
+/* --- 画面：撮影 --- */
+const GTIPS={front:['スマホは三脚で固定し、縦向き・腰の高さ（床から約90cm）で、歩く道のまっすぐ正面に置く','カメラから5〜6m離れたところから、カメラに向かってふだんどおりの速さで歩いてもらう','頭からつま先まで写る所（カメラの約1.5m手前）で止まってもらう。向きを変えるところは撮らない','膝や足首の形がわかる服装がおすすめ（ズボンのすそを上げる・はだしか靴下）','毎回同じ場所・同じ距離で撮ると、前回と比べやすくなります'],
+ back:['カメラの置き方は「前から」と同じ（三脚・縦向き・腰の高さ・歩く道のまっすぐ正面）','カメラの約1.5m手前から、カメラに背を向けて5〜6m先まで、ふだんどおりの速さで歩いてもらう','後ろからは、骨盤の落ち込みや上半身の横揺れが特によく見えます','歩き終わって振り返るところは撮らなくてかまいません','カメラの設定が4K・60コマのときは解析に時間がかかります（1080p・30コマがおすすめ）']};
+function gGuideSVG(k){const up=k==='back';
+ return '<svg viewBox="0 0 160 240" class="gsvg" aria-hidden="true"><rect x="8" y="8" width="144" height="224" rx="14" fill="none" stroke="var(--line)" stroke-width="2"/>'+
+ '<path d="M40 196 L120 196 L94 62 L66 62 Z" fill="var(--soft)" stroke="var(--line)"/><line x1="80" y1="62" x2="80" y2="196" stroke="var(--gd)" stroke-dasharray="4 4"/>'+
+ '<text x="80" y="54" font-size="11" text-anchor="middle" fill="var(--mut)">'+(up?'ここまで歩く':'5〜6m先からスタート')+'</text>'+
+ '<g transform="translate(80 '+(up?150:104)+')" fill="var(--g2)"><circle cx="0" cy="-26" r="6"/><path d="M-7 -18 h14 l2 22 h-18z"/><path d="M-6 4 l-3 20 h5 l3 -16 l3 16 h5 l-3 -20z"/></g>'+
+ '<path d="'+(up?'M80 116 L80 84 M73 92 L80 82 L87 92':'M80 136 L80 166 M73 158 L80 168 L87 158')+'" stroke="var(--gd)" stroke-width="3" fill="none" stroke-linecap="round"/>'+
+ '<g transform="translate(80 212)"><rect x="-9" y="-14" width="18" height="12" rx="2" fill="var(--g)"/><circle cx="0" cy="-8" r="3" fill="var(--soft)"/><path d="M0 -2 L-10 14 M0 -2 L10 14 M0 -2 L0 14" stroke="var(--mut)" stroke-width="2"/></g>'+
+ '<text x="80" y="'+(up?190:186)+'" font-size="10" text-anchor="middle" fill="var(--mut)">'+(up?'約1.5m手前からスタート':'約1.5m手前で止まる')+'</text></svg>'}
+function vGait(){const g=st.gc,k=st.gtab,cl=g.clips[k],r=g.res[k],lab=GVL[k],cnt=GV.filter(o=>g.res[o.k]&&g.res[o.k].ok).length;
+ const tabs='<div class="tabs gtabs" role="tablist">'+GV.map(o=>{const rr=g.res[o.k];return '<button role="tab" aria-selected="'+(k===o.k)+'" class="tab'+(k===o.k?' on':'')+(rr&&rr.ok?' done':'')+'" data-act="gTab" data-k="'+o.k+'"><b>'+o.label+'</b><small>'+(st.gbusy[o.k]?'解析中…':rr?(rr.ok?'✓ 解析済み':'撮り直しが必要'):'未撮影')+'</small></button>'}).join('')+'</div>';
+ let stage;
+ if(st.gbusy[k])stage='<div class="busy"><div><div class="spin"></div><span id="gprog">'+esc(st.gbusy[k].txt)+'</span><div class="gbar"><i id="gbar" style="width:'+Math.round((st.gbusy[k].p||0)*100)+'%"></i></div><p class="note">解析が終わるまで、この画面のままお待ちください。</p><button class="btn" data-act="gCancel">中止する</button></div></div>';
+ else if(!cl)stage='<div class="guide">'+gGuideSVG(k)+'<div><h2>'+lab+'の撮り方</h2><ul>'+GTIPS[k].map(t=>'<li>'+t+'</li>').join('')+'</ul><div class="gbtns"><label class="btn pri big" for="gfileCam">動画を撮影する</label><label class="btn big" for="gfile">撮った動画を選ぶ</label></div>'+(st.gerr[k]?'<div class="warn">'+esc(st.gerr[k])+'</div>':'')+'</div></div>';
+ else{const next=GV.find(o=>o.k!==k&&!g.clips[o.k]),nR=r&&r.ok?r.contacts.filter(c=>c.sd==='R').length:0,nL=r&&r.ok?r.contacts.filter(c=>c.sd==='L').length:0;
+  stage='<div class="gplayer" id="gp_cap"></div>'+(r&&r.ok?'<p class="gsum">着地を<b>'+r.steps+'回</b>検出しました（右足 '+nR+'回・左足 '+nL+'回）'+(r.cad?'。歩くリズムは約'+Math.round(r.cad)+'歩/分です。':'')+'</p>':'')+
+  (r?r.warn.map(w=>'<div class="warn">'+esc(w)+'</div>').join(''):'')+(st.gerr[k]&&!(r&&r.warn.includes(st.gerr[k]))?'<div class="warn">'+esc(st.gerr[k])+'</div>':'')+
+  '<div class="edbar"><label class="btn" for="gfileCam">撮り直す</label><label class="btn" for="gfile">別の動画を選ぶ</label>'+(next?'<button class="btn pri" data-act="gTab" data-k="'+next.k+'">次へ：'+next.label+' →</button>':'')+'</div>'+
+  '<p class="note">線の色：<b class="gR">オレンジ＝右</b>・<b class="gL">青＝左</b>。足元の丸が塗りつぶされているときが「その足が地面について体重をのせている」と判定した瞬間です。</p>'}
+ return '<div class="wrap"><div class="crumb"><button class="back" data-act="back">← 戻る</button><b>'+esc(st.patient.name)+' さん</b><span class="mut">歩行分析</span></div>'+
+ '<div class="eng" id="eng"></div><p class="lead">「前から（こちらへ歩く）」と「後ろから（向こうへ歩く）」の動画を撮ります。どちらか1本でも分析できます。動画は端末の中だけで解析し、動画そのものは保存しません。</p>'+tabs+stage+
+ '<input type="file" id="gfileCam" accept="video/*" capture="environment" class="vh" tabindex="-1"><input type="file" id="gfile" accept="video/*" class="vh" tabindex="-1"></div>'+
+ '<div class="actbar"><button class="btn pri big" data-act="gToResult"'+(cnt&&!GV.some(o=>st.gbusy[o.k])?'':' disabled')+'>歩行の結果を見る（'+cnt+'/2）</button></div>'}
+function setupGait(){updEngine();const g=st.gc,k=st.gtab;if(g.clips[k]&&!st.gbusy[k])gMountPlayer($('#gp_cap'),g.clips[k],g.res[k])}
+
+/* --- 画面：結果 --- */
+const gUnit=k=>GSPEC[k].unit;
+const gFmt=r=>f1(Math.abs(r.val))+gUnit(r.key);
+function gCmp(){const g=st.gc,list=(st.gaitList||[]).filter(s=>s.id!==g.id&&s.sum);if(!list.length)return null;let s=st.gcmpId?list.find(x=>x.id===st.gcmpId):null;
+ if(!s)s=list.filter(x=>String(x.date)<String(g.date)).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]||null;if(s)st.gcmpId=s.id;return s}
+function gTopTxt(sm){if(!sm||!sm.rows)return '';const w=sm.rows.filter(r=>r.st&&r.st!=='ok').sort((a,b)=>a.sc-b.sc).slice(0,2);return w.length?w.map(r=>r.d).join('・'):'大きな左右差なし'}
+function vGaitRes(){const g=st.gc,rs=GV.map(o=>g.res[o.k]).filter(Boolean),G=gCombine(rs);st.gG=G;if(g.comment==null)g.comment=gDefaultComment(G);
+ const okK=GV.filter(o=>g.res[o.k]&&g.res[o.k].ok).map(o=>o.k);if(!okK.includes(st.gpk))st.gpk=okK[0]||null;
+ const pv=gCmp(),ps=pv&&pv.sum,others=(st.gaitList||[]).filter(s=>s.id!==g.id&&s.sum);
+ const grp=[['gSupport','片脚の支え'],['gPelvis','骨盤'],['gTrunk','上半身'],['gKnee','膝']];
+ const tsc=key=>{const a=G.rows.filter(r=>r.key===key).map(r=>r.score);return a.length?Math.round(gMean(a)):null};
+ const ptsc=key=>{if(!ps||!ps.rows)return null;const a=ps.rows.filter(r=>r.k===key).map(r=>r.sc);return a.length?Math.round(gMean(a)):null};
+ const tiles=grp.map(([k,l])=>'<div class="tile"><small>'+l+'</small><b class="n s-'+band(tsc(k))+'">'+(tsc(k)!=null?tsc(k):'—')+'</b>'+delta(tsc(k),ptsc(k))+'</div>').join('');
+ const row=(k,sd)=>G.rows.find(r=>r.key===k&&r.side===sd);
+ const cell=(r,txt)=>r?'<td class="r n s-'+r.st+'">'+txt+'</td>':'<td class="r mut">—</td>';
+ const lr='<table class="lr"><thead><tr><th>項目</th><th class="r">右脚で立つとき</th><th class="r">左脚で立つとき</th></tr></thead><tbody>'+
+  '<tr><td>片脚で支える時間<small class="mut" style="display:block">反対の足が浮いている時間</small></td>'+['R','L'].map(sd=>{const v=G.ss[sd],r=row('gSupport',null),short=r&&r.st!=='ok'&&((r.val>0?'L':'R')===sd);return v!=null?'<td class="r n'+(short?' s-'+r.st:'')+'">'+v.toFixed(2)+'秒</td>':'<td class="r mut">—</td>'}).join('')+'</tr>'+
+  '<tr><td>反対側の骨盤の落ち込み</td>'+['R','L'].map(sd=>{const r=row('gPelvis',sd);return cell(r,r?(r.val>=0?'':'上がる ')+gFmt(r):'')}).join('')+'</tr>'+
+  '<tr><td>上半身の横への傾き</td>'+['R','L'].map(sd=>{const r=row('gTrunk',sd);return cell(r,r?(r.val>=0?jpS(sd)+'へ ':jpS(gOp(sd))+'へ ')+gFmt(r):'')}).join('')+'</tr>'+
+  '<tr><td>膝の向き</td>'+['R','L'].map(sd=>{const r=row('gKnee',sd);return cell(r,r?(r.val>=0?'内側 ':'外側 ')+gFmt(r):'')}).join('')+'</tr></tbody></table>';
+ const info='<div class="ginfo">'+(G.cad!=null?'<div><small>歩くリズム</small><b class="n">約'+Math.round(G.cad)+'</b> 歩/分<small>成人のふつうの速さで、約100〜120歩/分が目安</small></div>':'')+
+  (G.width!=null?'<div><small>足を置く幅（両足の横の間隔）</small><b class="n">腰幅の'+G.width.toFixed(1)+'</b> 倍<small>広いほど、バランスをとるために足を開いて歩いています</small></div>':'')+
+  (G.sway!=null?'<div><small>体（腰）の横揺れ</small><b class="n">腰幅の'+Math.round(G.sway*100)+'</b> %<small>大きいほど、左右に揺れながら歩いています</small></div>':'')+'</div>';
+ const cmpRows=ps&&ps.rows?G.rows.map(r=>{const p=ps.rows.find(q=>q.k===r.key&&(q.s||null)===(r.side||null));if(!p)return '';const d=Math.abs(r.val)-Math.abs(p.v);const t=Math.abs(d)<0.5?'<span class="mut">変化なし</span>':d<0?'<span class="b-ok">改善 '+f1(-d)+gUnit(r.key)+'</span>':'<span class="b-ng">悪化 '+f1(d)+gUnit(r.key)+'</span>';return '<tr><td>'+esc(r.label)+'</td><td class="r n">'+f1(Math.abs(p.v))+gUnit(r.key)+'</td><td class="r n">'+gFmt(r)+'</td><td class="r">'+t+'</td></tr>'}).join(''):'';
+ const keys=okK.map(k=>['R','L'].map(sd=>'<figure><canvas class="gkey" data-k="'+k+'" data-sd="'+sd+'" aria-label="'+GVL[k]+'・'+jpS(sd)+'脚で立った瞬間"></canvas><figcaption><b>'+jpS(sd)+'脚で立った瞬間</b>（'+GVL[k]+'）</figcaption></figure>').join('')).join('');
+ return '<div class="wrap"><div class="crumb"><button class="back" data-act="'+(g.fromHistory?'toPatient':'gToCapture')+'">'+(g.fromHistory?'← 記録の一覧':'← 動画に戻る')+'</button><b>'+esc(st.patient.name)+' さん</b><span class="mut">'+fmtDT(g.date)+'</span></div>'+
+ '<h1>歩行分析の結果</h1>'+(G.n<2?'<div class="warn">'+(G.n?'1方向の動画で計算しています。前から・後ろからの2本がそろうと精度が上がります。':'分析できた動画がありません。動画を撮り直してください。')+'</div>':'')+
+ GV.map(o=>g.res[o.k]).filter(r=>r&&r.swapped).map(r=>'<div class="warn">'+esc(r.warn.find(w=>/として分析しました/.test(w))||'')+'</div>').join('')+
+ '<div class="card scores"><div class="gauge">'+gauge(G.total)+'<div class="gl"><small>歩行スコア</small><b class="n">'+(G.total!=null?G.total:'—')+'</b><span>点 / 100</span>'+delta(G.total,ps&&ps.total)+'</div></div><div class="tiles t4">'+tiles+'</div></div>'+
+ (st.gpk?'<div class="card"><h2>歩き方の再生</h2>'+(okK.length>1?'<div class="gclips">'+okK.map(k=>'<button class="btn'+(st.gpk===k?' on':'')+'" data-act="gClip" data-k="'+k+'">'+GVL[k]+'</button>').join('')+'</div>':'')+'<div id="gp_res"></div><p class="note">線の色：<b class="gR">オレンジ＝右</b>・<b class="gL">青＝左</b>。足元の丸が塗りつぶされているときが、その足で体重を支えている瞬間です。ゆっくり再生やコマ送りで確認できます。</p></div>':'')+
+ (keys?'<div class="card"><h2>片脚で立った瞬間</h2><div class="gkeys">'+keys+'</div><p class="note">金の線＝骨盤、緑の線＝上半身。白い点線は、両足が地面についているときの位置（その人の基準）です。</p></div>':'')+
+ '<div class="grid2"><div class="card"><h2>気になったポイント</h2>'+(G.findings.length?'<ol class="finds">'+G.findings.map(r=>'<li class="b-'+r.st+'"><b>'+esc(r.dir)+'<span class="n">'+gFmt(r)+'</span></b><p>'+esc(r.tip)+'</p></li>').join('')+'</ol>':'<p>大きな左右差やくずれは見られませんでした。</p>')+
+ '<h3><label for="gcomment">先生からのコメント</label></h3><textarea id="gcomment" rows="6">'+esc(g.comment)+'</textarea><p class="note">LINE用の文章にもこのコメントが入ります。自由に書き換えてください。</p></div>'+
+ '<div class="card"><h2>左右の比べ</h2>'+lr+info+'</div></div>'+
+ (okK.length?'<div class="card"><h2>着地のリズムと、骨盤・上半身の動き</h2>'+okK.map(k=>'<div class="gdia"><h3>'+GVL[k]+'</h3>'+gDiagram(k)+'</div>').join('')+'<p class="note">上の帯が足の着地している時間です。グラフの色の帯は片脚で立っている時間（オレンジ＝右脚、青＝左脚）。片脚で立ったときに線が大きく動くほど、骨盤や上半身がぶれています。</p></div>':'')+
+ gCareCard(g,G)+
+ '<div class="card"><h2>測定項目の詳細</h2><ul class="mlist">'+G.rows.map(r=>'<li><div><small>'+esc(r.label)+'</small><b>'+(r.st==='ok'?'<span class="mut">わずかに</span>':'')+esc(r.dir)+'</b><small>'+r.n+'回分の平均</small></div><div class="mv"><span class="n">'+gFmt(r)+'</span><span class="badge b-'+r.st+'">'+STL[r.st]+'</span></div></li>').join('')+'</ul>'+
+ '<p class="note">スコアは動画から計算した独自の指標で、医学的な診断ではありません。歩く速さ・靴・撮影の角度でも数値は変わるため、毎回同じ条件で撮影すると比較しやすくなります。カメラから遠いところの数値は誤差が大きくなります。</p></div>'+
+ '<div class="card"><h2>前回との比較</h2>'+(others.length?'<label class="hrow"><span>比較する記録</span><select id="gcmpSel" style="width:auto">'+others.map(s=>'<option value="'+esc(s.id)+'"'+(pv&&pv.id===s.id?' selected':'')+'>'+fmtDT(s.date)+'（'+(s.sum.total!=null?s.sum.total:'-')+'点）</option>').join('')+'</select></label>'+
+  (ps?'<table><thead><tr><th>項目</th><th class="r">前回</th><th class="r">今回</th><th class="r">変化</th></tr></thead><tbody><tr><td><b>歩行スコア</b></td><td class="r n">'+(ps.total!=null?ps.total:'-')+'</td><td class="r n">'+(G.total!=null?G.total:'-')+'</td><td class="r">'+(G.total!=null&&ps.total!=null?((G.total-ps.total>=0?'+':'')+(G.total-ps.total)+'点'):'')+'</td></tr>'+cmpRows+'</tbody></table>':'')
+  :'<p class="mut">比較できる記録がまだありません。結果を保存すると、次回からここで前回と並べて比べられます。</p>')+'</div>'+
+ '<p class="store">動画そのものは保存せず、骨格の動き（目印の位置）と数値だけを保存します。</p></div>'+
+ '<div class="actbar"><button class="btn" data-act="gCopyLine">LINE用の文章をコピー</button><textarea id="gLineTxt" class="vh" tabindex="-1" aria-hidden="true"></textarea>'+(st.patient.id?'<button class="btn pri" id="gSaveBtn" data-act="gSave"'+(g.saved&&!g.dirty?' disabled':'')+'>'+(g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存')+'</button>':'<button class="btn pri" data-act="saveTrial">患者さんの記録に保存</button>')+'</div>'}
+function afterGaitRes(){const g=st.gc;if(st.gpk)gMountPlayer($('#gp_res'),g.clips[st.gpk],g.res[st.gpk]);
+ $$('canvas.gkey').forEach(cv=>{gDrawKey(cv,cv.dataset.k,cv.dataset.sd).catch(()=>{})});
+ const bm=$('#bmap');if(bm&&st.gC){const W=bm.parentElement.clientWidth,H=Math.round(W*336/360),ctx=fitCanvas(bm,W,H);drawBodyMap(ctx,W,H,st.gC,cssv('--bg').toLowerCase()==='#0f1613')}}
+function gMarkDirty(){const g=st.gc;if(g&&g.saved&&!g.dirty){g.dirty=true;const b=$('#gSaveBtn');if(b){b.disabled=false;b.textContent='変更を保存'}}}
+function gPack(g,G){const clips={};GV.forEach(o=>{const c=g.clips[o.k];if(c&&g.res[o.k]&&g.res[o.k].ok)clips[o.k]=gPackClip(c)});const p=st.patient||{};
+ return {ver:1,date:g.date,ageBand:p.ageBand||null,sex:p.sex||null,height:p.height||null,comment:g.comment||'',care:g.care||null,clips,sum:gSum(G)}}
+async function gSave(){const g=st.gc,p=st.patient;if(!g||!p||!p.id)return;const G=gCombine(GV.map(o=>g.res[o.k]).filter(Boolean));if(!G.n){toast('分析できた動画がありません');return}
+ const b=$('#gSaveBtn');if(b){b.disabled=true;b.textContent='保存中…'}
+ try{const body=gPack(g,G);await Store.saveGait(p.id,g.id,body);st.gaitList=gByDate([{id:g.id,date:g.date,sum:body.sum}].concat((st.gaitList||[]).filter(x=>x.id!==g.id)));g.saved=true;g.dirty=false;toast('保存しました')}
+ catch(e){toast('保存できませんでした：'+msg(e))}
+ if(st.view==='gres'){const btn=$('#gSaveBtn');if(btn){btn.disabled=g.saved&&!g.dirty;btn.textContent=g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存'}else render()}}
+async function gOpenHist(id){const row=await Store.getGait(st.patient.id,id);const g={id:row.id,date:row.date,clips:{},res:{},comment:row.comment==null?null:row.comment,care:row.care||null,saved:true,dirty:false,fromHistory:true};
+ for(const k in (row.clips||{})){const un=gUnpackClip(row.clips[k]);g.clips[k]=un;g.res[k]=gAnalyzeClip(un)}st.gc=g;st.gcmpId=null;st.gpk=null;go('gres')}
+function gLineText(){const g=st.gc,G=st.gG||gCombine(GV.map(o=>g.res[o.k]).filter(Boolean)),n=st.patient.id?st.patient.name+'様':'',C=gCareFrom(G),sel=gCareSel(g,C);
+ const ex=sel.ex.filter(id=>EX[id]),lf=sel.life.filter(id=>LIFE[id]);
+ return '【歩行分析の結果】'+n+'（'+fmtDate(g.date)+'）\n歩行スコア '+(G.total!=null?G.total:'-')+'点\n'+(G.cad!=null?'歩くリズム：約'+Math.round(G.cad)+'歩/分\n':'')+
+ (G.findings.length?'気になったポイント：\n'+G.findings.map(r=>'・'+r.dir+'（'+gFmt(r)+'）').join('\n')+'\n':'')+
+ (ex.length?'おすすめのセルフケア：\n'+ex.map((id,i)=>(i+1)+'. '+EX[id][0]+'（'+EX[id][3]+'）').join('\n')+'\n':'')+(lf.length?'生活のポイント：\n'+lf.map(id=>'・'+LIFE[id][0]).join('\n')+'\n':'')+
+ '\n'+(g.comment||'')+'\n\n'+(PROFILE.name||'')}
+
+Object.assign(ACT,{
+ gStart:()=>{st.gc=newGait();st.gtab='front';st.gbusy={};st.gerr={};st.gpk=null;go('gait');ensureEngine().catch(()=>{})},
+ gTrial:()=>{st.patient={id:null,name:'お試し',height:null};st.sessions=[];st.gaitList=[];ACT.gStart()},
+ gTab:b=>{st.gtab=b.dataset.k;render()},
+ gCancel:()=>{if(gCancel)gCancel.stop=true},
+ gToResult:()=>{st.gcmpId=null;st.gpk=null;go('gres')},
+ gToCapture:()=>{if(st.gc&&st.gc.fromHistory)return go('patient');go('gait')},
+ gOpen:async b=>{try{await gOpenHist(b.dataset.id)}catch(e){toast('記録を開けませんでした：'+msg(e))}},
+ gDel:b=>{const sid=b.dataset.id;confirmBox('この歩行分析の記録を削除しますか？','削除する',async()=>{try{await Store.deleteGait(st.patient.id,sid);st.gaitList=st.gaitList.filter(x=>x.id!==sid);toast('削除しました')}catch(e){toast(msg(e))}render()})},
+ gSave:()=>gSave(),
+ gClip:b=>{st.gpk=b.dataset.k;$$('.gclips .btn').forEach(x=>x.classList.toggle('on',x.dataset.k===st.gpk));gStopAll();gMountPlayer($('#gp_res'),st.gc.clips[st.gpk],st.gc.res[st.gpk])},
+ gCopyLine:async()=>{const t=gLineText();try{await navigator.clipboard.writeText(t);toast('LINE用の文章をコピーしました')}catch(e){const ta=$('#gLineTxt');if(ta){ta.className='';ta.value=t;ta.rows=8;ta.removeAttribute('tabindex');ta.removeAttribute('aria-hidden');ta.focus();ta.select()}toast('文章を選択しました。コピーしてお使いください')}}});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.id==='gfile'||t.id==='gfileCam'){const f=t.files&&t.files[0],k=st.gtab;t.value='';if(f&&st.gc&&!st.gbusy[k])gExtract(k,f)}
+ if(t.dataset&&t.dataset.gcare&&st.gc){st.gc.care={ex:$$('input[data-gcare=ex]:checked').map(i=>i.value),life:$$('input[data-gcare=life]:checked').map(i=>i.value)};gMarkDirty()}
+ if(t.id==='gcmpSel'){st.gcmpId=t.value;render()}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='gcomment'&&st.gc){st.gc.comment=t.value;gMarkDirty()}});
+
+window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,repPages,makePdf,loadPhotos,photoBlob,doSave:()=>doSave(),gait:{gAnalyzeClip,gCombine,gUnpackClip,gPackClip,gExtract,gaitOn,gSave,gLineText,gOpenHist,newGait}};
 (async()=>{try{if(!isDemo())applyTheme(localStorage.getItem('shisei-theme')||'',false)}catch(e){}NAV.init();render();await Store.init();
  if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.clinic||last||'').toLowerCase();PROFILE={name:'',tagline:''};if(prm.clinic&&st.lockCode){try{const br=await CL.sb.rpc('clinic_brand',{p_code:st.lockCode});if(br&&br.data){applyTheme(br.data.theme||'',false);PROFILE={name:br.data.name||'',tagline:''}}}catch(e){}}updBrand();
   const c=await CL.me();if(c&&(c.must_change||!CL.dekRaw)){PROFILE={name:(c.settings&&c.settings.profile&&c.settings.profile.name)||c.name,tagline:''};applyTheme((c.settings||{}).theme||'',false);updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
