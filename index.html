@@ -692,6 +692,8 @@ function unpack(s){const views={};const sv=s.views||{};for(const k in sv){const 
 /* ---------- pose engine ---------- */
 const MP='https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/';
 let enginePromise=null,queue=Promise.resolve();
+const isFast=()=>{try{return localStorage.getItem('shisei-fast')==='1'}catch(e){return false}};
+function warmEngine(){setTimeout(()=>{try{if(st.view!=='lock')ensureEngine().catch(()=>{})}catch(e){}},1500)}
 function ensureEngine(){
  if(!enginePromise){st.engine='loading';updEngine();
   enginePromise=(async()=>{if(typeof Pose==='undefined')throw new Error('AIエンジンのファイルを読み込めませんでした');
@@ -699,19 +701,28 @@ function ensureEngine(){
    await p.initialize();st.engine='ready';updEngine();return p})();
   enginePromise.catch(e=>{st.engine='error';st.engineErr=msg(e);enginePromise=null;updEngine()})}
  return enginePromise}
-function detectOnce(cv){const run=async()=>{const p=await ensureEngine();try{p.reset()}catch(_){}return new Promise((res,rej)=>{let done=false;p.onResults(r=>{done=true;res(r)});p.send({image:cv}).catch(rej);setTimeout(()=>{if(!done)rej(new Error('解析に時間がかかりすぎました'))},40000)})};const r=queue.then(run,run);queue=r.catch(()=>{});return r}
+let BLANK=null;
+function detectOnce(cv){const run=async()=>{const p=await ensureEngine();
+ const send=img=>new Promise((res,rej)=>{let done=false;p.onResults(r=>{done=true;res(r)});p.send({image:img}).catch(rej);setTimeout(()=>{if(!done)rej(new Error('解析に時間がかかりすぎました'))},40000)});
+ // 前の写真の追跡を消してから解析する。reset()はAIの作り直しで遅い端末だと数秒かかるため、人の写っていない小さな画像を1回通して消す
+ if((window.__pForce||{}).reset){try{p.reset()}catch(_){}}else{if(!BLANK){BLANK=document.createElement('canvas');BLANK.width=BLANK.height=128;const x=BLANK.getContext('2d');x.fillStyle='#7f7f7f';x.fillRect(0,0,128,128)}try{await send(BLANK)}catch(_){try{p.reset()}catch(e){}}}
+ return send(cv)};const r=queue.then(run,run);queue=r.catch(()=>{});return r}
 const PAIRS=[[1,4],[2,5],[3,6],[7,8],[9,10],[11,12],[13,14],[15,16],[17,18],[19,20],[21,22],[23,24],[25,26],[27,28],[29,30],[31,32]];
 const SWAP=(()=>{const a=Array.from({length:33},(_,i)=>i);PAIRS.forEach(([x,y])=>{a[x]=y;a[y]=x});return a})();
 function variant(cv,flip,scale){const W=cv.width,H=cv.height,pw=Math.round(W/scale),ph=Math.round(H/scale),c=document.createElement('canvas');c.width=pw;c.height=ph;
  const x=c.getContext('2d');x.fillStyle='#7f7f7f';x.fillRect(0,0,pw,ph);const ox=(pw-W)/2,oy=(ph-H)/2;x.save();if(flip){x.translate(pw,0);x.scale(-1,1)}x.drawImage(cv,ox,oy);x.restore();
  return {c,toOrig:(nx,ny)=>{let px=nx*pw;if(flip)px=pw-px;return [(px-ox)/W,(ny*ph-oy)/H]}}}
 const medn=a=>{const s=a.slice().sort((x,y)=>x-y),n=s.length;return n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2};
-async function detectRobust(cv,onStep){
- const runs=[[false,1],[true,1],[false,0.8],[true,0.8]],outs=[],ar=cv.width/cv.height;let j=0;
- for(const [flip,sc] of runs){j++;if(onStep)onStep(j,runs.length);const vv=variant(cv,flip,sc);let r;try{r=await detectOnce(vv.c)}catch(e){if(j===1)throw e;continue}
+async function detectRobust(cv,onStep){const F=window.__pForce||{};let slow=!!F.slow,stop=false;
+ const fast=(isFast()||F.two)&&!F.full,runs=fast?[[false,1],[true,1]]:[[false,1],[true,1],[false,0.8],[true,0.8]],outs=[],ar=cv.width/cv.height;let j=0;
+ for(const [flip,sc] of runs){j++;if(onStep)onStep(j,fast?2:slow?'2〜4':runs.length);const t0=performance.now(),vv=variant(cv,flip,sc);let r;try{r=await detectOnce(vv.c)}catch(e){if(j===1)throw e;continue}
+  if(j===1&&!F.full&&performance.now()-t0>2000){slow=true;if(!fast&&!window.__slowTold){window.__slowTold=1;setTimeout(()=>toast('この端末では解析に時間がかかっています。「速さ優先」に切り替えると速くなります'),300)}}
   if(!r||!r.poseLandmarks)continue;const lm=[],w=r.poseWorldLandmarks?[]:null;
   for(let i=0;i<33;i++){const s=flip?SWAP[i]:i,l=r.poseLandmarks[s],o=vv.toOrig(l.x,l.y);lm.push([o[0],o[1],l.z,l.visibility==null?1:l.visibility]);if(w){const q=r.poseWorldLandmarks[s];w.push([flip?-q.x:q.x,q.y,q.z])}}
-  outs.push({lm,w})}
+  outs.push({lm,w});
+  // 遅い端末では、2回の結果がよく合っていればそこで終える（合わないときは4回まで続ける）
+  if(slow&&!F.full&&j===2&&outs.length===2){const d=avg(outs[0].lm.slice(11,29).map((l,i)=>{const m=outs[1].lm[i+11];return Math.hypot((l[0]-m[0])*ar,l[1]-m[1])}));if(d<0.005&&!F.noStop){stop=true;break}}}
+ if(window.__pStat)window.__pStat({slow,runs:outs.length,stop});
  if(!outs.length)return null;
  const agg=os=>{const lm=[],unc=[];for(let i=0;i<33;i++){const mx=medn(os.map(o=>o.lm[i][0])),my=medn(os.map(o=>o.lm[i][1]));lm.push([mx,my,medn(os.map(o=>o.lm[i][2])),avg(os.map(o=>o.lm[i][3]))]);
    unc.push(os.length>1?Math.max(...os.map(o=>Math.hypot((o.lm[i][0]-mx)*ar,o.lm[i][1]-my))):0)}
@@ -889,7 +900,10 @@ function toolPanels(v,k){const r=v.roll||0,e=v.rollEst;
  '<label class="chk"><input type="checkbox" id="autoSnap"'+(st.autoSnap?' checked':'')+'> 撮影後に自動でシールに合わせる</label></div></details>'}
 function uncWarn(v,k){if(!v.unc)return '';const isF=k==='front',pts=isF?FRONT_EDIT:sideEdit(v.near||'R');const bad=pts.filter(i=>v.unc[i]>UNC_T&&!(v.snap&&v.snap[i])&&v.lm[i][3]>=0.35);
  return bad.length?'<div class="warn"><b>要確認：</b>'+bad.map(i=>LMN[i]||'').filter(Boolean).join('・')+'。AIの推定がぶれていた目印です（写真ではオレンジの点線）。「目印を指で調整」で位置を確かめてください。</div>':''}
-function updEngine(){const el=$('#eng');if(!el)return;const t={idle:'AIエンジン：未起動',loading:'AIエンジン（高精度）：準備中…',ready:'AIエンジン（高精度）：準備完了',error:'AIエンジン：読み込みに失敗しました（'+esc(st.engineErr)+'）'}[st.engine];el.innerHTML='<span class="dot '+st.engine+'"></span>'+t}
+function updEngine(){const el=$('#eng');if(!el)return;const m=isFast()?'（速さ優先）':'（高精度）',t={idle:'AIエンジン：未起動',loading:'AIエンジン'+m+'：準備中…',ready:'AIエンジン'+m+'：準備完了',error:'AIエンジン：読み込みに失敗しました（'+esc(st.engineErr)+'）'}[st.engine];
+ el.innerHTML='<span class="dot '+st.engine+'"></span>'+t+(st.engine==='error'?'':'<button class="link" data-act="toggleFast" style="margin-left:auto;font-size:13px">'+(isFast()?'高精度に戻す':'遅いときは「速さ優先」')+'</button>')}
+function toggleFast(){const on=!isFast();try{localStorage.setItem('shisei-fast',on?'1':'0')}catch(e){}
+ updEngine();toast(on?'速さ優先にしました（AIはそのままで、確かめる回数を4回から2回に減らします。この端末だけの設定です）':'高精度に戻しました（4回確かめます）')}
 function renderQuick(){const el=$('#quick');if(!el)return;const k=st.tab,v=st.cur.views[k];if(!v){el.innerHTML='';return}
  const A=analyze({views:{[k]:v},height:st.cur.height});const rows=A.rows.filter(r=>r.vk===k).slice(0,k==='front'?4:3);
  el.innerHTML=rows.map(r=>'<span><b class="b-'+r.st+'">●</b> '+r.label+' '+f1(Math.abs(r.val))+'°'+(r.st==='ok'?'':'・'+r.dir)+'</span>').join('')}
@@ -1043,7 +1057,7 @@ async function submitLockCloud(){const L=st.lock||{mode:'login'},v=id=>(($('#'+i
   if(L.mode==='setup'){const n1=v('np1'),n2=v('np2'),len=+v('plen')||6;st.plen=len;if(!lenOk(n1,len)){st.lockErr='パスコードは'+len+'桁の数字にしてください';return render()}if(n1!==n2){st.lockErr='2回目の入力が違います';return render()}busy();
    const code=await CL.setup(n1,v('rec')||null,!!L.discard);if(code){st.lock={mode:'recovery',rec:code};return render()}return enterApp()}
  }catch(e){st.lockErr=msg(e)==='NEED_REC'?'復旧コードを入れてください（ない場合は「復旧コードがない」を押してください）':msg(e);render()}}
-async function enterApp(){st.lock=null;st.lockErr='';applyClinic();go('home');await runPendingImports();await loadPatients()}
+async function enterApp(){st.lock=null;st.lockErr='';applyClinic();go('home');await runPendingImports();await loadPatients();warmEngine()}
 async function runLocalMigration(){if(Store.mode!=='cloud'||!CL.dek||!CL.clinic||!CL.clinic.is_admin||isDemo())return;let j=null;try{j=JSON.parse(localStorage.getItem(LSK)||'null')}catch(e){return}
  const ps=(j&&Array.isArray(j.patients)?j.patients:[]).filter(p=>p&&p.id&&p.id!==CFG_ID&&p.kind!=='cfg');if(!ps.length)return;let np=0,ns=0;
  try{for(const p of ps){await CL.savePatient(p);np++;for(const x of ((j.sessions||{})[p.id]||[])){if(!x||!x.id)continue;await CL.saveSession(p.id,x.id,x);ns++}}
@@ -1262,6 +1276,7 @@ const ACT={
  report:()=>openReport(),
  rep:b=>{st.repPhoto=b.dataset.p==='1';(st.repKind==='gait'?gOpenReport:openReport)()},
  printReport:()=>printReport(),
+ toggleFast:()=>toggleFast(),
  savePdf:()=>savePdf(),
  shareReport:async()=>{if(!st.report)return;const blob=await new Promise(r=>st.report.toBlob(r,'image/jpeg',0.92));const file=new File([blob],repName(),{type:'image/jpeg'});
   try{if(navigator.canShare&&!navigator.canShare({files:[file]}))throw new Error('x');await navigator.share({files:[file],title:st.repKind==='gait'?'歩行分析レポート':'姿勢分析レポート'})}catch(e){if(!(e&&e.name==='AbortError'))toast('この画面からは共有できませんでした。画像を長押しして保存してください')}},
@@ -2195,7 +2210,7 @@ window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust
   if(c.must_change){st.lock={mode:'setup'};st.loading=false;go('lock');return}if(!CL.dek){st.lock={mode:'unlock'};st.loading=false;go('lock');return}applyClinic()}catch(e){st.loadErr=msg(e)}}
  if(Store.mode==='gas'){try{const a=await gs('apiAuthStatus',AUTH.token);if(!a||!a.ok){st.lock={set:!!(a&&a.set)};st.loading=false;go('lock');return}}catch(e){st.loadErr=msg(e)}}
  if(Store.mode==='cloud'&&CL.dek)await runPendingImports();
- await loadPatients()})();
+ await loadPatients();if(st.view!=='lock')warmEngine()})();
 }
 </script>
 </body>
