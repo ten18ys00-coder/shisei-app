@@ -175,6 +175,8 @@ html.grlock,html.grlock body{overflow:hidden}
 .worse{border-top:1px solid var(--line);margin-top:14px;padding-top:6px}.worse h3{font-size:16px;margin:12px 0 6px}.wlist{list-style:none;margin:0;padding:0;display:grid;gap:10px}.wlist>li{border-left:4px solid var(--ng);padding:2px 0 2px 12px}.wlist>li>b{display:block}.wlist>li>small{display:block;font-size:12px;color:var(--mut)}.wlist .n{font-size:14px;margin-left:0}.wlist ul{margin:4px 0 0;padding-left:1.2em;font-size:14px}
 .wcond,.wq{margin:0;padding-left:1.2em;font-size:14px}.wcond li.auto{font-weight:700;color:var(--wn)}.worse .btn{margin-top:12px}.gpair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gpair b{display:block;font-size:14px;margin-bottom:4px}
 .gpctl.cmp .btn{min-height:40px;padding:6px 10px;font-size:14px}.gpctl.cmp select{min-height:40px;font-size:14px}.gpctl.cmp [data-g=prev],.gpctl.cmp [data-g=next]{display:none}
+
+.gvs{display:block}.gvs p{margin:4px 0 0}.gvchk{display:flex;gap:10px;align-items:center;font-weight:700;min-height:44px;color:var(--ink);cursor:pointer}.gvchk input{width:22px;height:22px;flex:none}
 @media (max-width:720px){.tiles.t4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
@@ -841,7 +843,7 @@ function vPatient(){const p=st.patient,ss=st.sessions;
  '<div class="acts pacts2"><button class="btn" data-act="editPatient">編集</button>'+(gaitOn()?'<button class="btn pri big" data-act="startCapture">姿勢を分析する</button><button class="btn big gait" data-act="gStart">歩行を分析する</button>':'<button class="btn pri big" data-act="startCapture">新しく分析する</button>')+'</div></div>'+
  (ss.length>=2?'<div class="card"><h2>総合スコアの推移</h2><div class="fig" id="trend"></div></div>':'')+
  '<div class="card"><h2>'+(gaitOn()?'姿勢分析の記録':'分析の記録')+'</h2>'+(ss.length?'<ul class="slist">'+ss.map(s=>{const sc=s.scores||{};return '<li><button class="srow" data-act="openSession" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sc.total)+'">'+(sc.total!=null?sc.total:'-')+'<small>点</small></span><span class="st">'+esc(s.type||'')+'</span><span class="ss">正面 '+(sc.front!=null?sc.front:'-')+'・側面 '+(sc.side!=null?sc.side:'-')+'・回旋 '+(sc.rot!=null?sc.rot:'-')+'</span></button><button class="x" data-act="delSession" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':'<p class="empty">まだ分析の記録がありません。「'+(gaitOn()?'姿勢を分析する':'新しく分析する')+'」から始めましょう。</p>')+'</div>'+(gaitOn()?gPatientCard():'')+'</div>'}
-function gPatientCard(){const gl=st.gaitList||[];return '<div class="card"><h2>歩行分析の記録</h2>'+(gl.length>=2?'<div class="gtrendbox">'+gTrendSVG(gl)+'</div>':'')+(st.gaitErr?'<div class="warn">'+esc(st.gaitErr)+'</div>':'')+(gl.length?'<ul class="slist">'+gl.map(s=>{const sm=s.sum||{};return '<li><button class="srow" data-act="gOpen" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sm.total)+'">'+(sm.total!=null?sm.total:'-')+'<small>点</small></span><span class="st">'+(sm.cad?'リズム 約'+sm.cad+'歩/分':'')+'</span><span class="ss">'+esc(gTopTxt(sm))+'</span></button><button class="x" data-act="gDel" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':(st.gaitErr?'':'<p class="empty">まだ歩行分析の記録がありません。「歩行を分析する」から始めましょう。</p>'))+'</div>'}
+function gPatientCard(){const gl=st.gaitList||[];return '<div class="card"><h2>歩行分析の記録</h2>'+(gl.length>=2?'<div class="gtrendbox">'+gTrendSVG(gl)+'</div>':'')+(st.gaitErr?'<div class="warn">'+esc(st.gaitErr)+'</div>':'')+(gl.length?'<ul class="slist">'+gl.map(s=>{const sm=s.sum||{};return '<li><button class="srow" data-act="gOpen" data-id="'+esc(s.id)+'"><span class="sd">'+fmtDT(s.date)+'</span><span class="sv n s-'+band(sm.total)+'">'+(sm.total!=null?sm.total:'-')+'<small>点</small></span><span class="st">'+(sm.cad?'リズム 約'+sm.cad+'歩/分':'')+(s.hv?'・動画あり':'')+'</span><span class="ss">'+esc(gTopTxt(sm))+'</span></button><button class="x" data-act="gDel" data-id="'+esc(s.id)+'">削除</button></li>'}).join('')+'</ul>':(st.gaitErr?'':'<p class="empty">まだ歩行分析の記録がありません。「歩行を分析する」から始めましょう。</p>'))+'</div>'}
 function drawTrend(){const el=$('#trend');if(!el)return;const ss=st.sessions.slice().reverse().filter(s=>s.scores&&s.scores.total!=null);
  const draw=()=>{const W=el.clientWidth,H=el.clientHeight;if(!W)return;const pl=34,pr=16,pt_=14,pb=26,xs=i=>pl+(ss.length<2?0:i*(W-pl-pr)/(ss.length-1)),ys=v=>pt_+(100-clamp(v,30,100))/70*(H-pt_-pb);
   let g='';[40,60,80,100].forEach(v=>{g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ys(v)+'" y2="'+ys(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(ys(v)+4)+'" text-anchor="end" font-size="11" fill="var(--mut)">'+v+'</text>'});
@@ -1066,7 +1068,7 @@ function cloudMenu(){const c=CL.clinic||{},p=PROFILE,f=(n,l,v,ph)=>'<label>'+l+'
  '<form id="profForm" class="form"><h3 style="margin:4px 0 0">レポートに入る院の情報</h3>'+f('name','院名',p.name,'例：〇〇整骨院')+f('tagline','ひとこと（英語のキャッチなど・任意）',p.tagline,'')+f('addr','住所（任意）',p.addr,'')+f('tel','電話番号（任意）',p.tel,'')+'<label>アプリの色<select name="theme"><option value="">緑（標準）</option>'+Object.keys(THEMES).map(k=>'<option value="'+k+'"'+(((c.settings||{}).theme||'')===k?' selected':'')+'>'+THEMES[k].label+'</option>').join('')+'</select></label><div class="macts"><button class="btn pri" type="submit">院の情報を保存</button></div></form>'+
  '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><form id="passForm" class="form"><h3 style="margin:0">パスコードを変える</h3>'+pw('op','今のパスコード','current-password')+lenSel('plen2',6)+pw('np1','新しいパスコード（数字）','new-password')+pw('np2','新しいパスコードをもう一度','new-password')+
  '<p class="note" style="margin:0">変えると、この端末以外はもう一度ログインが必要になります（スマホをなくしたときにも使えます）。</p><div class="macts"><button class="btn" type="submit">パスコードを変える</button></div></form>'+
- (c.is_admin?'':'<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><label class="chk"><input type="checkbox" id="shareRes"'+(c.share_research?' checked':'')+'> 名前を含まない測定値を、姿勢分析の精度向上のために提供する</label>')+
+ (c.is_admin?'':'<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><label class="chk"><input type="checkbox" id="shareRes"'+(c.share_research?' checked':'')+'> 名前を含まない測定値を、姿勢分析・歩行分析の精度向上のために提供する</label><p class="note" style="margin:6px 0 0">提供するのは骨格の目印の位置と数値だけです。写真・動画・コメントは提供されず、院の中だけに暗号化して保存されます。</p>')+
  '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><div class="macts"><button class="btn" data-act="logout">この端末からログアウト</button><button class="btn" data-act="closeModal">閉じる</button></div>');
  $('#profForm').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),np={name:String(fd.get('name')||'').trim()||c.name,tagline:String(fd.get('tagline')||'').trim(),addr:String(fd.get('addr')||'').trim(),tel:String(fd.get('tel')||'').trim()};
   try{await CL.saveSettings({profile:np,theme:String(fd.get('theme')||'')});applyClinic();toast('院の情報を保存しました')}catch(er){toast('保存できませんでした：'+msg(er))}};
@@ -1478,7 +1480,7 @@ function gSplitPasses(cl){const n=cl.t.length,ar=cl.ar;if(n<10)return [];const d
  const m=[];out.forEach(p=>{const q=m[m.length-1];if(q&&q.v===p.v&&cl.t[p.a]-cl.t[q.b]<=0.3)q.b=p.b;else m.push(Object.assign({},p))});return m}
 function gAnalyzeRound(cl){const n=cl.t.length,out={round:true,v:'round',n,warn:[],passes:[],ok:false};const ps=gSplitPasses(cl);
  if(!ps.length){out.warn.push('こちらへ歩く・向こうへ歩く部分を見つけられませんでした。歩く道のまっすぐ正面から、頭からつま先まで写るように撮ってください。');return out}
- ps.forEach(p=>{const sub={v:p.v,ar:cl.ar,t:cl.t.slice(p.a,p.b+1),P:cl.P.slice(p.a,p.b+1),url:cl.url,vw:cl.vw,vh:cl.vh};out.passes.push({off:p.a,cl:sub,r:gAnalyzeClip(sub,{minDur:0.8,pass:true})})});
+ ps.forEach(p=>{const sub={v:p.v,ar:cl.ar,t:cl.t.slice(p.a,p.b+1),P:cl.P.slice(p.a,p.b+1),url:cl.url,vw:cl.vw,vh:cl.vh,voff:cl.voff};out.passes.push({off:p.a,cl:sub,r:gAnalyzeClip(sub,{minDur:0.8,pass:true})})});
  const okP=out.passes.filter(p=>p.r.ok);out.ok=okP.length>0;if(!out.ok){out.warn.push('歩いている部分の足の着地をうまく検出できませんでした。頭からつま先まで写るように、もう少しゆっくり大きめの歩幅で撮ってください。');return out}
  // 画面表示用に、全体の長さにつなぎ直す
  const nul=()=>Array(n).fill(null);out.S={R:{},L:{}};GJ.forEach(j=>{out.S.R[j]=nul();out.S.L[j]=nul()});out.series={phi:nul(),psi:nul(),K:{R:nul(),L:nul()},sw:{R:nul(),L:nul()}};out.torso=nul();out.hipW=nul();
@@ -1508,7 +1510,7 @@ Object.assign(LIFE,{
  shoesG:['靴のすり減り方と靴選びを見直す','かかとの外側・内側の片減りは、歩き方のクセのサインです。かかとがしっかりした靴を選びましょう。']});
 const gErr=e=>{const m=(e&&(e.message||e.code))||String(e);return /gait_sessions|PGRST205|42P01|does not exist|schema cache/i.test(m)?new Error('歩行分析の保存先がまだ準備されていません（院の管理者による設定が必要です）'):e};
 Object.assign(CL,{
- async listGait(pid){let rows;try{rows=await this.pages(()=>this.sb.from('gait_sessions').select('id,date,sum:data->sum').eq('clinic_id',this.clinic.id).eq('patient_id',pid).order('date'))}catch(e){throw gErr(e)}return rows.map(r=>({id:r.id,date:r.date,sum:r.sum||null}))},
+ async listGait(pid){let rows;try{rows=await this.pages(()=>this.sb.from('gait_sessions').select('id,date,sum:data->sum,vids:data->vids').eq('clinic_id',this.clinic.id).eq('patient_id',pid).order('date'))}catch(e){throw gErr(e)}return rows.map(r=>({id:r.id,date:r.date,sum:r.sum||null,hv:!!(r.vids&&Object.keys(r.vids).length)}))},
  async getGait(sid){const {data,error}=await this.sb.from('gait_sessions').select('id,date,data,enc').eq('id',sid).eq('clinic_id',this.clinic.id).maybeSingle();if(error)throw gErr(error);if(!data)throw new Error('記録が見つかりませんでした');
   const e=await this.dec(data.enc);return Object.assign({},data.data,{id:data.id,date:data.date,comment:e._locked?'':(e.comment!=null?e.comment:'')})},
  async saveGait(pid,sid,b){const data=JSON.parse(JSON.stringify(b)),comment=data.comment||'';delete data.comment;delete data.id;
@@ -1516,7 +1518,7 @@ Object.assign(CL,{
  async deleteGait(pid,sid){const {error}=await this.sb.from('gait_sessions').delete().eq('id',sid).eq('clinic_id',this.clinic.id);if(error)throw gErr(error)}});
 const gByDate=a=>a.sort((x,y)=>String(y.date).localeCompare(String(x.date)));
 Object.assign(Store,{
- async listGait(pid){if(this.mode==='cloud')return gByDate(await CL.listGait(pid));if(this.mode==='gas')return [];return gByDate(((MEM.gait||{})[pid]||[]).map(x=>({id:x.id,date:x.date,sum:x.sum||null})))},
+ async listGait(pid){if(this.mode==='cloud')return gByDate(await CL.listGait(pid));if(this.mode==='gas')return [];return gByDate(((MEM.gait||{})[pid]||[]).map(x=>({id:x.id,date:x.date,sum:x.sum||null,hv:!!(x.vids&&Object.keys(x.vids).length)})))},
  async getGait(pid,sid){if(this.mode==='cloud')return CL.getGait(sid);const x=((MEM.gait||{})[pid]||[]).find(s=>s.id===sid);if(!x)throw new Error('記録が見つかりませんでした');return JSON.parse(JSON.stringify(x))},
  async saveGait(pid,sid,b){if(this.mode==='cloud')return CL.saveGait(pid,sid,b);if(this.mode==='gas')throw new Error('この環境では歩行分析の記録を保存できません');
   const G=MEM.gait||(MEM.gait={}),a=G[pid]||(G[pid]=[]),r=Object.assign({id:sid},JSON.parse(JSON.stringify(b))),i=a.findIndex(x=>x.id===sid);if(i>=0)a[i]=r;else a.push(r);persist()},
@@ -1536,8 +1538,8 @@ async function gLoadVideo(url){const v=document.createElement('video');v.muted=t
  let dur=v.duration;if(!isFinite(dur)||!dur){v.currentTime=1e7;await gWait(v,'seeked',5000);dur=v.currentTime}
  return {v,dur}}
 async function gSeek(v,t){const fr='requestVideoFrameCallback' in v?new Promise(r=>v.requestVideoFrameCallback(()=>r())):null;v.currentTime=t;await gWait(v,'seeked',5000);if(fr)await Promise.race([fr,gSleep(60)])}
-function gPlayTo(v,t){return new Promise((res,rej)=>{let done=false;const fin=(f,x)=>{if(done)return;done=true;clearTimeout(to);try{v.pause()}catch(e){}f(x)},to=setTimeout(()=>fin(rej,new Error('動画を再生できませんでした')),8000);
- const cb=(now,m)=>{if(done)return;if(m.mediaTime>=t-0.004||v.ended)fin(res,m.mediaTime);else v.requestVideoFrameCallback(cb)};
+function gPlayTo(v,t,snap){return new Promise((res,rej)=>{let done=false;const fin=(f,x)=>{if(done)return;done=true;clearTimeout(to);try{v.pause()}catch(e){}f(x)},to=setTimeout(()=>fin(rej,new Error('動画を再生できませんでした')),8000);
+ const cb=(now,m)=>{if(done)return;if(m.mediaTime>=t-0.004||v.ended){if(snap){try{snap()}catch(e){}}fin(res,m.mediaTime)}else v.requestVideoFrameCallback(cb)};
  if(v.ended){fin(res,v.currentTime);return}v.requestVideoFrameCallback(cb);const pr=v.play();if(pr&&pr.catch)pr.catch(e=>fin(rej,e))})}
 function gRunVideo(p,fn){const run=async()=>{try{p.setOptions({staticImageMode:false,smoothLandmarks:true})}catch(e){}try{p.reset()}catch(e){}
   const send=cv=>new Promise((res,rej)=>{let done=false;p.onResults(r=>{done=true;res(r)});p.send({image:cv}).catch(rej);setTimeout(()=>{if(!done)rej(new Error('解析に時間がかかりすぎました'))},40000)});
@@ -1545,19 +1547,20 @@ function gRunVideo(p,fn){const run=async()=>{try{p.setOptions({staticImageMode:f
  const r=queue.then(run,run);queue=r.catch(()=>{});return r}
 function gProg(k){const b=st.gbusy[k];if(!b||st.gtab!==k)return;const el=$('#gprog');if(el)el.textContent=b.txt;const bar=$('#gbar');if(bar)bar.style.width=Math.round((b.p||0)*100)+'%'}
 async function gExtract(k,file){const g=st.gc;if(!g)return;st.gbusy[k]={p:0,txt:'動画を読み込んでいます…'};st.gerr[k]='';render();
- const url=URL.createObjectURL(file),token={stop:false};gCancel=token;let V=null,keep=false;
+ const url=URL.createObjectURL(file),token={stop:false};gCancel=token;let V=null,keep=false,VE=null;
  try{const eng=ensureEngine();V=await gLoadVideo(url);const v=V.v,dur=V.dur;
   if(!(dur>1))throw new Error('動画が短すぎます。歩き始めから止まるまで（5〜6m）を撮ってください');
   const vw=v.videoWidth,vh=v.videoHeight;if(!vw||!vh)throw new Error('動画の大きさを読み取れませんでした');
   const lim=k==='round'?30:15,win=Math.min(dur,lim),step=Math.max(1/30,win/(k==='round'?480:300)),sc=Math.min(1,720/Math.max(vw,vh)),cv=document.createElement('canvas');cv.width=Math.round(vw*sc);cv.height=Math.round(vh*sc);const cx=cv.getContext('2d');
   if(st.engine!=='ready'){st.gbusy[k]={p:0,txt:'高精度AIモデルを準備しています（初回は約30MBを読み込みます）…'};gProg(k)}
-  const p=await eng;let times=[];for(let t=Math.min(0.03,step/2);t<win-0.02;t+=step)times.push(t);
+  const veP=gVidStart(vw,vh,1/step);const p=await eng;VE=await veP;let times=[];for(let t=Math.min(0.03,step/2);t<win-0.02;t+=step)times.push(t);
   const P=[],T=[],t0=performance.now(),F=window.__gForce||{},CAL=6,sk=[],inf=[];let mode=F.mode==='play'?'play':'seek',lite=false,note='';
   const med=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[b.length>>1]:0};
   await gRunVideo(p,async send=>{let i=0;
    while(i<times.length){if(token.stop)throw new Error('__cancel');const ta=performance.now();let mt=times[i];
-    if(mode==='play'){try{mt=await gPlayTo(v,times[i])}catch(e){mode='seek';await gSeek(v,times[i]);mt=times[i]}}else await gSeek(v,times[i]);
-    const tb=performance.now();cx.drawImage(v,0,0,cv.width,cv.height);const r=await send(cv);const tc=performance.now();
+    let snapped=false;const snap=()=>{cx.drawImage(v,0,0,cv.width,cv.height);if(VE)VE.draw(v);snapped=true};
+    if(mode==='play'){try{mt=await gPlayTo(v,times[i],snap)}catch(e){mode='seek';snapped=false;await gSeek(v,times[i]);mt=times[i]}}else await gSeek(v,times[i]);
+    const tb=performance.now();if(!snapped)snap();const r=await send(cv);const tc=performance.now();if(VE)await VE.add(mt,step);
     if(i<CAL){sk.push(tb-ta);inf.push(tc-tb)}
     const lm=r&&r.poseLandmarks;P.push(GK.map(j=>{const q=lm&&lm[j];return q&&(q.visibility==null||q.visibility>=0.3)?[q.x,q.y]:null}));T.push(mt);i++;
     if(i===CAL&&i<times.length){// 端末の速さに合わせて、動画の読み方・AIの重さ・コマ数を決める
@@ -1570,12 +1573,12 @@ async function gExtract(k,file){const g=st.gc;if(!g)return;st.gbusy[k]={p:0,txt:
     st.gbusy[k]={p:i/times.length,txt:'AIが歩き方を解析しています… '+Math.round(i/times.length*100)+'%'+(i>CAL+2?'（あと約'+Math.max(1,Math.round(rem))+'秒）':'')+(lite&&i>CAL?' ・この端末に合わせて軽めの解析にしています':'')};gProg(k)}});
   if(window.__gStat)window.__gStat({mode,lite,frames:times.length,seek:med(sk),infer:med(inf),total:(performance.now()-t0)/1000,note});
   if(!P.some(fr=>fr[GI[23]]&&fr[GI[24]]))throw new Error('人の体を見つけられませんでした。明るい場所で、全身が写るように撮ってください');
-  const un=gUnpackClip(gPackClip({v:k,ar:vw/vh,t:T,P}));un.url=url;un.vw=vw;un.vh=vh;un.cut=dur>lim+0.5;
+  const un=gUnpackClip(gPackClip({v:k,ar:vw/vh,t:T,P}));un.url=url;un.vw=vw;un.vh=vh;un.cut=dur>lim+0.5;if(VE){st.gbusy[k]={p:1,txt:'動画をまとめています…'};gProg(k);un.venc=await VE.done();VE=null}
   const r=gAnalyze(k,un);un.face=r.face;if(un.cut)r.warn.push('動画が長いため、はじめの'+lim+'秒だけを分析しました。');
   const old=g.clips[k];if(old&&old.url)URL.revokeObjectURL(old.url);g.clips[k]=un;g.res[k]=r;keep=true;if(g.saved)g.dirty=true;
   if(!r.ok)st.gerr[k]=r.warn[0]||'歩き方をうまく解析できませんでした。撮り方を確認して撮り直してください'}
  catch(e){if(msg(e)!=='__cancel')st.gerr[k]=msg(e)}
- finally{if(!keep)URL.revokeObjectURL(url);if(V&&V.v){try{V.v.removeAttribute('src');V.v.load()}catch(_){}}st.gbusy[k]=null;if(gCancel===token)gCancel=null}
+ finally{if(VE)VE.abort();if(!keep)URL.revokeObjectURL(url);if(V&&V.v){try{V.v.removeAttribute('src');V.v.load()}catch(_){}}st.gbusy[k]=null;if(gCancel===token)gCancel=null}
  if(st.view==='gait')render()}
 
 /* --- アプリ内で高画質に撮影（スマホ標準の撮影画面は画質を落とすことがあるため） --- */
@@ -1637,7 +1640,7 @@ function gMountPlayer(el,cl,r,opt){opt=opt||{};if(!el||!cl)return;if(el.__gp){tr
  el.innerHTML='<div class="gpbox'+(has?'':' stick')+'">'+(has?'<video playsinline muted preload="auto"></video>':'')+'<canvas aria-label="骨格の動き"></canvas></div>'+
   '<div class="gpctl'+(opt.compact?' cmp':'')+'"><button class="btn" data-g="pp" type="button">▶ 再生</button><select data-g="rate" aria-label="再生の速さ"><option value="1">等速</option><option value="0.5" selected>1/2の速さ</option><option value="0.25">1/4の速さ</option></select>'+
   '<button class="btn" data-g="prev" type="button" aria-label="1コマ戻す">◀</button><button class="btn" data-g="next" type="button" aria-label="1コマ進める">▶</button><input type="range" data-g="pos" min="0" max="1000" value="0" aria-label="再生位置"></div>'+
-  (has||opt.compact?'':'<p class="note">動画は保存していないため、骨格の動きだけを再生しています。</p>');
+  (has||opt.compact||opt.stick?'':'<p class="note">'+(cl.vload?'保存した動画を読み込んでいます…（読み込むまで骨格の動きを再生します）':cl.verr?'動画を読み込めなかったため、骨格の動きだけを再生しています（'+esc(cl.verr)+'）':'動画は保存していないため、骨格の動きだけを再生しています。')+'</p>');
  const box=el.querySelector('.gpbox'),cv=box.querySelector('canvas'),vid=box.querySelector('video'),pp=el.querySelector('[data-g=pp]'),rate=el.querySelector('[data-g=rate]'),pos=el.querySelector('[data-g=pos]');
  const cs=getComputedStyle(el),maxH=Math.min(window.innerHeight*0.62,640),W0=el.getBoundingClientRect().width-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-2,bar=has?ar:0.75,w=Math.max(120,Math.min(W0,maxH*bar)),h=Math.round(w/bar);box.style.width=Math.round(w)+'px';box.style.height=h+'px';
  const ctx=fitCanvas(cv,Math.round(w),h);cv.style.position='absolute';
@@ -1659,9 +1662,10 @@ function gMountPlayer(el,cl,r,opt){opt=opt||{};if(!el||!cl)return;if(el.__gp){tr
   if(gvEl){const S=r.series,PS=G0&&G0.ref.r.series,j=G0&&G0.j;const row=(lab,fn,a,b)=>'<div><b>'+lab+'</b><span class="now">今回 '+fn(a)+'</span><span class="pv">前回 '+(G0?fn(b):'—')+'</span></div>';
    const ps=part==='all'?['pelvis','trunk']:[part];gvEl.innerHTML=ps.map(pp=>pp==='pelvis'?row('骨盤',gAng.pelvis,S&&S.phi[i],PS&&PS.phi[j]):pp==='trunk'?row('上半身',gAng.trunk,S&&S.psi[i],PS&&PS.psi[j]):row('右膝',gAng.knee,S&&S.K.R[i],PS&&PS.K.R[j])+row('左膝',gAng.knee,S&&S.K.L[i],PS&&PS.K.L[j])).join('')+'<small>'+(gStance(r,'R',i)&&!gStance(r,'L',i)?'右脚で立っている瞬間':gStance(r,'L',i)&&!gStance(r,'R',i)?'左脚で立っている瞬間':'両足がついている瞬間')+'</small>'}
   pos.value=Math.round((t-tA)/((tB-tA)||1)*1000)};
- const now=()=>has?vid.currentTime:clock;
- const setT=t=>{t=clamp(t,tA,tB);if(has){vid.currentTime=t}else clock=t;cur=-1;draw(t)};
- const loop=ts=>{if(!alive)return;if(playing){if(has){if(vid.currentTime>=tB-0.01||vid.ended){vid.currentTime=tA}}else{const dt=last?(ts-last)/1000:0;clock+=dt*parseFloat(rate.value);if(clock>tB)clock=tA}}last=ts;draw(now());raf=requestAnimationFrame(loop)};
+ const vo=has?(cl.voff||0):0,ve=0.001,vt=t=>Math.max(0,t-vo+ve);
+ const now=()=>has?vid.currentTime+vo:clock;
+ const setT=t=>{t=clamp(t,tA,tB);if(has){vid.currentTime=vt(t)}else clock=t;cur=-1;draw(t)};
+ const loop=ts=>{if(!alive)return;if(playing){if(has){if(now()>=tB-0.01||vid.ended){vid.currentTime=vt(tA)}}else{const dt=last?(ts-last)/1000:0;clock+=dt*parseFloat(rate.value);if(clock>tB)clock=tA}}last=ts;draw(now());raf=requestAnimationFrame(loop)};
  const play=()=>{playing=true;last=0;pp.textContent='❚❚ 一時停止';if(has){vid.playbackRate=parseFloat(rate.value);const p=vid.play();if(p&&p.catch)p.catch(()=>{})}};
  const pause=()=>{playing=false;pp.textContent='▶ 再生';if(has)vid.pause()};
  pp.onclick=()=>playing?pause():play();rate.onchange=()=>{if(has)vid.playbackRate=parseFloat(rate.value)};
@@ -1702,7 +1706,7 @@ const gAng={pelvis:v=>v==null?'—':(Math.abs(v)<0.3?'水平':(v>=0?'左':'右')
 /* 決めの1コマ（片脚で立った瞬間）を切り出して、線と角度を書き込む */
 const gFrameCache={};
 async function gFrameAt(cl,t){const key=cl.url+'|'+t;if(gFrameCache[key])return gFrameCache[key];
- const job=(async()=>{const V=await gLoadVideo(cl.url);try{await gSeek(V.v,t);const c=document.createElement('canvas'),sc=Math.min(1,1920/Math.max(cl.vw,cl.vh));c.width=Math.round(cl.vw*sc);c.height=Math.round(cl.vh*sc);c.getContext('2d').drawImage(V.v,0,0,c.width,c.height);return c}finally{try{V.v.removeAttribute('src');V.v.load()}catch(e){}}})();
+ const job=(async()=>{const V=await gLoadVideo(cl.url);try{await gSeek(V.v,Math.max(0,t-(cl.voff||0)+0.001));const c=document.createElement('canvas'),sc=Math.min(1,1920/Math.max(cl.vw,cl.vh));c.width=Math.round(cl.vw*sc);c.height=Math.round(cl.vh*sc);c.getContext('2d').drawImage(V.v,0,0,c.width,c.height);return c}finally{try{V.v.removeAttribute('src');V.v.load()}catch(e){}}})();
  gFrameCache[key]=job;job.catch(()=>{delete gFrameCache[key]});return job}
 function gTag(ctx,txt,x,y,col,fs,W){ctx.font='700 '+fs+'px "Zen Kaku Gothic New",sans-serif';const tw=ctx.measureText(txt).width,pd=fs*0.4,bw=tw+pd*2,bh=fs+pd*1.4;x=clamp(x-bw/2,4,W-bw-4);ctx.fillStyle='rgba(15,22,19,.82)';rr(ctx,x,y-bh/2,bw,bh,bh/2.4);ctx.fill();ctx.fillStyle=col;ctx.textBaseline='middle';ctx.fillText(txt,x+pd,y+1)}
 async function gDrawKey(cv,k,sd,opt){opt=opt||{};const g=opt.g||st.gc;let cl=g.clips[k],r=g.res[k];if(!cl||!r||!r.ok)return;if(r.round){const kp=r.keyPass&&r.keyPass[sd];if(kp){cl=kp.cl;r=kp.r}}const i=r.key&&r.key[sd]!=null?r.key[sd]:null;const W=opt.W||cv.parentElement.clientWidth,H=Math.round(W*4/3),ctx=opt.W?(()=>{cv.width=W*2;cv.height=H*2;const c=cv.getContext('2d');c.setTransform(2,0,0,2,0,0);return c})():fitCanvas(cv,W,H);
@@ -1857,16 +1861,19 @@ function vGaitRes(){const g=st.gc,rs=GALL.map(o=>g.res[o.k]).filter(Boolean),G=g
  '<div class="card"><h2>前回との比較</h2>'+(others.length?'<label class="hrow"><span>比較する記録</span><select id="gcmpSel" style="width:auto">'+others.map(s=>'<option value="'+esc(s.id)+'"'+(pv&&pv.id===s.id?' selected':'')+'>'+fmtDT(s.date)+'（'+(s.sum.total!=null?s.sum.total:'-')+'点）</option>').join('')+'</select></label>'+
   (ps?'<div class="gcmpplay" id="gcmpPlay">'+(st.gcmpShow===pv.id?'<p class="mut">読み込み中…</p>':'<button class="btn" data-act="gCmpPlay">前回と今回の歩き方を並べて再生</button>')+'</div><table><thead><tr><th>項目</th><th class="r">前回</th><th class="r">今回</th><th class="r">変化</th></tr></thead><tbody><tr><td><b>歩行スコア</b></td><td class="r n">'+(ps.total!=null?ps.total:'-')+'</td><td class="r n">'+(G.total!=null?G.total:'-')+'</td><td class="r">'+(G.total!=null&&ps.total!=null?((G.total-ps.total>=0?'+':'')+(G.total-ps.total)+'点'):'')+'</td></tr>'+cmpRows+'</tbody></table>'+gWorse(g,G,pv):'')
   :'<p class="mut">比較できる記録がまだありません。結果を保存すると、次回からここで前回と並べて比べられます。</p>')+'</div>'+
- '<p class="store">'+(isDemo()?'お試し版では結果を保存しません。院内版では患者さんごとに保存して、前回の歩き方と並べたり重ねたりして比べられます。':'動画そのものは保存せず、骨格の動き（目印の位置）と数値だけを保存します。')+'</p></div>'+
+ (isDemo()?'<p class="store">お試し版では結果を保存しません。院内版では患者さんごとに、実際の動画と骨格の動き・数値を保存して、前回の歩き方と並べたり重ねたりして比べられます。</p>':gVidNote(g))+'</div>'+
  '<div class="actbar"><button class="btn" data-act="gReport">レポート画像を作る</button><button class="btn" data-act="gCopyLine">LINE用の文章をコピー</button><textarea id="gLineTxt" class="vh" tabindex="-1" aria-hidden="true"></textarea>'+(isDemo()?'':st.patient.id?'<button class="btn pri" id="gSaveBtn" data-act="gSave"'+(g.saved&&!g.dirty?' disabled':'')+'>'+(g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存')+'</button>':'<button class="btn pri" data-act="saveTrial">患者さんの記録に保存</button>')+'</div>'}
 
 async function gCmpLoad(id){const c=st.gcmpCache||(st.gcmpCache={});if(c[id])return c[id];const row=await Store.getGait(st.patient.id,id),o={id,date:row.date,clips:{},res:{}};
- for(const k in (row.clips||{})){const u=gUnpackClip(row.clips[k]);o.clips[k]=u;o.res[k]=gAnalyze(k,u)}c[id]=o;return o}
+ for(const k in (row.clips||{})){const u=gUnpackClip(row.clips[k]);o.clips[k]=u;o.res[k]=gAnalyze(k,u);if(row.vids&&row.vids[k]&&GVS.can())u.vmeta=row.vids[k]}c[id]=o;return o}
 async function gCmpMount(){const box=$('#gcmpPlay'),g=st.gc,id=st.gcmpShow;if(!box||!id)return;let pv;try{pv=await gCmpLoad(id)}catch(e){box.innerHTML='<div class="warn">前回の記録を読み込めませんでした：'+esc(msg(e))+'</div>';return}
  if(st.gcmpShow!==id||!document.body.contains(box))return;const ks=GALL.map(o=>o.k).filter(k=>pv.res[k]&&pv.res[k].ok&&g.res[k]&&g.res[k].ok),k=ks.includes(st.gpk)?st.gpk:ks[0];
  if(!k){box.innerHTML='<p class="mut">前回と今回で、同じ向き（前から・後ろから）の動画がないため並べられません。</p>';return}
- box.innerHTML='<p class="note" style="margin-top:0">'+GVL[k]+'の動画どうしを、同じ大きさにそろえて並べています。</p><div class="gpair"><div><b>前回（'+fmtDate(pv.date)+'）</b><div id="gpPrev"></div></div><div><b>今回（'+fmtDate(g.date)+'）</b><div id="gpNow"></div></div></div>';
- gMountPlayer($('#gpPrev'),pv.clips[k],pv.res[k],{stick:true,compact:true});gMountPlayer($('#gpNow'),g.clips[k],g.res[k],{stick:true,compact:true});
+ const canV=GVS.can()&&!!(pv.clips[k].vmeta&&(g.clips[k].url||g.clips[k].vmeta)),useV=canV&&!!st.gcmpVid;
+ if(useV){box.innerHTML='<p class="mut">保存した動画を読み込んでいます…</p>';await Promise.all([gLoadVids(pv),gLoadVids(g)]);if(st.gcmpShow!==id||!document.body.contains(box))return}
+ const vOK=!!(useV&&pv.clips[k].url&&g.clips[k].url);
+ box.innerHTML=(canV?'<div class="gparts" role="radiogroup" aria-label="並べ方"><span>並べ方</span><button type="button" role="radio" aria-checked="'+!vOK+'" class="btn'+(vOK?'':' on')+'" data-act="gCmpVid" data-v="0">骨格（大きさをそろえる）</button><button type="button" role="radio" aria-checked="'+vOK+'" class="btn'+(vOK?' on':'')+'" data-act="gCmpVid" data-v="1">実際の動画</button></div>':'')+'<p class="note" style="margin-top:0">'+(vOK?GVL[k]+'の実際の動画を並べています（色つきの線はAIが読み取った骨格です）。':GVL[k]+'の動画どうしを、同じ大きさにそろえて並べています。'+(useV?'動画を読み込めなかったため、骨格で並べています。':''))+'</p><div class="gpair"><div><b>前回（'+fmtDate(pv.date)+'）</b><div id="gpPrev"></div></div><div><b>今回（'+fmtDate(g.date)+'）</b><div id="gpNow"></div></div></div>';
+ gMountPlayer($('#gpPrev'),pv.clips[k],pv.res[k],{stick:!vOK,compact:true});gMountPlayer($('#gpNow'),g.clips[k],g.res[k],{stick:!vOK,compact:true});
  box.insertAdjacentHTML('beforeend','<h3 style="margin-top:14px">片脚で立った瞬間を前回と比べる</h3><div class="gkeys g4">'+['R','L'].map(sd=>'<figure><canvas class="gkp" data-w="p" data-sd="'+sd+'"></canvas><figcaption><b>前回</b>・'+jpS(sd)+'脚で立った瞬間</figcaption></figure><figure><canvas class="gkp" data-w="n" data-sd="'+sd+'"></canvas><figcaption><b>今回</b>・'+jpS(sd)+'脚で立った瞬間</figcaption></figure>').join('')+'</div><p class="note">どちらも骨格だけで、同じ大きさにそろえています。金の線＝骨盤、緑の線＝上半身、白い点線＝その人の基準。</p>');
  $$('canvas.gkp',box).forEach(cv=>{gDrawKey(cv,k,cv.dataset.sd,{g:cv.dataset.w==='p'?pv:g,photo:false}).catch(()=>{})})}
 function gDemoSend(){const g=st.gc;if(!isDemo()||!CL.sb||st.demoShare===false||!g||g.sent)return;const G=st.gG;if(!G||!G.n)return;g.sent=true;
@@ -1882,11 +1889,11 @@ function gPack(g,G){const clips={};GALL.forEach(o=>{const c=g.clips[o.k];if(c&&g
  return {ver:1,date:g.date,ageBand:p.ageBand||null,sex:p.sex||null,height:p.height||null,comment:g.comment||'',care:g.care||null,clips,sum:gSum(G)}}
 async function gSave(){const g=st.gc,p=st.patient;if(!g||!p||!p.id)return;const G=gCombine(GALL.map(o=>g.res[o.k]).filter(Boolean));if(!G.n){toast('分析できた動画がありません');return}
  const b=$('#gSaveBtn');if(b){b.disabled=true;b.textContent='保存中…'}
- try{const body=gPack(g,G);await Store.saveGait(p.id,g.id,body);st.gaitList=gByDate([{id:g.id,date:g.date,sum:body.sum}].concat((st.gaitList||[]).filter(x=>x.id!==g.id)));g.saved=true;g.dirty=false;toast('保存しました')}
+ try{const body=gPack(g,G),V=await gUpVids(g,body,b);if(Object.keys(V.vids).length)body.vids=V.vids;if(b)b.textContent='保存中…';await Store.saveGait(p.id,g.id,body);st.gaitList=gByDate([{id:g.id,date:g.date,sum:body.sum,hv:!!body.vids}].concat((st.gaitList||[]).filter(x=>x.id!==g.id)));g.saved=true;g.dirty=false;toast(V.fail.length?'骨格と数値は保存しました（動画は保存できませんでした：'+V.fail[0]+'）':'保存しました'+(body.vids?'（動画も保存）':''));const n=$('#gvNote');if(n)n.outerHTML=gVidNote(g)}
  catch(e){toast('保存できませんでした：'+msg(e))}
  if(st.view==='gres'){const btn=$('#gSaveBtn');if(btn){btn.disabled=g.saved&&!g.dirty;btn.textContent=g.saved?(g.dirty?'変更を保存':'保存済み ✓'):'結果を保存'}else render()}}
 async function gOpenHist(id){const row=await Store.getGait(st.patient.id,id);const g={id:row.id,date:row.date,clips:{},res:{},comment:row.comment==null?null:row.comment,care:row.care||null,saved:true,dirty:false,fromHistory:true};
- for(const k in (row.clips||{})){const un=gUnpackClip(row.clips[k]);g.clips[k]=un;g.res[k]=gAnalyze(k,un)}st.gc=g;st.gcmpId=null;st.gcmpShow=null;st.gpk=null;go('gres')}
+ for(const k in (row.clips||{})){const un=gUnpackClip(row.clips[k]);g.clips[k]=un;g.res[k]=gAnalyze(k,un);if(row.vids&&row.vids[k]&&GVS.can()){un.vmeta=row.vids[k];un.vload=true}}st.gc=g;st.gcmpId=null;st.gcmpShow=null;st.gcmpVid=false;st.gpk=null;go('gres');gLoadVids(g)}
 function gLineText(){const g=st.gc,G=st.gG||gCombine(GALL.map(o=>g.res[o.k]).filter(Boolean)),n=st.patient.id?st.patient.name+'様':'',C=gCareFrom(G),sel=gCareSel(g,C);
  const ex=sel.ex.filter(id=>EX[id]),lf=sel.life.filter(id=>LIFE[id]);
  return '【歩行分析の結果】'+n+'（'+fmtDate(g.date)+'）\n歩行スコア '+(G.total!=null?G.total:'-')+'点\n'+(G.cad!=null?'歩くリズム：約'+Math.round(G.cad)+'歩/分\n':'')+
@@ -1996,6 +2003,72 @@ function gTrendSVG(list){const a=list.filter(s=>s.sum&&s.sum.total!=null).slice(
  s+='<polyline fill="none" stroke="var(--g2)" stroke-width="2.5" points="'+a.map((x,i)=>X(i).toFixed(1)+','+Y(Math.max(30,x.sum.total)).toFixed(1)).join(' ')+'"/>';
  a.forEach((x,i)=>{s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(Math.max(30,x.sum.total)).toFixed(1)+'" r="5" fill="var(--'+band(x.sum.total)+')"/><text x="'+X(i).toFixed(1)+'" y="'+(Y(Math.max(30,x.sum.total))-10).toFixed(1)+'" font-size="12" text-anchor="middle" fill="var(--ink)">'+x.sum.total+'</text><text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" font-size="11" text-anchor="middle" fill="var(--mut)">'+(new Date(x.date).getMonth()+1)+'/'+new Date(x.date).getDate()+'</text>'});
  return s+'</svg>'}
+
+/* ---------- 歩行動画の保存：解析したコマを小さなMP4にまとめ、院ごとの鍵で暗号化して保存 ---------- */
+const GMUX='https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js',GVMAX=960,GVKEY=15,GVLIM=45*1024*1024;
+let gMuxP=null;
+function gLoadMux(){if(window.Mp4Muxer)return Promise.resolve(window.Mp4Muxer);if(gMuxP)return gMuxP;
+ gMuxP=new Promise((res,rej)=>{const s=document.createElement('script');s.src=GMUX;s.crossOrigin='anonymous';s.onload=()=>window.Mp4Muxer?res(window.Mp4Muxer):rej(new Error('mux'));s.onerror=()=>rej(new Error('mux'));document.head.appendChild(s)});
+ gMuxP.catch(()=>{gMuxP=null});return gMuxP}
+const gVErr=e=>{const m=(e&&(e.message||e.error||e.statusCode))||String(e);return /bucket|not found|404/i.test(String(m))?new Error('動画の保存先がまだ準備されていません'):e};
+Object.assign(CL,{
+ vidPath(sid,k){return this.clinic.id+'/'+sid+'/'+k+'.bin'},
+ async putGaitVid(sid,k,blob){const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},this.dek,await blob.arrayBuffer())),b=new Uint8Array(12+ct.length);b.set(iv);b.set(ct,12);
+  const {error}=await this.sb.storage.from('videos').upload(this.vidPath(sid,k),new Blob([b],{type:'application/octet-stream'}),{upsert:true,contentType:'application/octet-stream'});if(error)throw gVErr(error)},
+ async getGaitVid(sid,k,type){const {data,error}=await this.sb.storage.from('videos').download(this.vidPath(sid,k));if(error)throw gVErr(error);const b=new Uint8Array(await data.arrayBuffer());
+  return new Blob([await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},this.dek,b.slice(12))],{type:type||'video/mp4'})},
+ async delGaitVids(sids){const paths=[];(sids||[]).forEach(x=>GALL.forEach(o=>paths.push(this.vidPath(x,o.k))));if(!paths.length)return;try{await this.sb.storage.from('videos').remove(paths)}catch(e){}}});
+{const _del=CL.deleteGait;CL.deleteGait=async function(pid,sid){await _del.call(this,pid,sid);await this.delGaitVids([sid])}}
+{const _delP=CL.deletePatient;if(_delP)CL.deletePatient=async function(id){let gids=[];try{const r=await this.sb.from('gait_sessions').select('id').eq('clinic_id',this.clinic.id).eq('patient_id',id);gids=(r.data||[]).map(x=>x.id)}catch(e){}
+ await _delP.call(this,id);await this.delGaitVids(gids)}}
+// 保存先（院内版のクラウド保存のときだけ動画を保存。お試し版・端末内保存では保存しない）
+const GVS={can:()=>!isDemo()&&Store.mode==='cloud'&&!!(CL.sb&&CL.dek&&CL.clinic),put:(sid,k,b)=>CL.putGaitVid(sid,k,b),get:(sid,k,t)=>CL.getGaitVid(sid,k,t)};
+const gVidCan=()=>GVS.can()&&typeof VideoEncoder!=='undefined'&&typeof VideoFrame!=='undefined';
+const gVidOn=()=>{try{return localStorage.getItem('gvidsave')!=='0'}catch(e){return true}};
+const gMB=b=>(b/1048576).toFixed(b<1048576*10?1:0);
+
+// 解析と同じコマを圧縮していく（骨格と動画のコマがぴったり一致する）
+async function gVidStart(vw,vh,fps){if(!gVidCan())return null;
+ try{const MX=await gLoadMux(),sc=Math.min(1,GVMAX/Math.max(vw,vh)),w=Math.max(2,2*Math.round(vw*sc/2)),h=Math.max(2,2*Math.round(vh*sc/2)),fr=clamp(fps,5,60),br=Math.round(clamp(w*h*fr*0.11,6e5,2.4e6));
+  const cands=[['avc','avc1.42001f'],['avc','avc1.4d001f'],['avc','avc1.640028'],['vp9','vp09.00.31.08'],['av1','av01.0.04M.08']];let cfg=null,mc=null;
+  for(const [m,c] of cands){const o={codec:c,width:w,height:h,bitrate:br,framerate:fr};if(m==='avc')o.avc={format:'avc'};try{const s=await VideoEncoder.isConfigSupported(o);if(s&&s.supported){cfg=o;mc=m;break}}catch(e){}}
+  if(!cfg)return null;
+  const tgt=new MX.ArrayBufferTarget(),mux=new MX.Muxer({target:tgt,video:{codec:mc,width:w,height:h},fastStart:'in-memory',firstTimestampBehavior:'offset'});
+  let err=null,n=0,t0=null,lm=null;const enc=new VideoEncoder({output:(ch,meta)=>{try{mux.addVideoChunk(ch,meta)}catch(e){err=e}},error:e=>{err=e}});enc.configure(cfg);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d');
+  return {w,h,
+   draw(v){if(!err)try{cx.drawImage(v,0,0,w,h)}catch(e){err=e}},
+   async add(t,dur){if(err)return;const ms=Math.round(t*1000);if(lm!=null&&ms<=lm)return;lm=ms;if(t0==null)t0=ms;let f=null;
+    try{f=new VideoFrame(cv,{timestamp:ms*1000,duration:Math.max(1,Math.round(dur*1e6))});enc.encode(f,{keyFrame:n%GVKEY===0});n++}catch(e){err=e}finally{if(f)f.close()}
+    let k=0;while(enc.encodeQueueSize>3&&k++<400)await gSleep(5)},
+   async done(){try{if(err||!n)throw err||new Error('empty');await enc.flush();enc.close();if(err)throw err;mux.finalize();const blob=new Blob([tgt.buffer],{type:'video/mp4'});
+     return blob.size>GVLIM?null:{blob,w,h,voff:t0/1000,n,mime:'video/mp4',codec:cfg.codec}}catch(e){try{enc.close()}catch(_){}return null}},
+   abort(){try{enc.close()}catch(e){}}}}
+ catch(e){return null}}
+
+// 保存した動画を読み込んで、骨格・決めの1コマ・レポートにつなぐ
+function gSetVid(g,k,url,m){const c=g.clips[k];if(!c)return;const o={url,vw:m.w,vh:m.h,voff:m.voff||0};Object.assign(c,o);const r=g.res[k];if(r&&r.passes)r.passes.forEach(p=>{if(p.cl)Object.assign(p.cl,o)})}
+function gLoadVids(g){const ks=Object.keys(g.clips||{}).filter(k=>g.clips[k].vmeta&&!g.clips[k].url);
+ return Promise.all(ks.map(k=>{const c=g.clips[k];if(!c.vp)c.vp=(async()=>{c.vload=true;c.verr='';try{const blob=await GVS.get(g.id,k,c.vmeta.mime);gSetVid(g,k,URL.createObjectURL(blob),c.vmeta)}catch(e){c.verr=msg(e)}finally{c.vload=false}gVidRefresh(g,k)})();return c.vp}))}
+function gVidRefresh(g,k){if(st.gc!==g||st.view!=='gres')return;
+ if(st.gpk===k){if(st.gghost)gMountRes();else gMountPlayer($('#gp_res'),g.clips[k],g.res[k])}
+ $$('canvas.gkey').forEach(cv=>{if(cv.dataset.k===k)gDrawKey(cv,k,cv.dataset.sd).catch(()=>{})});const n=$('#gvNote');if(n)n.outerHTML=gVidNote(g)}
+// 結果画面の「保存について」
+function gVidNote(g){const ks=Object.keys(g.clips).filter(k=>g.res[k]&&g.res[k].ok);
+ if(!GVS.can())return '<p class="store" id="gvNote">動画そのものは保存せず、骨格の動き（目印の位置）と数値だけを保存します。</p>';
+ const kept=ks.filter(k=>g.clips[k].vmeta),fresh=ks.filter(k=>g.clips[k].venc&&!g.clips[k].vmeta),none=ks.filter(k=>!g.clips[k].vmeta&&!g.clips[k].venc),sz=fresh.reduce((a,k)=>a+g.clips[k].venc.blob.size,0);
+ const nm=a=>a.length<ks.length?a.map(k=>GVL[k]).join('・')+'の':'',nt=none.length?(g.fromHistory&&!fresh.length?nm(none)+'動画は保存されていないため、骨格の動き（目印の位置）と数値だけを表示しています。':'この端末のブラウザでは'+nm(none)+'動画をまとめられなかったため、骨格の動き（目印の位置）と数値だけを保存します。'):'';
+ if(!fresh.length)return ks.length?'<p class="store" id="gvNote">'+(kept.length?nm(kept)+'実際の動画も保存されています（院ごとの鍵で暗号化）。':'')+(kept.length&&nt?'<br>':'')+nt+'</p>':'<p class="store" id="gvNote"></p>';
+ return '<div class="store gvs" id="gvNote"><label class="gvchk"><input type="checkbox" id="gvsave"'+(gVidOn()?' checked':'')+'> 実際の動画も保存する（約'+gMB(sz)+'MB）</label>'+
+  '<p>動画は院ごとの鍵で暗号化し、見返しやすい大きさにまとめて保存します。次回から、実際の動画で見返したり前回と並べたりできます。'+(nt?'<br>'+nt:'')+'</p></div>'}
+// 保存：先に動画を送り、うまくいったものだけ記録に書く
+async function gUpVids(g,body,btn){const out={},fail=[];if(!GVS.can())return {vids:out,fail};
+ for(const k of Object.keys(body.clips)){const c=g.clips[k];if(c.vmeta){out[k]=c.vmeta;continue}
+  if(!c.venc||!gVidOn())continue;if(btn)btn.textContent='動画を保存中…（'+GVL[k]+'）';
+  try{await GVS.put(g.id,k,c.venc.blob);c.vmeta={w:c.venc.w,h:c.venc.h,voff:c.venc.voff,bytes:c.venc.blob.size,mime:c.venc.mime,n:c.venc.n};out[k]=c.vmeta}catch(e){fail.push(msg(e))}}
+ return {vids:out,fail}}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='gvsave'){try{localStorage.setItem('gvidsave',e.target.checked?'1':'0')}catch(_){}gMarkDirty()}});
+Object.assign(ACT,{gCmpVid:b=>{st.gcmpVid=b.dataset.v==='1';gCmpMount()}});
 
 /* ---------- 悪くなったときの理由（姿勢・歩行の前回比較） ---------- */
 const WR={
@@ -2115,7 +2188,7 @@ function pcClose(){clearTimeout(PC.cdT);PC.cd=0;if(LV.el===PC.el)lvStop();try{wi
  if(PC.stream)PC.stream.getTracks().forEach(t=>t.stop());if(PC.el)PC.el.remove();PC.el=null;PC.stream=null;if(!GR.el)document.documentElement.classList.remove('grlock')}
 Object.assign(ACT,{pCam:()=>{const k=st.tab;if(st.busy[k])return;st.err[k]='';pcStart(k)},pCamShot:()=>pcShot(),pCamClose:()=>pcClose()});
 
-window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,runLocalMigration,repPages,makePdf,loadPhotos,photoBlob,doSave:()=>doSave(),gait:{gAnalyzeClip,gAnalyze,gCombine,gUnpackClip,gPackClip,gExtract,gaitOn,gSave,gLineText,gOpenHist,newGait,pWorse,gWorse}};
+window.__app={st,analyze,ACT,Store,makeReport,lineText,estimateRoll,detectRobust,snapMarkers,loadImg,getCfg:()=>CFG,setCfg:c=>{CFG=c},calFit,calSamples,specOf,CL,CRY,getProfile:()=>PROFILE,runPendingImports,runLocalMigration,repPages,makePdf,loadPhotos,photoBlob,doSave:()=>doSave(),gait:{gAnalyzeClip,gAnalyze,gCombine,gUnpackClip,gPackClip,gExtract,gaitOn,gSave,gLineText,gOpenHist,newGait,pWorse,gWorse,GVS,gVidStart,gLoadVids,gVidNote}};
 (async()=>{try{if(!isDemo())applyTheme(localStorage.getItem('shisei-theme')||'',false)}catch(e){}NAV.init();render();await Store.init();
  if(Store.mode==='cloud'){try{const prm=await urlParams();let last='';try{last=localStorage.getItem('shisei-last-code')||''}catch(e){}st.lockCode=String(prm.clinic||last||'').toLowerCase();PROFILE={name:'',tagline:''};if(prm.clinic&&st.lockCode){try{const br=await CL.sb.rpc('clinic_brand',{p_code:st.lockCode});if(br&&br.data){applyTheme(br.data.theme||'',false);PROFILE={name:br.data.name||'',tagline:''}}}catch(e){}}updBrand();
   const c=await CL.me();if(c&&(c.must_change||!CL.dekRaw)){PROFILE={name:(c.settings&&c.settings.profile&&c.settings.profile.name)||c.name,tagline:''};applyTheme((c.settings||{}).theme||'',false);updBrand()}if(!c){st.lock={mode:'login'};st.loading=false;go('lock');return}await CL.loadLocalDek();
