@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #214d3d;
+  --color-brand-700: #1a3e31;
+  --color-brand-600: #2b604c;
+  --color-brand-100: #dce8e2;
+  --color-brand-50: #eef4f1;
+  --color-sage: #7f9f8c;
+  --color-sage-200: #cfdcd4;
+  --color-sage-100: #e6eee9;
+  --color-beige: #f5f0e7;
+  --color-beige-200: #e9e0cf;
+  --color-beige-50: #fbf8f3;
+  --color-gold: #b8914a;
+  --color-gold-700: #9c7a3c;
+  --color-gold-100: #f3ead8;
+  --color-ink: #1d2925;
+  --color-muted: #5b6863;
+  --color-line: #e3e7e4;
+  --font-sans: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+  --font-display: "Outfit", "Zen Kaku Gothic New", "Hiragino Sans", system-ui, sans-serif;
+  --font-serif: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+}
+
+@layer base {
+  :root { color-scheme: light; }
+  html, body { background: #ffffff; color: var(--color-ink); }
+  body { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.65; -webkit-text-size-adjust: 100%; overflow-x: clip; -webkit-tap-highlight-color: transparent; }
+  * { min-width: 0; }
+  input, select, textarea { font-size: 16px; }
+  @media (min-width: 1024px) { input, select, textarea { font-size: 15px; } }
+  :focus-visible { outline: 2px solid #2b604c; outline-offset: 2px; }
+}
+.num { font-variant-numeric: tabular-nums; }
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.scroll-x::-webkit-scrollbar { display: none; }
+.fig-bg { background: radial-gradient(120% 90% at 50% 15%, #ffffff 0%, #f4f8f5 70%, #eef4f1 100%); }
+.safe-b { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.safe-t { padding-top: env(safe-area-inset-top); }
+
+@keyframes pop { 0% { transform: scale(.6); opacity: 0 } 60% { transform: scale(1.08); opacity: 1 } 100% { transform: scale(1) } }
+.pop { animation: pop .35s ease-out both; }
+
+/* 印刷（A4） */
+.print-only { display: none; }
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: #fff !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .print-root { position: static !important; overflow: visible !important; }
+  .sheet-item { break-inside: avoid; }
+}

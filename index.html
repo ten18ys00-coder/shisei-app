@@ -120,7 +120,9 @@ td.r,th.r{text-align:right;white-space:nowrap}td small{display:block;color:var(-
 .modal{position:fixed;inset:0;z-index:20;background:rgba(8,14,11,.55);display:flex;align-items:center;justify-content:center;padding:16px}
 .modal[hidden]{display:none}.mbox{background:var(--card);color:var(--ink);border-radius:20px;max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:20px}
 .form{display:grid;gap:12px}.form label{display:grid;gap:4px;font-size:14px;font-weight:700}.req{font-size:11px;color:var(--ng);margin-left:6px}
-.macts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.or{text-align:center;color:var(--mut);font-size:13px;margin:0}
+.macts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.rembox{display:grid;gap:4px;margin:12px 0 4px;padding:12px;border:1px dashed var(--gd);border-radius:12px;background:var(--soft)}.rembox small{color:var(--mut);font-size:13px}
+.remlist{margin:10px 0;padding-left:20px}.remlist li{margin:4px 0}.remlist small{display:block;color:var(--gd);font-size:12px}.or{text-align:center;color:var(--mut);font-size:13px;margin:0}
 .repimg{background:var(--soft);border-radius:12px;padding:8px;margin:10px 0;min-height:120px;display:grid;place-items:center}.repimg img{width:100%;display:block;border-radius:6px}
 .seg2{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}.seg2 button{border:0;background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:8px 14px;min-height:44px;cursor:pointer}.seg2 button.on{background:var(--g);color:var(--onG)}
 .toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-size:14px;z-index:30;max-width:90vw}
@@ -388,6 +390,59 @@ function loadEst(c,A){const out={};
  else if(['right','left'].some(k=>A.SD[k])&&!c.height)out.needH=true;
  return out}
 function careSel(c,C){if(c.care)return c.care;return {ex:C.ex.slice(0,4).map(e=>e.id),life:C.life.slice(0,3)}}
+/* ---------- Re:MOVE（運動処方アプリ）へ渡す：ほさか整骨院のみ ---------- */
+const REMOVE={url:'https://ten18ys00-coder.github.io/shisei-app/re-move/',clinics:['hosaka'],
+ // 姿勢アプリのおすすめ運動 → Re:MOVE の運動
+ map:{chin:'chin-tuck',neckS:'neck-side-stretch',neckSide:'neck-side-stretch',pecS:'chest-open',wall:'wall-slide',towel:'towel-thoracic',psoasS:'half-kneel-hip-flexor',
+  quadS:'standing-quad-stretch',drawin:'draw-in',bridge:'bridge',hamS:'hamstring-chair',deadbug:'dead-bug',kneeup:'marching-sit',clam:'side-lying-abduction',sideS:'side-bend',
+  adduct:'inner-thigh-ball',addS:'butterfly',softknee:'soft-knee-stand',calfS:'calf-stretch-wall',sls:'single-leg-stand',squatK:'chair-squat',towelG:'towel-gather'},
+ names:{'chin-tuck':'あご引き運動','neck-side-stretch':'首の横のストレッチ','chest-open':'胸を開く（手を後ろで組む）','wall-slide':'ウォールスライド（壁で腕上げ）','towel-thoracic':'タオルで胸を開く',
+  'half-kneel-hip-flexor':'股関節の前のストレッチ（片ひざ立ち）','standing-quad-stretch':'太もも前のストレッチ（立って）','draw-in':'お腹へこませ呼吸（ドローイン）','bridge':'お尻上げ（ヒップリフト）',
+  'hamstring-chair':'太もも裏のストレッチ（椅子）','dead-bug':'デッドバグ','marching-sit':'座って足踏み','side-lying-abduction':'横向き脚上げ（お尻の横）','side-bend':'体側のばし',
+  'inner-thigh-ball':'内ももでボールつぶし','butterfly':'内もものストレッチ（足裏合わせ）','soft-knee-stand':'ひざをゆるめて立つ練習','calf-stretch-wall':'ふくらはぎのストレッチ（壁押し）',
+  'single-leg-stand':'片脚立ち','chair-squat':'椅子スクワット','towel-gather':'タオルギャザー'}};
+const remOK=()=>{try{return !isDemo()&&Store.mode==='cloud'&&!!CL.sb&&!!CL.clinic&&REMOVE.clinics.includes(CL.clinic.code)&&!!(st.patient&&st.patient.id)}catch(e){return false}};
+function remBtn(kind){return remOK()?'<div class="rembox"><button class="btn pri" data-act="'+(kind==='gait'?'remGait':'remPosture')+'">Re:MOVEで運動を渡す</button><small>チェックした運動を、患者さんのスマホ用の運動メニュー（Re:MOVE）に提案として送ります</small></div>':''}
+// 選んだ運動を Re:MOVE の運動に置きかえ、理由（どの所見から出たか）をつける
+function remItems(ids,C,whyOf){const items=[],un=[];
+ for(const id of ids){if(!EX[id])continue;const m=REMOVE.map[id],e=C.ex.find(x=>x.id===id),note=e&&e.notes.length?e.notes.join('、'):'';
+  if(!m){if(!un.includes(EX[id][0]))un.push(EX[id][0]);continue}
+  const why=whyOf(id),it=items.find(x=>x.exId===m);
+  if(it){if(note&&!(it.note||'').includes(note))it.note=[it.note,note].filter(Boolean).join('、');why.forEach(w=>{if(!it.whys.includes(w))it.whys.push(w)});continue}
+  items.push({exId:m,note:note||'',whys:why.slice()})}
+ return {items:items.map(i=>{const o={exId:i.exId};if(i.note)o.note=i.note;if(i.whys.length)o.why=i.whys.slice(0,3).join('・');return o}),unmapped:un}}
+function remPosture(){const c=st.cur,A=st.A||analyze(c),C=careFrom(A),ids=careSel(c,C).ex;
+ const bad=A.rows.filter(r=>r.st!=='ok');
+ const R=remItems(ids,C,id=>bad.filter(r=>careFrom({rows:[r]}).ex.some(e=>e.id===id)).map(r=>r.dir));
+ return Object.assign({from:'posture',date:c.date||new Date().toISOString(),type:A.type?A.type.name:'',total:A.sc&&A.sc.total!=null?A.sc.total:null,
+  findings:(A.findings||[]).slice(0,4).map(r=>({label:SPEC[r.key]?SPEC[r.key].label:'',dir:r.dir,st:r.st}))},R)}
+function remGait(){const g=st.gc,G=st.gG,C=st.gC||gCareFrom(G),ids=gCareSel(g,C).ex;
+ const R=remItems(ids,C,id=>G.findings.filter(r=>gCareFrom({findings:[r]}).ex.some(e=>e.id===id)).map(r=>r.dir));
+ return Object.assign({from:'gait',date:g.date||new Date().toISOString(),type:'歩行分析',total:G.total!=null?Math.round(G.total):null,
+  findings:G.findings.slice(0,4).map(r=>({label:r.label||'',dir:r.dir,st:r.st}))},R)}
+async function remStart(kind){if(!remOK())return;let P;
+ try{P=kind==='gait'?remGait():remPosture()}catch(e){return toast('提案を作れませんでした：'+msg(e))}
+ if(!P.items.length)return toast(P.unmapped.length?'チェックした運動は、Re:MOVEにまだありません':'Re:MOVEで渡す運動にチェックを入れてください');
+ const {data,error}=await CL.sb.from('ex_patients').select('id,label,posture_patient_id,archived').eq('clinic_id',CL.clinic.id).order('updated_at',{ascending:false});
+ if(error)return toast('Re:MOVEにつなげませんでした：'+msg(error));
+ const rows=data||[],linked=rows.find(r=>r.posture_patient_id===st.patient.id)||null;st.remP=P;st.remLinked=linked;
+ const list='<ul class="remlist">'+P.items.map(i=>'<li><b>'+esc(REMOVE.names[i.exId]||i.exId)+'</b>'+(i.note?'<small>'+esc(i.note)+'</small>':'')+'</li>').join('')+'</ul>'+(P.unmapped.length?'<p class="note">Re:MOVEにまだない運動：'+esc(P.unmapped.join('・'))+'</p>':'');
+ const nm=st.patient.locked?'':String(st.patient.name||'').trim().split(/[\s　]+/)[0];
+ const free=rows.filter(r=>!r.posture_patient_id&&!r.archived);
+ openModal('<h2>Re:MOVEで運動を渡す</h2>'+(linked?'<p>Re:MOVEの「'+esc(linked.label)+'」に、次の運動を提案として送ります。</p>'+list+'<div class="macts"><button class="btn pri" data-act="remSend">送る</button><button class="btn" data-act="closeModal">やめる</button></div>':
+  '<p>この患者さんは、まだRe:MOVEにいません。</p><form id="remForm" class="form" onsubmit="return false"><label>Re:MOVEでの呼び名<input id="remLabel" maxlength="40" autocomplete="off" value="'+esc(nm?nm+'さん':'')+'"></label>'+
+  (free.length?'<p class="or">または</p><label>Re:MOVEにいる患者さんにつなぐ<select id="remLink"><option value="">（新しく登録する）</option>'+free.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.label)+'</option>').join('')+'</select></label>':'')+
+  '</form><p class="note">呼び名は患者さんのスマホの画面にも出ます（例：山田さん）。フルネームは不要です。</p>'+list+'<div class="macts"><button class="btn pri" data-act="remSend">登録して送る</button><button class="btn" data-act="closeModal">やめる</button></div>'))}
+async function remSend(b){const P=st.remP;if(!P||!remOK())return;const prop=Object.assign({},P,{at:new Date().toISOString()});const t0=b.textContent;b.disabled=true;b.textContent='送信中…';
+ try{let id;
+  if(st.remLinked){id=st.remLinked.id;const {error}=await CL.sb.from('ex_patients').update({proposal:prop}).eq('id',id);if(error)throw error}
+  else{const link=($('#remLink')||{}).value||'';
+   if(link){id=link;const {error}=await CL.sb.from('ex_patients').update({proposal:prop,posture_patient_id:st.patient.id}).eq('id',id);if(error)throw error}
+   else{const label=(($('#remLabel')||{}).value||'').trim();if(!label){b.disabled=false;b.textContent=t0;return toast('呼び名を入れてください')}
+    const {data,error}=await CL.sb.from('ex_patients').insert({label:label.slice(0,40),memo:'',plan:{title:'',message:'',items:[]},posture_patient_id:st.patient.id,proposal:prop}).select('id').single();if(error)throw error;id=data.id}}
+  st.remP=null;
+  openModal('<h2>Re:MOVEに送りました</h2><p>Re:MOVEで中身を確かめて、「メニューに入れる」を押してください。</p><div class="macts"><a class="btn pri" href="'+esc(REMOVE.url+'#p='+id)+'" target="_blank" rel="noopener">Re:MOVEを開く</a><button class="btn" data-act="closeModal">閉じる</button></div>')}
+ catch(e){b.disabled=false;b.textContent=t0;toast('送れませんでした：'+(/duplicate|unique/i.test(msg(e))?'この患者さんは、すでに別の呼び名でRe:MOVEにつながっています':msg(e)))}}
 const BMAP={f:{scm:[7,56,4,9],dnf:[0,58,5,6],uptrap:[22,64,10,5],chest:[17,84,13,9],serratus:[30,100,5,9],upabs:[0,100,12,8],abs:[0,124,13,10],obl:[21,126,6,12],hipflex:[13,158,7,9],thighF:[13,205,9,24],inner:[4,198,4,20],outer:[24,200,4,22]},
  b:{subocc:[0,44,9,4],levator:[10,57,4,8],uptrap:[22,64,10,5],midback:[11,92,7,13],lats:[25,108,7,14],lowback:[7,132,5,13],ql:[17,138,5,9],glute:[13,170,11,10],gmed:[24,160,6,7],hams:[13,212,9,24],calf:[13,264,7,18]}};
 function drawBodyMap(ctx,W,H,C,dark){const s=Math.min(W/360,H/336),ox0=(W-360*s)/2;ctx.save();ctx.translate(ox0,0);ctx.scale(s,s);
@@ -933,7 +988,7 @@ function careCard(c,A){const C=careFrom(A),L=loadEst(c,A),sel=careSel(c,C);st.C=
  return '<div class="card"><h2>体への負担と、おすすめのセルフケア</h2>'+(loads?'<div class="loads">'+loads+'</div><p class="note">首はスマホ首の研究（Hansraj, 2014）の数値を当てはめた目安、腰は単純な力学モデルで計算した目安です。</p>':'')+
  '<div class="cgrid"><div class="bmapbox"><canvas id="bmap" aria-label="負担がかかりやすい筋肉の図"></canvas><p class="leg"><i style="background:#e0573f"></i>縮こまって負担がかかりやすい　<i style="background:#3f8fd8"></i>働きにくくなりやすい</p></div>'+
  '<div><h3>縮こまって負担がかかりやすい筋肉</h3>'+mus(C.tight,'t')+'<h3>働きにくくなりやすい筋肉</h3>'+mus(C.weak,'w')+(C.troubles.length?'<h3>出やすい不調（傾向）</h3><p>'+C.troubles.join('、')+'</p>':'')+'</div></div>'+
- (C.ex.length?'<h3>おすすめの運動 <small class="mut">チェックしたものがレポートに入ります</small></h3><div class="exlist">'+C.ex.slice(0,8).map(e=>{const X=EX[e.id];return '<label class="exi"><input type="checkbox" data-care="ex" value="'+e.id+'"'+(sel.ex.includes(e.id)?' checked':'')+'><span><b>'+X[0]+'</b><small>'+X[1]+'・'+X[3]+(e.notes.length?'・'+e.notes.join('、'):'')+'</small><span class="how">'+X[2]+'</span></span></label>'}).join('')+'</div>':'')+
+ (C.ex.length?'<h3>おすすめの運動 <small class="mut">チェックしたものがレポートに入ります</small></h3><div class="exlist">'+C.ex.slice(0,8).map(e=>{const X=EX[e.id];return '<label class="exi"><input type="checkbox" data-care="ex" value="'+e.id+'"'+(sel.ex.includes(e.id)?' checked':'')+'><span><b>'+X[0]+'</b><small>'+X[1]+'・'+X[3]+(e.notes.length?'・'+e.notes.join('、'):'')+'</small><span class="how">'+X[2]+'</span></span></label>'}).join('')+'</div>'+remBtn('posture'):'')+
  (C.life.length?'<h3>生活のポイント</h3><div class="exlist">'+C.life.slice(0,6).map(id=>{const X=LIFE[id];return '<label class="exi"><input type="checkbox" data-care="life" value="'+id+'"'+(sel.life.includes(id)?' checked':'')+'><span><b>'+X[0]+'</b><span class="how">'+X[1]+'</span></span></label>'}).join('')+'</div>':'')+
  '<p class="note">筋肉の状態は、姿勢の傾向から推定したものです。実際の状態は検査で確かめます。運動中に痛みやしびれが出たら中止して、ご相談ください。</p></div>'}
 let anim3d=0;
@@ -1211,6 +1266,9 @@ const ACT={
  driveReport:async b=>{if(!st.report)return;b.disabled=true;b.textContent='保存中…';const b64=st.report.toDataURL('image/jpeg',0.92).split(',')[1];
   try{const url=await gs('apiSaveReport',repName(),b64);const h=$('#repHint');if(h)h.innerHTML='Googleドライブの「ほさか整骨院_姿勢分析レポート」フォルダに保存しました。<a href="'+esc(url)+'" target="_blank" rel="noopener">開く</a>';b.textContent='保存しました ✓'}catch(e){toast('保存できませんでした：'+msg(e));b.disabled=false;b.textContent='Googleドライブに保存'}},
  copyLine:async()=>{const t=lineText();try{await navigator.clipboard.writeText(t);toast('LINE用の文章をコピーしました')}catch(e){const ta=$('#lineTxt');if(ta){ta.className='';ta.value=t;ta.rows=8;ta.removeAttribute('tabindex');ta.focus();ta.select()}toast('文章を選択しました。コピーしてお使いください')}},
+ remPosture:()=>remStart('posture'),
+ remGait:()=>remStart('gait'),
+ remSend:b=>remSend(b),
  closeModal:()=>closeModal()
 };
 document.addEventListener('click',e=>{const m=$('#modal');if(e.target===m){closeModal();return}const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const fn=ACT[b.dataset.act];if(fn){e.preventDefault();Promise.resolve(fn(b,e)).catch(err=>toast(msg(err)))}});
@@ -1683,12 +1741,12 @@ function gCareFrom(G){const T=[],Wk=[],trb=[],ex={},lf={};
  const TT=merge(T),weak=merge(Wk).filter(x=>!TT.some(t=>t.m===x.m&&(t.side===x.side||t.side==='B'||x.side==='B')));
  return {tight:TT,weak,troubles:trb,ex:Object.values(ex).sort((a,b)=>b.w-a.w),life:Object.entries(lf).sort((a,b)=>b[1]-a[1]).map(e=>e[0])}}
 function gCareSel(g,C){return g.care||{ex:C.ex.slice(0,4).map(e=>e.id),life:C.life.slice(0,3)}}
-function gCareCard(g,G){const C=gCareFrom(G),sel=gCareSel(g,C);st.gC=C;
+function gCareCard(g,G){const C=gCareFrom(G),sel=gCareSel(g,C);st.gC=C;st.gG=G;
  if(!C.tight.length&&!C.weak.length&&!C.ex.length)return '<div class="card"><h2>体への負担と、おすすめのセルフケア</h2><p class="mut">大きな左右差やくずれがないため、特に負担が集中している筋肉は見つかりませんでした。今の歩き方を保つために、毎日歩く習慣を続けましょう。</p></div>';
  const mus=(arr,cls)=>arr.length?'<ul class="mus '+cls+'">'+arr.map(e=>'<li><b>'+(e.side!=='B'?'<span class="sd">'+jpS(e.side)+'</span>':'')+MUS[e.m][0]+'</b><small>'+e.why.map(esc).join('・')+'</small></li>').join('')+'</ul>':'<p class="mut">特になし</p>';
  return '<div class="card"><h2>体への負担と、おすすめのセルフケア</h2><div class="cgrid"><div class="bmapbox"><canvas id="bmap" aria-label="負担がかかりやすい筋肉の図"></canvas><p class="leg"><i style="background:#e0573f"></i>縮こまって負担がかかりやすい　<i style="background:#3f8fd8"></i>働きにくくなりやすい</p></div>'+
  '<div><h3>縮こまって負担がかかりやすい筋肉</h3>'+mus(C.tight,'t')+'<h3>働きにくくなりやすい筋肉</h3>'+mus(C.weak,'w')+(C.troubles.length?'<h3>出やすい不調（傾向）</h3><p>'+C.troubles.map(esc).join('、')+'</p>':'')+'</div></div>'+
- (C.ex.length?'<h3>おすすめの運動 <small class="mut">チェックしたものがLINE用の文章に入ります</small></h3><div class="exlist">'+C.ex.slice(0,8).map(e=>{const X=EX[e.id];return '<label class="exi"><input type="checkbox" data-gcare="ex" value="'+e.id+'"'+(sel.ex.includes(e.id)?' checked':'')+'><span><b>'+X[0]+'</b><small>'+X[1]+'・'+X[3]+(e.notes.length?'・'+e.notes.join('、'):'')+'</small><span class="how">'+X[2]+'</span></span></label>'}).join('')+'</div>':'')+
+ (C.ex.length?'<h3>おすすめの運動 <small class="mut">チェックしたものがLINE用の文章に入ります</small></h3><div class="exlist">'+C.ex.slice(0,8).map(e=>{const X=EX[e.id];return '<label class="exi"><input type="checkbox" data-gcare="ex" value="'+e.id+'"'+(sel.ex.includes(e.id)?' checked':'')+'><span><b>'+X[0]+'</b><small>'+X[1]+'・'+X[3]+(e.notes.length?'・'+e.notes.join('、'):'')+'</small><span class="how">'+X[2]+'</span></span></label>'}).join('')+'</div>'+remBtn('gait'):'')+
  (C.life.length?'<h3>生活のポイント</h3><div class="exlist">'+C.life.slice(0,6).map(id=>{const X=LIFE[id];return '<label class="exi"><input type="checkbox" data-gcare="life" value="'+id+'"'+(sel.life.includes(id)?' checked':'')+'><span><b>'+X[0]+'</b><span class="how">'+X[1]+'</span></span></label>'}).join('')+'</div>':'')+
  '<p class="note">筋肉の状態は、歩き方の傾向から推定したものです。実際の状態は検査で確かめます。運動中に痛みやしびれが出たら中止して、ご相談ください。</p></div>'}
 function gDefaultComment(G){const top=G.findings.slice(0,2).map(r=>'「'+r.dir+'」').join('');

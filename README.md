@@ -16,3 +16,11 @@
 - 公開する前に、前の版で記録を作り、新しい版で開いて「患者さん・記録・コメント・写真」が全部出ることを確かめる。
 - 端末の中だけに残っている古い記録（hosaka-posture-v1）は、ほさか整骨院でログインしたときに自動でクラウドに移す。
 - 患者さん・記録が上書き・削除されると、直前の内容がデータベースの private.record_history に90日間残る（更新の不具合で消えても戻せる）。
+
+## Re:MOVE（運動処方アプリ）
+
+- アプリ: https://ten18ys00-coder.github.io/shisei-app/re-move/ （先生用。患者さんは先生から渡されたリンクで開く）
+- お試し版: https://ten18ys00-coder.github.io/shisei-app/re-move/?demo
+- 公開ファイルは `re-move/`、ソースは `remove-app/`（`npm run build:web` の結果 `docs/` を `re-move/` にコピー）。姿勢アプリとは別のアプリで、保存先は Supabase の `ex_*` テーブル。
+- 姿勢分析・歩行分析の結果画面「おすすめの運動」の下の「Re:MOVEで運動を渡す」（ほさか整骨院のみ）から、チェックした運動を Re:MOVE に提案として送る。姿勢アプリの患者IDでつなぎ、名前は送らない（Re:MOVE では呼び名を使う）。
+- 姿勢アプリの表（patients / sessions / gait_sessions）は Re:MOVE から読むだけで、書き換えない。
