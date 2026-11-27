@@ -1536,9 +1536,12 @@ async function gLoadVideo(url){const v=document.createElement('video');v.muted=t
  let dur=v.duration;if(!isFinite(dur)||!dur){v.currentTime=1e7;await gWait(v,'seeked',5000);dur=v.currentTime}
  return {v,dur}}
 async function gSeek(v,t){const fr='requestVideoFrameCallback' in v?new Promise(r=>v.requestVideoFrameCallback(()=>r())):null;v.currentTime=t;await gWait(v,'seeked',5000);if(fr)await Promise.race([fr,gSleep(60)])}
+function gPlayTo(v,t){return new Promise((res,rej)=>{let done=false;const fin=(f,x)=>{if(done)return;done=true;clearTimeout(to);try{v.pause()}catch(e){}f(x)},to=setTimeout(()=>fin(rej,new Error('動画を再生できませんでした')),8000);
+ const cb=(now,m)=>{if(done)return;if(m.mediaTime>=t-0.004||v.ended)fin(res,m.mediaTime);else v.requestVideoFrameCallback(cb)};
+ if(v.ended){fin(res,v.currentTime);return}v.requestVideoFrameCallback(cb);const pr=v.play();if(pr&&pr.catch)pr.catch(e=>fin(rej,e))})}
 function gRunVideo(p,fn){const run=async()=>{try{p.setOptions({staticImageMode:false,smoothLandmarks:true})}catch(e){}try{p.reset()}catch(e){}
   const send=cv=>new Promise((res,rej)=>{let done=false;p.onResults(r=>{done=true;res(r)});p.send({image:cv}).catch(rej);setTimeout(()=>{if(!done)rej(new Error('解析に時間がかかりすぎました'))},40000)});
-  try{return await fn(send)}finally{try{p.setOptions({staticImageMode:true,smoothLandmarks:false})}catch(e){}try{p.reset()}catch(e){}}};
+  try{return await fn(send)}finally{try{p.setOptions({modelComplexity:2,staticImageMode:true,smoothLandmarks:false})}catch(e){}try{p.reset()}catch(e){}}};
  const r=queue.then(run,run);queue=r.catch(()=>{});return r}
 function gProg(k){const b=st.gbusy[k];if(!b||st.gtab!==k)return;const el=$('#gprog');if(el)el.textContent=b.txt;const bar=$('#gbar');if(bar)bar.style.width=Math.round((b.p||0)*100)+'%'}
 async function gExtract(k,file){const g=st.gc;if(!g)return;st.gbusy[k]={p:0,txt:'動画を読み込んでいます…'};st.gerr[k]='';render();
@@ -1548,11 +1551,24 @@ async function gExtract(k,file){const g=st.gc;if(!g)return;st.gbusy[k]={p:0,txt:
   const vw=v.videoWidth,vh=v.videoHeight;if(!vw||!vh)throw new Error('動画の大きさを読み取れませんでした');
   const lim=k==='round'?30:15,win=Math.min(dur,lim),step=Math.max(1/30,win/(k==='round'?480:300)),sc=Math.min(1,720/Math.max(vw,vh)),cv=document.createElement('canvas');cv.width=Math.round(vw*sc);cv.height=Math.round(vh*sc);const cx=cv.getContext('2d');
   if(st.engine!=='ready'){st.gbusy[k]={p:0,txt:'高精度AIモデルを準備しています（初回は約30MBを読み込みます）…'};gProg(k)}
-  const p=await eng;const times=[];for(let t=Math.min(0.03,step/2);t<win-0.02;t+=step)times.push(t);
-  const P=[],T=[],t0=performance.now();
-  await gRunVideo(p,async send=>{for(let i=0;i<times.length;i++){if(token.stop)throw new Error('__cancel');await gSeek(v,times[i]);cx.drawImage(v,0,0,cv.width,cv.height);const r=await send(cv);
-   const lm=r&&r.poseLandmarks;P.push(GK.map(j=>{const q=lm&&lm[j];return q&&(q.visibility==null||q.visibility>=0.3)?[q.x,q.y]:null}));T.push(times[i]);
-   const el=(performance.now()-t0)/1000,rem=el/(i+1)*(times.length-i-1);st.gbusy[k]={p:(i+1)/times.length,txt:'AIが歩き方を解析しています… '+Math.round((i+1)/times.length*100)+'%'+(i>4?'（あと約'+Math.max(1,Math.round(rem))+'秒）':'')};gProg(k)}});
+  const p=await eng;let times=[];for(let t=Math.min(0.03,step/2);t<win-0.02;t+=step)times.push(t);
+  const P=[],T=[],t0=performance.now(),F=window.__gForce||{},CAL=6,sk=[],inf=[];let mode=F.mode==='play'?'play':'seek',lite=false,note='';
+  const med=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[b.length>>1]:0};
+  await gRunVideo(p,async send=>{let i=0;
+   while(i<times.length){if(token.stop)throw new Error('__cancel');const ta=performance.now();let mt=times[i];
+    if(mode==='play'){try{mt=await gPlayTo(v,times[i])}catch(e){mode='seek';await gSeek(v,times[i]);mt=times[i]}}else await gSeek(v,times[i]);
+    const tb=performance.now();cx.drawImage(v,0,0,cv.width,cv.height);const r=await send(cv);const tc=performance.now();
+    if(i<CAL){sk.push(tb-ta);inf.push(tc-tb)}
+    const lm=r&&r.poseLandmarks;P.push(GK.map(j=>{const q=lm&&lm[j];return q&&(q.visibility==null||q.visibility>=0.3)?[q.x,q.y]:null}));T.push(mt);i++;
+    if(i===CAL&&i<times.length){// 端末の速さに合わせて、動画の読み方・AIの重さ・コマ数を決める
+     const s1=med(sk),s2=med(inf);
+     if(mode==='seek'&&s1>80&&'requestVideoFrameCallback' in v&&!F.noAdapt){mode='play';note='動画を順番に読み込む方法に切り替えました'}
+     if((s2>200&&!F.noAdapt)||F.lite){lite=true;try{p.setOptions({modelComplexity:1})}catch(e){lite=false}}
+     const per=(mode==='play'?Math.max(40,step*1000)+30:s1)+(lite?s2*0.45:s2);
+     if(per*(times.length-i)/1000>150&&step<1/15&&!F.noAdapt){const last=times[i-1],ns=Math.min(1/15,Math.max(step,(win-last)/(150000/per)));times=times.slice(0,i);for(let t=last+ns;t<win-0.02;t+=ns)times.push(t)}}
+    const el=(performance.now()-t0)/1000,rem=el/i*(times.length-i);
+    st.gbusy[k]={p:i/times.length,txt:'AIが歩き方を解析しています… '+Math.round(i/times.length*100)+'%'+(i>CAL+2?'（あと約'+Math.max(1,Math.round(rem))+'秒）':'')+(lite&&i>CAL?' ・この端末に合わせて軽めの解析にしています':'')};gProg(k)}});
+  if(window.__gStat)window.__gStat({mode,lite,frames:times.length,seek:med(sk),infer:med(inf),total:(performance.now()-t0)/1000,note});
   if(!P.some(fr=>fr[GI[23]]&&fr[GI[24]]))throw new Error('人の体を見つけられませんでした。明るい場所で、全身が写るように撮ってください');
   const un=gUnpackClip(gPackClip({v:k,ar:vw/vh,t:T,P}));un.url=url;un.vw=vw;un.vh=vh;un.cut=dur>lim+0.5;
   const r=gAnalyze(k,un);un.face=r.face;if(un.cut)r.warn.push('動画が長いため、はじめの'+lim+'秒だけを分析しました。');
@@ -1593,7 +1609,7 @@ function gRecToggle(){if(!GR.stream)return;const btn=GR.el.querySelector('.grbtn
  GR.mime=(window.MediaRecorder&&MediaRecorder.isTypeSupported?GMIME.find(m=>MediaRecorder.isTypeSupported(m)):'')||'';
  const tr=GR.stream.getVideoTracks()[0],s2=tr&&tr.getSettings?tr.getSettings():{},px=(s2.width||1280)*(s2.height||720),fps=s2.frameRate||30;
  const bps=Math.round(clamp(px*fps*0.16,4e6,16e6));// 1080p・60コマで約16Mbps
- try{GR.rec=new MediaRecorder(GR.stream,GR.mime?{mimeType:GR.mime,videoBitsPerSecond:bps}:{videoBitsPerSecond:bps})}catch(e){try{GR.rec=new MediaRecorder(GR.stream)}catch(e2){toast('この端末では録画できません。「撮った動画を選ぶ」をお使いください');return}}
+ try{GR.rec=new MediaRecorder(GR.stream,GR.mime?{mimeType:GR.mime,videoBitsPerSecond:bps,videoKeyFrameIntervalDuration:1000}:{videoBitsPerSecond:bps,videoKeyFrameIntervalDuration:1000})}catch(e){try{GR.rec=new MediaRecorder(GR.stream)}catch(e2){toast('この端末では録画できません。「撮った動画を選ぶ」をお使いください');return}}
  GR.chunks=[];GR.rec.ondataavailable=e=>{if(e.data&&e.data.size)GR.chunks.push(e.data)};
  GR.rec.onstop=()=>{clearInterval(GR.timer);const type=(GR.rec&&GR.rec.mimeType)||GR.mime||'video/mp4',blob=new Blob(GR.chunks,{type}),k=GR.k,ext=/webm/.test(type)?'webm':'mp4';gRecClose();
   if(blob.size<2000){st.gerr[k]='録画できませんでした。もう一度お試しください';render();return}
